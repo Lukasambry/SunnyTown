@@ -1,0 +1,48 @@
+name: Deploy to Prod
+
+on:
+  push:
+    branches: [prod]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Prod
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_PROD_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🔄 Déploiement Prod..."
+            cd /home/florddev-sunnytown/htdocs/sunnytown.florddev.fr/
+
+            git config --global --add safe.directory /home/florddev-sunnytown/htdocs/sunnytown.florddev.fr
+            sudo chown -R ${{ secrets.SSH_PROD_USER }}:florddev-sunnytown .git
+            sudo chmod -R 755 .git
+
+            git reset --hard HEAD
+            git clean -fd
+            git pull origin prod
+
+            sudo chown -R ${{ secrets.SSH_PROD_USER }}:florddev-sunnytown .
+            sudo chmod -R 755 .
+            sudo chmod -R 777 storage bootstrap/cache
+
+            composer install --no-dev --optimize-autoloader
+
+            sudo rm -rf node_modules package-lock.json
+            npm install --production
+            npm run build
+
+            sudo chown -R florddev-sunnytown:www-data storage bootstrap/cache public/build
+            sudo chmod -R 775 storage bootstrap/cache public/build
+
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan migrate --force
