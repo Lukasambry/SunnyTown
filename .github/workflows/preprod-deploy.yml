@@ -25,18 +25,18 @@ jobs:
             sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .git
             sudo chmod -R 755 .git
 
+            git reset --hard HEAD
+            git clean -fd
             git pull origin preprod
 
             sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .
             sudo chmod -R 755 .
-
             sudo chmod -R 777 storage bootstrap/cache
 
             composer install --no-dev --optimize-autoloader
 
             sudo rm -rf node_modules package-lock.json
-            sudo rm -rf node_modules/.bin node_modules/.cache
-            npm ci
+            npm install --production
             npm run build
 
             sudo chown -R florddev-preprod-sunnytown:www-data storage bootstrap/cache public/build
