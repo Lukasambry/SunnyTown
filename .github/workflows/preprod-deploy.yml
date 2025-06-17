@@ -22,23 +22,27 @@ jobs:
             cd /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr/
 
             git config --global --add safe.directory /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr
-
-            sudo chown -R florddev-preprod-sunnytown:florddev-preprod-sunnytown .
-            sudo chmod -R 755 .
-            sudo chmod -R 775 storage bootstrap/cache
+            sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .git
+            sudo chmod -R 755 .git
 
             git pull origin preprod
+
+            sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .
+            sudo chmod -R 755 .
+
+            sudo chmod -R 777 storage bootstrap/cache
+
             composer install --no-dev --optimize-autoloader
 
-            sudo chown -R www-data:www-data storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
+            sudo rm -rf node_modules package-lock.json
+            sudo rm -rf node_modules/.bin node_modules/.cache
+            npm ci
+            npm run build
+
+            sudo chown -R florddev-preprod-sunnytown:www-data storage bootstrap/cache public/build
+            sudo chmod -R 775 storage bootstrap/cache public/build
 
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan migrate --force
-
-            npm ci
-            npm run build
-
-            sudo chown -R www-data:www-data public/build
