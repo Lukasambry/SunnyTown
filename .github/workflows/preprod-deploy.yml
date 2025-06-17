@@ -1,0 +1,28 @@
+name: Deploy to Preprod
+
+on:
+  push:
+    branches: [preprod]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Preprod
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_PREPROD_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "🔄 Déploiement Préprod..."
+            cd /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr/
+            git pull origin preprod
+            composer install --no-dev
+            php artisan migrate --force
+            php artisan db:seed
+            npm ci
+            npm run build
