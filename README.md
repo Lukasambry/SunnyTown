@@ -45,6 +45,7 @@ SunnyTown est un jeu incrémental de type "idle game" où les joueurs construise
 Une fois l'application démarrée, elle est accessible à l'adresse :
 - Frontend : http://sunnytown.localhost
 - Serveur Vite : http://localhost:5173
+- Adminer : http://adminer.sunnytown.localhost (pour la gestion de la base de données)
 
 ## Structure Docker
 
