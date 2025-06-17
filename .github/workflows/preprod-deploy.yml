@@ -20,9 +20,25 @@ jobs:
           script: |
             echo "🔄 Déploiement Préprod..."
             cd /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr/
+
+            git config --global --add safe.directory /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr
+
+            sudo chown -R florddev-preprod-sunnytown:florddev-preprod-sunnytown .
+            sudo chmod -R 755 .
+            sudo chmod -R 775 storage bootstrap/cache
+
             git pull origin preprod
-            composer install --no-dev
+            composer install --no-dev --optimize-autoloader
+
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
             php artisan migrate --force
-            php artisan db:seed
+
             npm ci
             npm run build
+
+            sudo chown -R www-data:www-data public/build
