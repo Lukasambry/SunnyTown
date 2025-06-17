@@ -20,9 +20,25 @@ jobs:
           script: |
             echo "🔄 Déploiement Prod..."
             cd /home/florddev-sunnytown/htdocs/sunnytown.florddev.fr/
+
+            git config --global --add safe.directory /home/florddev-sunnytown/htdocs/sunnytown.florddev.fr
+
+            sudo chown -R florddev-sunnytown:florddev-sunnytown .
+            sudo chmod -R 755 .
+            sudo chmod -R 775 storage bootstrap/cache
+
             git pull origin prod
-            composer install --no-dev
+            composer install --no-dev --optimize-autoloader
+
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
             php artisan migrate --force
-            php artisan db:seed
-            npm install --production
+
+            npm ci
             npm run build
+
+            sudo chown -R www-data:www-data public/build
