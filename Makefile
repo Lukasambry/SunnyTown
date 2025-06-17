@@ -41,3 +41,13 @@ clear: ## Clear application cache
 	php artisan config:clear
 	php artisan route:clear
 	php artisan view:clear
+
+prod: ## Prepare the application for production
+	composer install --optimize-autoloader --no-dev && \
+    npm i --production && \
+    npm run build && \
+    chmod 777 -R storage/ && \
+    echo "Production environment is ready."
+
+
+
