@@ -1,21 +1,5 @@
 <template>
-  <div class="bg-[#0c1739] text-[#422d1b] relative overflow-hidden" style="font-family: 'Verdana', sans-serif;">
-    <!-- Particules flottantes -->
-    <div
-      v-for="particle in particles"
-      :key="particle.id"
-      class="fixed pointer-events-none z-50 animate-ping"
-      :style="{
-        left: particle.x + 'px',
-        top: particle.y + 'px',
-        transform: 'translate(-50%, -50%)'
-      }"
-    >
-      <span v-if="particle.type === 'coins'" class="text-yellow-400 font-bold">+25 💰</span>
-      <span v-if="particle.type === 'population'" class="text-green-400 font-bold">+2 👥</span>
-      <span v-if="particle.type === 'happiness'" class="text-pink-400 font-bold">+5 😊</span>
-    </div>
-
+  <div class="bg-gray-900 text-white min-h-screen font-sans antialiased overflow-x-hidden">
     <!-- Header avec stats en temps réel -->
     <header class="fixed top-0 left-0 right-0 z-50 bg-[#182c55]/95 backdrop-blur-sm shadow-lg border-b-2 border-yellow-400/30">
       <nav class="container mx-auto px-4 py-3">
@@ -27,7 +11,8 @@
             <a href="#community" class="text-yellow-200 hover:text-white transition-colors">
               COMMUNAUTÉ
             </a>
-            <a href="#Forum" class="text-yellow-200 hover:text-white transition-colors">
+            <!-- Lien Forum ajouté pour correspondre à la maquette implicite -->
+            <a href="#forum" class="text-yellow-200 hover:text-white transition-colors">
               FORUM
             </a>
           </div>
@@ -51,19 +36,21 @@
               <span class="text-green-200 font-mono">{{ population }}</span>
             </div>
             <div 
-              class="flex items-center space-x-1 bg-pink-600/20 px-3 py-1 rounded-full cursor-pointer transition-all duration-300 hover:bg-pink-600/30"
-              :class="{ 'scale-110 bg-pink-600/40': clickedElements.has('happiness') }"
+              class="flex items-center space-x-1 bg-blue-600/20 px-3 py-1 rounded-full cursor-pointer transition-all duration-300 hover:bg-blue-600/30"
+              :class="{ 'scale-110 bg-blue-600/40': clickedElements.has('happiness') }"
               @click="handleResourceClick('happiness', $event)"
             >
-              <img src="/images/heart-icon.png" alt="Bonheur" class="w-4 h-4 pixelated" />
-              <span class="text-pink-200 font-mono">{{ happiness }}%</span>
+              <img src="/images/happiness-icon.png" alt="Bonheur" class="w-4 h-4 pixelated" />
+              <span class="text-blue-200 font-mono">{{ happiness }}%</span>
             </div>
           </div>
 
+          <!-- Icônes sociales (exemple) -->
           <div class="flex items-center space-x-3">
-            <Twitter class="w-5 h-5 text-yellow-200 hover:text-white cursor-pointer transition-colors" />
-            <Facebook class="w-5 h-5 text-yellow-200 hover:text-white cursor-pointer transition-colors" />
-            <MessageCircle class="w-5 h-5 text-yellow-200 hover:text-white cursor-pointer transition-colors" />
+            <!-- Appliquer les classes Tailwind pour transitions et hover ici -->
+            <Twitter class="w-5 h-5 text-yellow-200 cursor-pointer transition-all duration-300 ease-out hover:text-white hover:scale-120" />
+            <Facebook class="w-5 h-5 text-yellow-200 cursor-pointer transition-all duration-300 ease-out hover:text-white hover:scale-120" />
+            <MessageCircle class="w-5 h-5 text-yellow-200 cursor-pointer transition-all duration-300 ease-out hover:text-white hover:scale-120" />
           </div>
         </div>
       </nav>
@@ -75,20 +62,21 @@
         <!-- Background animé avec effet de parallax -->
         <div 
           class="parallax-bg animated-bg-pan absolute inset-0 w-full h-full bg-cover bg-center transition-transform duration-75"
-          :style="{ transform: `translateY(${parallax.bg}px)` }"
+          :style="{ transform: `translateY(${parallax.bg}px)`, backgroundImage: 'url(\'/images/sunnytown-world-map.jpg\')' }"
         />
         
         <!-- Nuages flottants et personnages animés -->
         <div class="absolute inset-0 overflow-hidden">
-          <div class="animate-bounce absolute top-20 left-10 text-white/20 text-6xl">☁️</div>
-          <div class="animate-pulse absolute top-32 right-20 text-white/30 text-4xl cloud-delay-1">☁️</div>
-          <div class="animate-bounce absolute top-40 left-1/3 text-white/20 text-5xl cloud-delay-2">☁️</div>
+          <!-- Ajouter les classes de délai d'animation Tailwind si disponibles, sinon garder les classes CSS -->
+          <div class="animate-bounce absolute top-20 left-10 text-white/20 text-6xl cloud-delay-1">☁️</div>
+          <div class="animate-pulse absolute top-32 right-20 text-white/30 text-4xl cloud-delay-2">☁️</div>
+          <div class="animate-bounce absolute top-40 left-1/3 text-white/20 text-5xl">☁️</div>
           
           <!-- Personnages animés du jeu -->
-          <div class="absolute bottom-20 left-10 animate-bounce">
+          <div class="absolute bottom-20 left-10">
             <img src="/images/frame 167.png" alt="Felix" class="w-16 h-16 pixelated character-walk" />
           </div>
-          <div class="absolute bottom-32 right-20 animate-pulse">
+          <div class="absolute bottom-32 right-20">
             <img src="/images/frame 185.png" alt="Fermier" class="w-16 h-16 pixelated character-idle" />
           </div>
         </div>
@@ -109,13 +97,14 @@
             <div class="absolute -inset-4 bg-yellow-400/20 rounded-full blur-xl animate-pulse"></div>
             
             <!-- Particules magiques autour du logo -->
+            <!-- Les classes sparkle-N définissent top, left, animation-delay. Les autres (absolute, text-yellow-400, pointer-events-none, text-size) sont Tailwind -->
             <div class="absolute inset-0 pointer-events-none">
-              <div class="sparkle sparkle-1">✨</div>
-              <div class="sparkle sparkle-2">⭐</div>
-              <div class="sparkle sparkle-3">💫</div>
-              <div class="sparkle sparkle-4">🌟</div>
-              <div class="sparkle sparkle-5">✨</div>
-              <div class="sparkle sparkle-6">⭐</div>
+              <div class="sparkle sparkle-1 absolute text-yellow-400 pointer-events-none text-lg">✨</div>
+              <div class="sparkle sparkle-2 absolute text-yellow-400 pointer-events-none text-base">⭐</div>
+              <div class="sparkle sparkle-3 absolute text-yellow-400 pointer-events-none text-xl">💫</div>
+              <div class="sparkle sparkle-4 absolute text-yellow-400 pointer-events-none text-sm">🌟</div>
+              <div class="sparkle sparkle-5 absolute text-yellow-400 pointer-events-none text-lg">✨</div> <!-- Approximativement 1.1rem -->
+              <div class="sparkle sparkle-6 absolute text-yellow-400 pointer-events-none text-base">⭐</div>
             </div>
           </div>
           
@@ -136,26 +125,14 @@
               />
             </div>
           </div>
-
-          <!-- Bouton principal animé -->
-          <div class="mt-8">
-            <button class="group relative px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold text-xl rounded-lg shadow-2xl transform transition-all duration-300 hover:scale-110 hover:rotate-1 hover:shadow-yellow-400/50 border-4 border-yellow-300">
-              <span class="relative z-10">🎮 Commencer à jouer MAINTENANT</span>
-              <div class="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div class="absolute -inset-2 bg-yellow-400/30 rounded-lg blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </button>
-            <p class="text-yellow-200 mt-2 text-sm animate-pulse">
-              ⚡ Gratuit • Progression automatique • Sans téléchargement
-            </p>
-          </div>
         </div>
       </section>
 
       <!-- Content avec animations d'idle game -->
-      <div class="bg-[#f5eac7] py-10 relative z-30" style="background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABFSURBVHhe7cExAQAAAMKg9U9tCF8gAAAAAAAAAAAAAAB+DmQAAgAAAAAAAAAAAAAAgJMDGgAAAAAAAAAAAAAAgJMDGgAAAAAAAAAAAAAAgJMDGgAAAAAAAAAAAADgC2cCATsPsnNFAAAAAElFTkSuQmCC'); background-repeat: repeat;">
+      <div class="bg-[#f5eac7] py-10 relative z-30 needs-fade-in" style="background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABFSURBVHhe7cExAQAAAMKg9U9tCF8gAAAAAAAAAAAAAAB+DmQAAgAAAAAAAAAAAAAAgJMDGgAAAAAAAAAAAAAAgJMDGgAAAAAAAAAAAAAAgJMDGgAAAAAAAAAAAADgC2cCATsPsnNFAAAAAElFTkSuQmCC'); background-repeat: repeat;">
         
         <!-- Section Fonctionnalités avec éléments interactifs -->
-        <section id="features" class="container mx-auto px-4 py-12">
+        <section id="features" class="container mx-auto px-4 py-12 needs-fade-in">
           <div class="bg-[#fff9e6] p-8 rounded-xl shadow-2xl border-4 border-[#d3b87b]">
             <h2 class="text-4xl md:text-5xl font-bold text-center mb-8 text-[#5a3d2b]" style="font-family: 'Georgia', serif;">
               🌟 Bienvenue à SunnyTown ! 🌟
@@ -166,150 +143,49 @@
               Transformez une simple ferme en métropole prospère grâce à la magie de la progression automatique.
             </p>
 
-            <!-- Stats en temps réel visibles -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div 
-                class="text-center p-6 bg-yellow-100 rounded-xl border-2 border-yellow-400 hover:scale-105 transition-transform cursor-pointer"
-                @click="handleResourceClick('coins', $event)"
-              >
-                <div class="text-4xl mb-2">💰</div>
-                <div class="text-2xl font-bold text-yellow-800">{{ coins.toLocaleString() }}</div>
-                <div class="text-yellow-600">Pièces générées</div>
-                <div class="text-xs text-yellow-500 mt-1">Cliquez pour bonus!</div>
-              </div>
-              
-              <div 
-                class="text-center p-6 bg-green-100 rounded-xl border-2 border-green-400 hover:scale-105 transition-transform cursor-pointer"
-                @click="handleResourceClick('population', $event)"
-              >
-                <div class="text-4xl mb-2">👥</div>
-                <div class="text-2xl font-bold text-green-800">{{ population }}</div>
-                <div class="text-green-600">Habitants</div>
-                <div class="text-xs text-green-500 mt-1">Cliquez pour attirer!</div>
-              </div>
-              
-              <div 
-                class="text-center p-6 bg-pink-100 rounded-xl border-2 border-pink-400 hover:scale-105 transition-transform cursor-pointer"
-                @click="handleResourceClick('happiness', $event)"
-              >
-                <div class="text-4xl mb-2">😊</div>
-                <div class="text-2xl font-bold text-pink-800">{{ happiness }}%</div>
-                <div class="text-pink-600">Bonheur</div>
-                <div class="text-xs text-pink-500 mt-1">Cliquez pour joie!</div>
-              </div>
-            </div>
-
-            <!-- Fonctionnalités avec assets du jeu -->
-            <div class="grid md:grid-cols-3 gap-8 text-center">
-              <div class="group p-6 hover:bg-[#fdf5e0] rounded-xl transition-all duration-500 hover:scale-105">
-                <div class="mb-4 flex justify-center">
-                  <img src="/images/sunflower-crop.png" alt="Agriculture" class="w-16 h-16 pixelated group-hover:animate-bounce" />
-                </div>
-                <h4 class="text-2xl font-semibold mb-2 text-[#5a3d2b]">Agriculture Automatique</h4>
-                <p class="text-[#422d1b]">Vos récoltes poussent même pendant votre sommeil !</p>
-                <div class="mt-2 w-full bg-green-200 rounded-full h-2">
-                  <div class="bg-green-500 h-2 rounded-full animate-pulse" style="width: 70%"></div>
-                </div>
-              </div>
-              
-              <div class="group p-6 hover:bg-[#fdf5e0] rounded-xl transition-all duration-500 hover:scale-105">
-                <div class="mb-4 flex justify-center">
-                  <img src="/images/game-tools.png" alt="Outils" class="w-16 h-16 pixelated group-hover:animate-pulse" />
-                </div>
-                <h4 class="text-2xl font-semibold mb-2 text-[#5a3d2b]">Outils Magiques</h4>
-                <p class="text-[#422d1b]">Découvrez des outils qui génèrent des bonus permanents !</p>
-                <div class="mt-2 w-full bg-purple-200 rounded-full h-2">
-                  <div class="bg-purple-500 h-2 rounded-full animate-pulse" style="width: 45%"></div>
-                </div>
-              </div>
-              
-              <div class="group p-6 hover:bg-[#fdf5e0] rounded-xl transition-all duration-500 hover:scale-105">
-                <div class="mb-4 flex justify-center">
-                  <img src="/images/frame 185.png" alt="Personnages" class="w-16 h-16 pixelated group-hover:animate-bounce" />
-                </div>
-                <h4 class="text-2xl font-semibold mb-2 text-[#5a3d2b]">Personnages Vivants</h4>
-                <p class="text-[#422d1b]">Plus de 30 PNJ qui travaillent pour vous 24/7 !</p>
-                <div class="mt-2 w-full bg-blue-200 rounded-full h-2">
-                  <div class="bg-blue-500 h-2 rounded-full animate-pulse" style="width: 85%"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Interface de gameplay preview -->
-            <div class="mt-16 bg-[#8B4513] p-6 rounded-xl border-4 border-[#654321] shadow-2xl">
-              <h3 class="text-2xl font-bold text-center mb-6 text-yellow-100">🎮 Aperçu du Gameplay</h3>
-              <div class="grid md:grid-cols-2 gap-8 items-center">
-                <div class="text-center">
-                  <img src="/images/inventory-interface.png" alt="Interface Inventaire" class="w-full max-w-md mx-auto pixelated hover:scale-105 transition-transform shadow-lg rounded-lg" />
-                  <p class="text-yellow-200 mt-4 text-sm">Interface d'inventaire en temps réel</p>
-                </div>
-                <div class="text-center">
-                  <img src="/images/harvest-interface.png" alt="Interface Récolte" class="w-full max-w-md mx-auto pixelated hover:scale-105 transition-transform shadow-lg rounded-lg" />
-                  <p class="text-yellow-200 mt-4 text-sm">Système de récolte automatique</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Call to action principal -->
-            <div class="text-center mt-12">
-              <button class="pixel-border gold py-3 px-8 transform hover:scale-105 transition-transform text-lg font-bold">
-                🚀 Découvrir le Jeu
-              </button>
-              <div class="flex items-center justify-center mt-4 space-x-4 text-sm text-green-600">
-                <span class="flex items-center"><Clock class="w-4 h-4 mr-1" /> Progresse automatiquement</span>
-                <span class="flex items-center"><TrendingUp class="w-4 h-4 mr-1" /> Revenus passifs</span>
-                <span class="flex items-center"><Star class="w-4 h-4 mr-1" /> Gratuit à vie</span>
+            <div class="grid md:grid-cols-3 gap-8">
+              <!-- Exemple de carte de fonctionnalité - appliquer les classes Tailwind ici -->
+              <div v-for="feature in props.features" :key="feature.title" 
+                   class="bg-yellow-50 p-6 rounded-lg shadow-lg text-center transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-105 hover:shadow-2xl group">
+                <div class="text-5xl mb-4 transition-transform duration-300 ease-out group-hover:rotate-12 group-hover:scale-110">{{ feature.icon }}</div>
+                <h3 class="text-2xl font-semibold text-[#7c553c] mb-2">{{ feature.title }}</h3>
+                <p class="text-[#5a3d2b] text-sm">{{ feature.description }}</p>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- Section Communauté avec interactions et assets -->
-        <section id="community" class="container mx-auto px-4 py-12">
-          <div class="bg-[#fff9e6] p-8 rounded-xl shadow-2xl border-4 border-[#d3b87b] relative overflow-hidden">
-            <!-- Éléments décoratifs avec assets -->
-            <div class="absolute top-4 left-4 opacity-30">
-              <img src="/images/sunflower-item.png" alt="Tournesol" class="w-8 h-8 pixelated animate-pulse" />
+        <!-- Section "Comment Jouer" -->
+        <section id="how-to-play" class="container mx-auto px-4 py-16 needs-fade-in">
+          <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 text-[#5a3d2b]">Comment Commencer Votre Aventure?</h2>
+          <div class="grid md:grid-cols-3 gap-8 text-center">
+            <div class="bg-lime-50 p-6 rounded-lg shadow-md">
+              <div class="text-6xl mb-4">1️⃣</div>
+              <h3 class="text-xl font-semibold text-lime-700 mb-2">Inscrivez-vous</h3>
+              <p class="text-lime-600">Créez votre compte en quelques clics et rejoignez la communauté SunnyTown.</p>
             </div>
-            <div class="absolute top-6 right-6 opacity-30">
-              <img src="/images/tools-icon.png" alt="Outils" class="w-8 h-8 pixelated animate-bounce" />
+            <div class="bg-sky-50 p-6 rounded-lg shadow-md">
+              <div class="text-6xl mb-4">2️⃣</div>
+              <h3 class="text-xl font-semibold text-sky-700 mb-2">Construisez Votre Ville</h3>
+              <p class="text-sky-600">Placez vos premiers bâtiments et commencez à récolter des ressources.</p>
             </div>
-            <div class="absolute bottom-4 left-8 opacity-30">
-              <img src="/images/crop-seeds.png" alt="Graines" class="w-6 h-6 pixelated animate-pulse" />
+            <div class="bg-amber-50 p-6 rounded-lg shadow-md">
+              <div class="text-6xl mb-4">3️⃣</div>
+              <h3 class="text-xl font-semibold text-amber-700 mb-2">Progressez & Explorez</h3>
+              <p class="text-amber-600">Débloquez de nouvelles technologies, explorez des îles et devenez le maire ultime!</p>
             </div>
-            
-            <h2 class="text-4xl font-bold text-center mb-8 text-[#5a3d2b]" style="font-family: 'Georgia', serif;">
-              🤝 Rejoignez la Communauté !
-            </h2>
-            
-            <div class="grid md:grid-cols-2 gap-8">
-              <div class="text-center p-6 bg-gradient-to-br from-blue-100 to-purple-100 rounded-xl hover:scale-105 transition-transform relative">
-                <div class="absolute top-2 right-2">
-                  <img src="/images/character-happy.png" alt="Personnage heureux" class="w-8 h-8 pixelated animate-bounce" />
-                </div>
-                <div class="text-6xl mb-4 animate-bounce">🎮</div>
-                <h3 class="text-2xl font-bold text-blue-800 mb-4">Joueurs Actifs</h3>
-                <div class="text-4xl font-bold text-blue-600 mb-2">{{ currentPlayers.toLocaleString() }}</div>
-                <p class="text-blue-700">Joueurs connectés maintenant</p>
-                <div class="mt-4 flex justify-center space-x-2">
-                  <div class="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-                  <div class="w-2 h-2 bg-green-500 rounded-full animate-ping ping-delay-1"></div>
-                  <div class="w-2 h-2 bg-green-500 rounded-full animate-ping ping-delay-2"></div>
-                </div>
-              </div>
-              
-              <div class="text-center p-6 bg-gradient-to-br from-green-100 to-yellow-100 rounded-xl hover:scale-105 transition-transform relative">
-                <div class="absolute top-2 right-2">
-                  <img src="/images/chat-icon.png" alt="Chat" class="w-8 h-8 pixelated animate-pulse" />
-                </div>
-                <div class="text-6xl mb-4 animate-pulse">💬</div>
-                <h3 class="text-2xl font-bold text-green-800 mb-4">Discord</h3>
-                <div class="text-4xl font-bold text-green-600 mb-2">3,521</div>
-                <p class="text-green-700">Membres dans la communauté</p>
-                <button class="pixel-border py-2 px-6 transform hover:scale-105 transition-transform mt-4">
-                  Rejoindre Discord
-                </button>
-              </div>
+          </div>
+        </section>
+
+        <!-- Section Communauté -->
+        <section id="community" class="bg-[#e0cda8] py-16 needs-fade-in">
+          <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl font-bold text-[#5a3d2b] mb-6">Rejoignez notre Communauté Ensoleillée !</h2>
+            <p class="text-lg text-[#422d1b] mb-8 max-w-2xl mx-auto">Partagez vos créations, échangez des astuces et participez à des événements exclusifs avec des milliers d'autres joueurs.</p>
+            <div class="flex justify-center space-x-6">
+              <!-- Exemple de bouton CTA - appliquer les classes Tailwind ici -->
+              <a href="#" class="bg-yellow-500 text-[#5a3d2b] px-8 py-3 rounded-full font-bold text-lg shadow-md transition-all duration-300 ease-out hover:bg-yellow-600 hover:scale-105 hover:shadow-lg">Discord</a>
+              <a href="#" class="bg-green-500 text-white px-8 py-3 rounded-full font-bold text-lg shadow-md transition-all duration-300 ease-out hover:bg-green-600 hover:scale-105 hover:shadow-lg">Forum</a>
             </div>
           </div>
         </section>
@@ -317,114 +193,168 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-[#182c55] py-8 relative z-30">
-      <div class="container mx-auto px-4 text-center text-yellow-200">
-        <p class="text-lg">&copy; {{ new Date().getFullYear() }} SunnyTown. Tous droits réservés.</p>
-        <p class="text-sm mt-2 opacity-75">🌟 Un jeu idle qui grandit avec vous ! 🌟</p>
+    <footer class="bg-[#182c55] text-yellow-200 py-8 border-t-2 border-yellow-400/20">
+      <div class="container mx-auto px-4 text-center">
+        <p>&copy; {{ new Date().getFullYear() }} SunnyTown. Tous droits réservés.</p>
+        <div class="mt-4 space-x-4">
+          <!-- Exemple de lien de footer - appliquer les classes Tailwind ici -->
+          <a href="#" class="transition-colors duration-300 ease-out hover:text-white">Politique de confidentialité</a>
+          <a href="#" class="transition-colors duration-300 ease-out hover:text-white">Conditions d'utilisation</a>
+        </div>
       </div>
     </footer>
+
+    <!-- Bouton Retour en Haut -->
+    <!-- Appliquer les classes Tailwind pour transitions et hover ici -->
+    <button v-if="showBackToTop" @click="scrollToTop" 
+            class="fixed bottom-5 right-5 bg-yellow-500 text-[#5a3d2b] p-3 rounded-full shadow-lg transition-all duration-300 ease-out hover:bg-yellow-600 hover:scale-110 focus:outline-none">
+      <ArrowUp class="w-6 h-6" />
+    </button>
+
+    <!-- Conteneur pour les particules de clic -->
+    <div id="particle-container" class="fixed inset-0 pointer-events-none z-[100]">
+      <div v-for="particle in particles" :key="particle.id"
+           :style="{ top: particle.y + 'px', left: particle.x + 'px' }"
+           class="particle absolute select-none pointer-events-none" 
+           :class="particle.type === 'coins' ? 'text-yellow-400 text-2xl' : 
+                    particle.type === 'population' ? 'text-green-400 text-2xl' : 
+                    'text-blue-400 text-2xl'">
+        {{ particle.emoji }}
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
-import { Crop, Users, MessageCircle, Twitter, Facebook, Sparkles, Coins, TrendingUp, Clock, Star } from 'lucide-vue-next';
+import { ref, onMounted, onUnmounted, computed, defineProps } from 'vue';
+import { Twitter, Facebook, MessageCircle, ArrowUp } from 'lucide-vue-next';
 
-// États réactifs
-const parallax = reactive({
-  bg: 0,
-  logo: 0,
+// Props (si des données sont passées depuis Laravel/Inertia)
+const props = defineProps({
+  meta: Object,
+  stats: Object,
+  features: Array,
+  gameplay_features: Array,
+  social_links: Object,
 });
 
-const coins = ref(1247);
-const population = ref(156);
-const happiness = ref(87);
+// Références pour les stats dynamiques (idle game)
+const coins = ref(props.stats?.active_players.replace(/\D/g, '')/100 || 12345); // Exemple basé sur active_players
+const population = ref(props.stats?.cities_created.replace(/\D/g, '')/1000 || 876); // Exemple basé sur cities_created
+const happiness = ref(92);
 const autoProgress = ref(0);
-const clickedElements = ref(new Set());
-const particles = ref([]);
 
-// Nombre de joueurs actuels (simulation)
-const currentPlayers = computed(() => {
-  return 12847 + Math.floor(Date.now() / 10000) % 100;
-});
-
-// Gestion du parallax
+// Parallax effect
+const parallax = ref({ bg: 0, logo: 0 });
 const handleScroll = () => {
   const scrollY = window.scrollY;
-  parallax.bg = scrollY * 0.2;
-  parallax.logo = scrollY * 0.4;
+  parallax.value.bg = scrollY * 0.3;
+  parallax.value.logo = scrollY * 0.5;
+
+  // Gérer l'affichage du bouton "Retour en Haut"
+  if (window.scrollY > 300) {
+    showBackToTop.value = true;
+  } else {
+    showBackToTop.value = false;
+  }
 };
 
-// Gestion des clics pour collecte de ressources
+// Bouton Retour en Haut
+const showBackToTop = ref(false);
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Particules de clic
+const particles = ref([]);
+const clickedElements = ref(new Set());
+let particleId = 0;
+
 const handleResourceClick = (type, event) => {
   const rect = event.currentTarget.getBoundingClientRect();
-  const id = Date.now();
-  
-  // Ajout de particules
-  const newParticle = {
-    id,
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2,
-    type
+  const emojiMap = {
+    coins: '💰',
+    population: '🧑‍🌾',
+    happiness: '😊'
   };
-  
-  particles.value.push(newParticle);
+
+  for (let i = 0; i < 5; i++) { // Générer 5 particules
+    particles.value.push({
+      id: particleId++,
+      x: rect.left + rect.width / 2 + (Math.random() - 0.5) * 20,
+      y: rect.top + rect.height / 2 + (Math.random() - 0.5) * 20,
+      emoji: emojiMap[type],
+      type: type
+    });
+  }
+
   clickedElements.value.add(type);
-
-  // Bonus de ressources
-  if (type === 'coins') coins.value += 25;
-  if (type === 'population') population.value += 2;
-  if (type === 'happiness') happiness.value = Math.min(100, happiness.value + 5);
-
   // Nettoyage
   setTimeout(() => {
-    particles.value = particles.value.filter(p => p.id !== id);
+    particles.value = particles.value.filter(p => p.id !== particleId - 5); // Approximation
     clickedElements.value.delete(type);
   }, 1000);
 };
 
-// Lifecycle hooks
+
+// Intersection Observer pour les animations au défilement
+const observer = ref(null);
+const observedElements = ref([]);
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll);
-  
+
   // Animations automatiques (idle game simulation)
   const intervals = [];
-  
-  // Incrementation automatique des ressources
-  intervals.push(setInterval(() => {
-    coins.value += Math.floor(Math.random() * 3) + 1;
-  }, 2000));
-
-  intervals.push(setInterval(() => {
-    population.value += Math.random() > 0.7 ? 1 : 0;
-  }, 5000));
-
-  intervals.push(setInterval(() => {
-    happiness.value = Math.min(100, happiness.value + (Math.random() > 0.5 ? 1 : -1));
-  }, 3000));
-
-  // Barre de progression automatique
-  intervals.push(setInterval(() => {
-    autoProgress.value = (autoProgress.value + 1) % 101;
-  }, 150));
-
-  // Stockage des intervalles pour nettoyage
+  intervals.push(setInterval(() => { coins.value += Math.floor(Math.random() * 3) + 1; }, 2000));
+  intervals.push(setInterval(() => { population.value += Math.random() > 0.7 ? 1 : 0; }, 5000));
+  intervals.push(setInterval(() => { happiness.value = Math.min(100, Math.max(0, happiness.value + (Math.random() > 0.5 ? 1 : -1))); }, 3000));
+  intervals.push(setInterval(() => { autoProgress.value = (autoProgress.value + 1) % 101; }, 150));
   window.sunnyTownIntervals = intervals;
+
+  // Configuration de l'Intersection Observer
+  const options = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.1 // Déclenche quand 10% de l'élément est visible
+  };
+  observer.value = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('opacity-100', 'translate-y-0');
+        entry.target.classList.remove('opacity-0', 'translate-y-5');
+      } else {
+        // Optionnel: pour ré-animer si l'utilisateur remonte et redescend
+        // entry.target.classList.remove('opacity-100', 'translate-y-0');
+        // entry.target.classList.add('opacity-0', 'translate-y-5');
+      }
+    });
+  }, options);
+
+  document.querySelectorAll('.needs-fade-in').forEach(el => {
+    el.classList.add('opacity-0', 'translate-y-5', 'transition-all', 'duration-700', 'ease-out');
+    observer.value.observe(el);
+    observedElements.value.push(el);
+  });
 });
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll);
-  
-  // Nettoyage des intervalles
   if (window.sunnyTownIntervals) {
     window.sunnyTownIntervals.forEach(interval => clearInterval(interval));
     window.sunnyTownIntervals = null;
   }
+  if (observer.value) {
+    observedElements.value.forEach(el => {
+      if (el) observer.value.unobserve(el);
+    });
+  }
 });
+
 </script>
 
 <style scoped>
-/* Animation d'entrée et de flottement pour le logo */
+/* Animations Keyframes (conservées) */
 @keyframes logo-enter {
   0% { transform: translateY(-30px) scale(0.9); opacity: 0; }
   80% { transform: translateY(5px) scale(1.02); opacity: 1; }
@@ -439,225 +369,92 @@ onUnmounted(() => {
   100% { transform: translateY(0px) rotate(0deg); }
 }
 
-@keyframes logo-glow {
-  0% { filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.5)) brightness(1); }
-  50% { filter: drop-shadow(0px 8px 20px rgba(255,215,0,0.6)) brightness(1.1); }
-  100% { filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.5)) brightness(1); }
+@keyframes bg-pan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-@keyframes sparkle-float {
-  0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  50% { transform: translate(-20px, -30px) scale(1) rotate(180deg); opacity: 1; }
-  100% { transform: translate(-40px, -60px) scale(0) rotate(360deg); opacity: 0; }
-}
-
-@keyframes sparkle-float-reverse {
-  0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  50% { transform: translate(20px, -30px) scale(1) rotate(-180deg); opacity: 1; }
-  100% { transform: translate(40px, -60px) scale(0) rotate(-360deg); opacity: 0; }
+@keyframes particle-fade-out {
+  to {
+    transform: translateY(-50px) scale(0.5);
+    opacity: 0;
+  }
 }
 
 @keyframes character-walk {
-  0% { transform: translateX(0px); }
-  25% { transform: translateX(10px); }
-  50% { transform: translateX(20px); }
-  75% { transform: translateX(10px); }
-  100% { transform: translateX(0px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 @keyframes character-idle {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.02); }
 }
 
+@keyframes sparkle-effect {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
 
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes panZoomBackground {
-  0% {
-    transform: scale(1.15) translate(0%, 0%);
-  }
-  25% {
-    transform: scale(1.20) translate(-2%, -1%);
-  }
-  50% {
-    transform: scale(1.15) translate(2%, 1%);
-  }
-  75% {
-    transform: scale(1.20) translate(-1%, 2%);
-  }
-  100% {
-    transform: scale(1.15) translate(0%, 0%);
-  }
-}
-
+/* Classes CSS minimales (conservées) */
 .animated-logo {
-  animation: 
-    logo-enter 1.2s ease-out forwards,
-    logo-float 4s ease-in-out 1.5s infinite,
-    logo-glow 3s ease-in-out 2s infinite;
-  will-change: transform, filter;
-  transition: transform 0.3s ease;
-}
-
-.animated-logo:hover {
-  transform: scale(1.05) rotate(2deg);
-  animation-play-state: paused;
-}
-
-.sparkle {
-  position: absolute;
-  font-size: 1.5rem;
-  pointer-events: none;
-  animation-duration: 4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
-}
-
-.sparkle-1 {
-  top: 10%;
-  left: 15%;
-  animation-name: sparkle-float;
-  animation-delay: 0s;
-}
-
-.sparkle-2 {
-  top: 20%;
-  right: 10%;
-  animation-name: sparkle-float-reverse;
-  animation-delay: 0.8s;
-}
-
-.sparkle-3 {
-  top: 60%;
-  left: 10%;
-  animation-name: sparkle-float;
-  animation-delay: 1.6s;
-}
-
-.sparkle-4 {
-  top: 70%;
-  right: 15%;
-  animation-name: sparkle-float-reverse;
-  animation-delay: 2.4s;
-}
-
-.sparkle-5 {
-  top: 40%;
-  left: 5%;
-  animation-name: sparkle-float;
-  animation-delay: 3.2s;
-  font-size: 1rem;
-}
-
-.sparkle-6 {
-  top: 30%;
-  right: 5%;
-  animation-name: sparkle-float-reverse;
-  animation-delay: 1.2s;
-  font-size: 1rem;
-}
-
-.character-walk {
-  animation: character-walk 4s ease-in-out infinite;
-}
-
-.character-idle {
-  animation: character-idle 3s ease-in-out infinite;
-}
-
-/* Style pixel art pour tous les assets du jeu */
-.pixelated {
-  image-rendering: -moz-crisp-edges;
-  image-rendering: -webkit-crisp-edges;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-.pixelated:hover {
-  transform: scale(1.1);
-  transition: transform 0.2s ease;
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 1s ease-out forwards;
-  animation-delay: 0.5s;
-}
-
-.parallax-bg {
-  background-image: url('/images/sunnytown-world-map.jpg');
-  will-change: transform;
+  animation: logo-enter 0.8s ease-out forwards, logo-float 12s ease-in-out infinite 1s;
 }
 
 .animated-bg-pan {
-  animation: panZoomBackground 75s linear infinite alternate;
+  /* background-image est maintenant appliqué via :style dans le template pour une meilleure co-localisation */
+  animation: bg-pan 60s linear infinite;
 }
 
-.cloud-delay-1 {
-  animation-delay: 1s;
+.particle { /* Applique uniquement l'animation. Position, taille, couleur via Tailwind dans le template */
+  animation: particle-fade-out 1s forwards;
 }
 
-.cloud-delay-2 {
-  animation-delay: 2s;
+.cloud-delay-1 { animation-delay: 1s; }
+.cloud-delay-2 { animation-delay: 2s; }
+
+.pixelated { /* Utilitaire général pour le style pixel art */
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
 }
 
-.ping-delay-1 {
-  animation-delay: 0.5s;
+.character-walk {
+  animation: character-walk 1s infinite steps(1, end);
 }
 
-.ping-delay-2 {
-  animation-delay: 1s;
+.character-idle {
+  animation: character-idle 2s infinite ease-in-out;
 }
 
-/* CSS pour .pixel-border (repris de votre code original) */
-.pixel-border {
-    --border-size: 4px;
-    --btn-color-primary: forestgreen;
-    --btn-color-secondary: darkgreen;
-    --btn-color-tertiary: transparent;
-    --btn-color-border: black;
-
-    position: relative;
-    border-radius: 0 !important; 
-    color: white;
-    font-family: '04b03', monospace;
-    background-color: var(--btn-color-primary);
-    border: var(--border-size) solid var(--btn-color-tertiary);
-    box-shadow: 
-        var(--border-size) 0 var(--btn-color-secondary), 
-        0 var(--border-size) var(--btn-color-secondary), 
-        0 calc(var(--border-size) * -1) var(--btn-color-secondary), 
-        calc(var(--border-size) * -1) 0 var(--btn-color-secondary), 
-        var(--border-size) var(--border-size) var(--btn-color-border), 
-        calc(var(--border-size) * -1) var(--border-size) var(--btn-color-border), 
-        var(--border-size) calc(var(--border-size) * -1) var(--btn-color-border), 
-        calc(var(--border-size) * -1) calc(var(--border-size) * -1) var(--btn-color-border), 
-        calc(var(--border-size) * 2) 0 var(--btn-color-border), 
-        0 calc(var(--border-size) * 2) var(--btn-color-border), 
-        0 calc(var(--border-size) * -2) var(--btn-color-border), 
-        calc(var(--border-size) * -2) 0 var(--btn-color-border);
-    line-height: 1;
+.sparkle { /* Applique uniquement l'animation. Position, couleur, etc. via Tailwind et classes sparkle-N */
+  animation: sparkle-effect 1.5s infinite;
 }
 
-.pixel-border.gold {
-    --btn-color-primary: #FEAE34;
-    --btn-color-secondary: #FBDF6B;
-    color: #422d1b; 
+/* Positionnement et délai spécifiques pour chaque étincelle. Taille de police via Tailwind dans le template. */
+.sparkle-1 { top: 10%; left: 15%; animation-delay: 0s; }
+.sparkle-2 { top: 20%; right: 10%; animation-delay: 0.2s; }
+.sparkle-3 { bottom: 15%; left: 20%; animation-delay: 0.4s; }
+.sparkle-4 { bottom: 25%; right: 25%; animation-delay: 0.6s; }
+.sparkle-5 { top: 50%; left: 5%; animation-delay: 0.8s; }
+.sparkle-6 { top: 5%; right: 30%; animation-delay: 1s; }
+
+.animate-fade-in-up { /* Appliqué au paragraphe sous le logo */
+  animation: fade-in-up 0.8s ease-out forwards;
+  animation-delay: 0.5s; 
 }
 
-.drop-shadow-lg {
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-}
+/* Les classes .section-fade-in et .section-fade-in.visible ne sont plus nécessaires.
+   L'animation au défilement est gérée par IntersectionObserver et des classes Tailwind
+   directement appliquées/supprimées dans le script.
+   Les éléments concernés dans le template doivent avoir la classe 'needs-fade-in'.
+   Les classes initiales (opacity-0, translate-y-5) et de transition (transition-all, duration-700, ease-out)
+   sont ajoutées par le script onMounted.
+*/
 </style>
