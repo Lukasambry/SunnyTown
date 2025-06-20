@@ -20,24 +20,28 @@ export class TiledBuildingPreview {
     private readonly map: Phaser.Tilemaps.Tilemap;
     private readonly tileset: Phaser.Tilemaps.Tileset;
     private readonly config: PreviewConfig;
-    
+
     private isValid: boolean = true;
     private currentPosition: Position = { x: 0, y: 0 };
-    
+    private isDragging: boolean = false;
+    private dragOffset: Position = { x: 0, y: 0 };
+    private initialPosition: Position = { x: 0, y: 0 };
+
     constructor(scene: Scene, templateKey: string) {
         this.scene = scene;
-        
+
         this.config = {
             validTint: 0xffffff,
             invalidTint: 0xff0000,
             previewAlpha: 0.6,
             previewDepthOffset: 100
         };
-        
+
         try {
             this.map = scene.make.tilemap({ key: templateKey });
             this.tileset = this.initializeTileset(templateKey);
             this.createPreviewLayers();
+            this.setupDragEvents();
         } catch (error) {
             console.error(`Erreur lors de la création du preview pour ${templateKey}:`, error);
             throw error;
@@ -49,19 +53,19 @@ export class TiledBuildingPreview {
         if (!tilesetName) {
             throw new Error(`Aucun tileset trouvé dans le template ${templateKey}`);
         }
-        
+
         const tileset = this.map.addTilesetImage(tilesetName, 'tiles');
         if (!tileset) {
             throw new Error(`Impossible d'ajouter le tileset ${tilesetName} pour le preview`);
         }
-        
+
         return tileset;
     }
 
     private createPreviewLayers(): void {
         this.map.layers.forEach(layerData => {
-            const layer = this.map.createLayer(layerData.name, this.tileset, 0, 0);
-            
+            const layer = this.map.createLayer(layerData.name, this.tileset, 100, 100);
+
             if (layer) {
                 this.setupPreviewLayer(layer, layerData);
                 this.layers.push(layer);
@@ -71,10 +75,77 @@ export class TiledBuildingPreview {
 
     private setupPreviewLayer(layer: Phaser.Tilemaps.TilemapLayer, layerData: Phaser.Tilemaps.LayerData): void {
         const baseDepth = this.extractLayerDepth(layerData);
-        
+
         layer.setDepth(baseDepth + this.config.previewDepthOffset);
         layer.setAlpha(this.config.previewAlpha);
         layer.setTint(this.config.validTint);
+
+        layer.setInteractive(new Phaser.Geom.Rectangle(0, 0, layer.width, layer.height),
+            Phaser.Geom.Rectangle.Contains);
+
+        layer.on('pointerover', () => {
+            this.showGrabCursor();
+        });
+
+        layer.on('pointerout', () => {
+            if (!this.isDragging && this.scene.uiScene) {
+                this.scene.uiScene.defaultCursor.setVisible(true);
+                this.scene.uiScene.grabCursor.setVisible(false);
+                this.scene.uiScene.grabbingCursor.setVisible(false);
+            }
+        });
+    }
+
+    private setupDragEvents(): void {
+        this.layers.forEach(layer => {
+            this.scene.input.setDraggable(layer);
+
+            layer.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                this.startDragging(pointer);
+                this.showGrabbingCursor();
+            });
+        });
+
+        this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+            if (this.isDragging) {
+                this.updateDragPosition(pointer);
+            }
+        });
+
+        this.scene.input.on('pointerup', () => {
+            if (this.isDragging) {
+                this.stopDragging();
+                this.showGrabCursor();
+            }
+        });
+    }
+
+    private startDragging(pointer: Phaser.Input.Pointer): void {
+        this.isDragging = true;
+
+        // Calculer l'offset pour maintenir la position relative lors du drag
+        const worldPoint = this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        this.dragOffset = {
+            x: this.currentPosition.x - worldPoint.x,
+            y: this.currentPosition.y - worldPoint.y
+        };
+    }
+
+    private updateDragPosition(pointer: Phaser.Input.Pointer): void {
+        if (!this.isDragging) return;
+
+        const worldPoint = this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+        // Appliquer l'offset pour maintenir la position relative
+        const targetX = worldPoint.x + this.dragOffset.x;
+        const targetY = worldPoint.y + this.dragOffset.y;
+
+        // Mettre à jour la position en utilisant le système de grille
+        this.updatePosition(targetX, targetY);
+    }
+
+    private stopDragging(): void {
+        this.isDragging = false;
     }
 
     private extractLayerDepth(layerData: Phaser.Tilemaps.LayerData): number {
@@ -87,14 +158,14 @@ export class TiledBuildingPreview {
     }
 
     public checkPlacementValidity(
-        map: Phaser.Tilemaps.Tilemap, 
+        map: Phaser.Tilemaps.Tilemap,
         mapLayers: Map<string, LayerConfig>
     ): boolean {
         const tilePosition = this.worldToTilePosition(this.currentPosition);
         const dimensions = this.getDimensions();
 
         return this.isWithinMapBounds(map, tilePosition, dimensions) &&
-               this.hasNoCollisions(mapLayers, tilePosition, dimensions);
+            this.hasNoCollisions(mapLayers, tilePosition, dimensions);
     }
 
     private worldToTilePosition(worldPos: Position): Position {
@@ -105,19 +176,19 @@ export class TiledBuildingPreview {
     }
 
     private isWithinMapBounds(
-        map: Phaser.Tilemaps.Tilemap, 
-        tilePos: Position, 
+        map: Phaser.Tilemaps.Tilemap,
+        tilePos: Position,
         dimensions: BuildingDimensions
     ): boolean {
-        return tilePos.x >= 0 && 
-               tilePos.y >= 0 && 
-               tilePos.x + dimensions.tilesWidth <= map.width && 
-               tilePos.y + dimensions.tilesHeight <= map.height;
+        return tilePos.x >= 0 &&
+            tilePos.y >= 0 &&
+            tilePos.x + dimensions.tilesWidth <= map.width &&
+            tilePos.y + dimensions.tilesHeight <= map.height;
     }
 
     private hasNoCollisions(
-        mapLayers: Map<string, LayerConfig>, 
-        tilePos: Position, 
+        mapLayers: Map<string, LayerConfig>,
+        tilePos: Position,
         dimensions: BuildingDimensions
     ): boolean {
         for (let x = 0; x < dimensions.tilesWidth; x++) {
@@ -166,7 +237,7 @@ export class TiledBuildingPreview {
 
     public updatePosition(x: number, y: number): void {
         const snappedPosition = this.snapToGrid({ x, y });
-        
+
         if (this.positionChanged(snappedPosition)) {
             this.currentPosition = snappedPosition;
             this.updateLayerPositions();
@@ -181,8 +252,8 @@ export class TiledBuildingPreview {
     }
 
     private positionChanged(newPosition: Position): boolean {
-        return this.currentPosition.x !== newPosition.x || 
-               this.currentPosition.y !== newPosition.y;
+        return this.currentPosition.x !== newPosition.x ||
+            this.currentPosition.y !== newPosition.y;
     }
 
     private updateLayerPositions(): void {
@@ -196,7 +267,7 @@ export class TiledBuildingPreview {
 
         this.isValid = isValid;
         const tint = isValid ? this.config.validTint : this.config.invalidTint;
-        
+
         this.layers.forEach(layer => {
             layer.setTint(tint);
         });
@@ -255,14 +326,57 @@ export class TiledBuildingPreview {
         });
     }
 
+    private showGrabCursor(): void {
+        if (this.scene.uiScene) {
+            this.scene.uiScene.defaultCursor.setVisible(false);
+            this.scene.uiScene.hoverCursor.setVisible(false);
+            this.scene.uiScene.grabCursor.setVisible(true);
+            this.scene.uiScene.grabbingCursor.setVisible(false);
+        }
+    }
+
+    private showGrabbingCursor(): void {
+        if (this.scene.uiScene) {
+            this.scene.uiScene.defaultCursor.setVisible(false);
+            this.scene.uiScene.hoverCursor.setVisible(false);
+            this.scene.uiScene.grabCursor.setVisible(false);
+            this.scene.uiScene.grabbingCursor.setVisible(true);
+        }
+    }
+
+    public setInitialPosition(x: number, y: number): void {
+        const snappedPosition = this.snapToGrid({ x, y });
+        this.initialPosition = snappedPosition;
+        this.updatePosition(snappedPosition.x, snappedPosition.y);
+    }
+
+    public resetToInitialPosition(): void {
+        this.updatePosition(this.initialPosition.x, this.initialPosition.y);
+    }
+
+    public isDraggingActive(): boolean {
+        return this.isDragging;
+    }
+
     public destroy(): void {
+        if (this.scene.uiScene) {
+            this.scene.uiScene.defaultCursor.setVisible(true);
+            this.scene.uiScene.hoverCursor.setVisible(false);
+            this.scene.uiScene.grabCursor.setVisible(false);
+            this.scene.uiScene.grabbingCursor.setVisible(false);
+        }
+
         this.layers.forEach(layer => {
+            layer.removeAllListeners();
             try {
                 layer.destroy();
             } catch (error) {
                 console.error('Erreur lors de la destruction d\'une layer de preview:', error);
             }
         });
+
+        this.scene.input.off('pointermove');
+        this.scene.input.off('pointerup');
 
         this.layers.length = 0;
     }
