@@ -19,9 +19,11 @@
     <DebugPanel v-if="isDevelopment" />
 
     <!-- Debug resource info -->
+    <!--
     <div v-if="isDevelopment" class="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs">
       Resources: {{ totalResources }} | Updates: {{ resourceUpdateCount }}
     </div>
+    -->
   </div>
 </template>
 

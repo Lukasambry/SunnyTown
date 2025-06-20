@@ -24,7 +24,7 @@ export class BuildingRegistry {
         name: 'Maison',
         template: 'house-template',
         icon: 'house',
-        cost: { [ResourceType.WOOD]: 10 },
+        cost: { [ResourceType.WOOD]: 30 },
         description: 'Logement pour les ouvriers, améliore leur efficacité'
       },
       {
@@ -32,7 +32,7 @@ export class BuildingRegistry {
         name: 'Scierie',
         template: 'sawmill-template',
         icon: 'sawmill',
-        cost: { [ResourceType.WOOD]: 20 },
+        cost: { [ResourceType.WOOD]: 200 },
         description: 'Traite le bois et stocke les ressources'
       },
       {
