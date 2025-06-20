@@ -1,12 +1,4 @@
-import { AnimationRegistry } from './AnimationRegistry';
-import { ResourceManager } from './ResourceManager';
-import { ResourceInventory } from './ResourceInventory';
-import { BuildingManager } from './BuildingManager';
-import { WorkerManager } from './WorkerManager';
-import { DialogService } from './DialogService';
-import { BuildingRegistry } from './BuildingRegistry';
-import { WorkerRegistry } from './WorkerRegistry';
-import { AnimationType } from '@/game/types/AnimationTypes';
+import {BuildingRegistry} from "./BuildingRegistry";
 
 export { BuildingManager } from './BuildingManager'
 export { BuildingRegistry } from './BuildingRegistry'
@@ -15,9 +7,12 @@ export { WorkerRegistry } from './WorkerRegistry'
 export { ResourceRegistry } from './ResourceRegistry';
 export { ResourceInventory } from './ResourceInventory';
 export { ResourceManager } from './ResourceManager';
-export { AnimationRegistry } from './AnimationRegistry';
-export { AnimationType } from '@/game/types/AnimationTypes';
-export type { AnimationConfig, AnimationFrameConfig } from '@/game/types/AnimationTypes';
+export { 
+    AnimationRegistry, 
+    AnimationType,
+    type AnimationConfig,
+    type AnimationFrameConfig 
+} from './AnimationRegistry'
 export { 
     DialogService, 
     type DialogConfig, 
@@ -226,7 +221,7 @@ export class ServicesFactory {
         }
 
         if (finalConfig.enablePlayerInventory) {
-            const playerInventory = new ResourceInventory()
+            const playerInventory = new PlayerInventory()
             serviceManager.registerService('playerInventory', playerInventory)
         }
 

@@ -12,11 +12,7 @@ export const RESOURCE_ENTITY_CONFIGS: Record<string, ResourceEntityConfig> = {
         damagePerHit: 10,
         respawnTime: 60000,
         resources: [
-            {
-                type: ResourceType.WOOD,
-                amount: 4,
-                chance: 1.0
-            }
+            { type: ResourceType.WOOD, amount: 4, chance: 1.0 }
         ],
         animations: {
             idle: 'tree-idle',

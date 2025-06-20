@@ -102,15 +102,6 @@ export class ResourceManager {
         return this.globalInventory.getResource(type);
     }
 
-    public getStackSize(type: ResourceType): number {
-        try {
-            return this.registry.getStackSize(type);
-        } catch (error) {
-            console.error(`Error getting stack size for ${type}:`, error);
-            return 1000;
-        }
-    }
-
     public hasResource(type: ResourceType, amount: number): boolean {
         if (!this.isInitialized) {
             console.error('ResourceManager not initialized');

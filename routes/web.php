@@ -81,5 +81,7 @@ Route::post('/user/two-factor-recovery-codes', [TwoFactorAuthenticationControlle
 
 Route::get('/game', [GameController::class, 'index'])->name('game.index');
 
+Route::get('/game', [GameController::class, 'index'])->name('game.index');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

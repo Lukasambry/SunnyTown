@@ -5,14 +5,13 @@ export interface BuildingCost {
 }
 
 export interface BuildingConfig {
-    key: string;
-    name: string;
-    template: string;
-    icon: string;
-    cost: BuildingCost;
-    workerType: string;
-    description?: string;
-    maxWorkers: number;
+    readonly key: string;
+    readonly name: string;
+    readonly template: string;
+    readonly icon: string;
+    readonly cost: BuildingCost;
+    readonly description?: string;
+    //readonly category?: BuildingCategory;
 }
 
 export enum BuildingType {
@@ -25,7 +24,7 @@ export enum BuildingType {
 /*
 export enum BuildingCategory {
     HOUSING = 'housing',
-    PRODUCTION = 'production',
+    PRODUCTION = 'production', 
     STORAGE = 'storage',
     UTILITY = 'utility'
 }
@@ -56,7 +55,7 @@ export const calculateBuildingCost = (config: BuildingConfig): number => {
 };
 
 export const canAffordBuilding = (config: BuildingConfig, resources: Record<string, number>): boolean => {
-    return Object.entries(config.cost).every(([resource, cost]) =>
+    return Object.entries(config.cost).every(([resource, cost]) => 
         (resources[resource] || 0) >= cost
     );
 };

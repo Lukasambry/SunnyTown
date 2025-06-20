@@ -156,25 +156,5 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
 
         tint: 0x3498db,
         scale: 1.0
-    },
-    [WorkerType.NEUTRAL]: {
-        id: WorkerType.NEUTRAL,
-        name: 'Ouvrier',
-        description: 'Ouvrier neutre, peut être assigné à n\'importe quel métier.',
-        texture: 'player-idle',
-        carryCapacity: 0,
-        harvestSpeed: 0,
-        moveSpeed: 60,
-        workRadius: 300,
-        harvestTargets: [],
-        depositTargets: [],
-        animations: {
-            idle: 'player-idle',
-            walking: 'player-walk',
-            working: 'player-idle',
-            carrying: 'player-idle'
-        },
-        tint: 0xaaaaaa,
-        scale: 1.0
     }
 };

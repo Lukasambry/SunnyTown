@@ -1,7 +1,6 @@
 import { ResourceType } from './ResourceSystemTypes';
 
 export enum WorkerType {
-    NEUTRAL = 'neutral',
     LUMBERJACK = 'lumberjack',
     MINER = 'miner',
     FARMER = 'farmer',

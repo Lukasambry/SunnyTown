@@ -1,17 +1,15 @@
-import Phaser from 'phaser';
-type Scene = typeof Phaser.Scene;
+import { Scene } from 'phaser';
+type Scene = typeof Scene;
 
 import { Worker } from '../objects/workers';
 import { WorkerRegistry } from './WorkerRegistry';
 import { WorkerType, type WorkerPosition } from '../types';
-import { TiledBuilding } from '@/game/objects/TiledBuilding';
 
 export class WorkerManager {
     private readonly scene: Scene;
     private readonly registry: WorkerRegistry;
     private readonly workers = new Map<string, Worker>();
     private nextWorkerId: number = 1;
-    private workerIdMap = new Map<string, string>();
 
     constructor(scene: Scene) {
         this.scene = scene;
@@ -30,13 +28,20 @@ export class WorkerManager {
                 return null;
             }
 
-            const internalId = `worker_${type}_${this.nextWorkerId++}`;
-            const workerId = worker.getWorkerId();
+            const id = `worker_${type}_${this.nextWorkerId++}`;
+            this.workers.set(id, worker);
 
-            this.workers.set(internalId, worker);
-            this.workerIdMap.set(workerId, internalId);
+            console.log(`WorkerManager: Created worker ${id}`);
 
-            console.log(`WorkerManager: Created worker ${internalId} with workerId ${workerId}`);
+            // Notifier Vue.js
+            window.dispatchEvent(new CustomEvent('game:workerCreated', {
+                detail: {
+                    id,
+                    type,
+                    position: { x, y },
+                    config: worker.getConfig()
+                }
+            }));
 
             return worker;
 
@@ -72,21 +77,7 @@ export class WorkerManager {
     }
 
     public getWorker(workerId: string): Worker | null {
-        let worker = this.workers.get(workerId);
-        if (worker) return worker;
-
-        const internalId = this.workerIdMap.get(workerId);
-        if (internalId) {
-            worker = this.workers.get(internalId);
-            if (worker) return worker;
-        }
-
-        for (const w of this.workers.values()) {
-            if (w.getWorkerId() === workerId) {
-                return w;
-            }
-        }
-        return null;
+        return this.workers.get(workerId) || null;
     }
 
     public getAllWorkers(): readonly Worker[] {
@@ -174,10 +165,15 @@ export class WorkerManager {
         this.workers.clear();
         this.nextWorkerId = 1;
 
+        // Notifier Vue.js
         window.dispatchEvent(new CustomEvent('game:allWorkersCleared'));
     }
 
     public update(): void {
+        // Les workers se mettent à jour automatiquement via leur boucle interne
+        // Cette méthode peut être utilisée pour des tâches de maintenance globales
+
+        // Nettoyer les workers détruits
         const destroyedWorkers: string[] = [];
         this.workers.forEach((worker, id) => {
             if (!worker.scene || !worker.active) {
@@ -195,6 +191,7 @@ export class WorkerManager {
         this.clearAllWorkers();
     }
 
+    // Méthodes de compatibilité avec l'ancien système
     public createLumberjack(x: number, y: number, depositPoint?: WorkerPosition): Worker | null {
         return this.createWorker(WorkerType.LUMBERJACK, x, y, depositPoint);
     }
@@ -204,118 +201,10 @@ export class WorkerManager {
     }
 
     public getWorkersByType_Legacy(type: any): readonly Worker[] {
+        // Conversion pour l'ancien système
         if (typeof type === 'string') {
             return this.getWorkersByType(type as WorkerType);
         }
         return [];
-    }
-
-    public assignWorkerToBuilding(workerId: string, building: TiledBuilding): boolean {
-        const worker = this.getWorker(workerId);
-        if (!worker) {
-            console.warn(`WorkerManager: Worker ${workerId} not found`);
-            return false;
-        }
-
-        if (!building.canAssignWorker()) {
-            console.warn(`WorkerManager: Building cannot accept more workers`);
-            return false;
-        }
-
-        if (worker.getConfig().id !== WorkerType.NEUTRAL) {
-            console.warn(`WorkerManager: Worker is not neutral type`);
-            return false;
-        }
-
-        const targetWorkerType = building.getWorkerType();
-        const newConfig = this.registry.getWorkerConfig(targetWorkerType);
-
-        if (!newConfig) {
-            console.warn(`WorkerManager: No config found for worker type ${targetWorkerType}`);
-            return false;
-        }
-
-        const buildingId = this.getBuildingId(building);
-
-        if (building.assignWorker(workerId) && worker.convertToSpecializedWorker) {
-            worker.convertToSpecializedWorker(newConfig, buildingId);
-
-            const pos = building.getPosition();
-            worker.setDepositPoint({ x: pos.x, y: pos.y });
-
-            window.dispatchEvent(new CustomEvent('game:workerSpecialized', {
-                detail: {
-                    workerId,
-                    oldType: WorkerType.NEUTRAL,
-                    newType: targetWorkerType,
-                    buildingId
-                }
-            }));
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public unassignWorkerFromBuilding(workerId: string): boolean {
-        const worker = this.getWorker(workerId);
-        if (!worker) {
-            console.warn(`WorkerManager: Worker ${workerId} not found`);
-            return false;
-        }
-
-        const buildingId = worker.getAssignedBuildingId();
-        if (!buildingId) {
-            console.warn(`WorkerManager: Worker is not assigned to any building`);
-            return false;
-        }
-
-        const building = this.findBuildingById(buildingId);
-        if (building && building.unassignWorker(workerId)) {
-            const oldType = worker.getConfig().id;
-            worker.convertToNeutral();
-            worker.setDepositPoint(null);
-
-            window.dispatchEvent(new CustomEvent('game:workerNeutralized', {
-                detail: {
-                    workerId,
-                    oldType,
-                    newType: WorkerType.NEUTRAL,
-                    buildingId
-                }
-            }));
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public getAvailableNeutralWorkers(): readonly Worker[] {
-        return this.getWorkersByType(WorkerType.NEUTRAL).filter(worker =>
-            !worker.isAssignedToBuilding?.()
-        );
-    }
-
-    public getWorkersAssignedToBuilding(buildingId: string): readonly Worker[] {
-        return Array.from(this.workers.values()).filter(worker =>
-            worker.getAssignedBuildingId() === buildingId
-        );
-    }
-
-    private getBuildingId(building: TiledBuilding): string {
-        const pos = building.getPosition();
-        return `${building.getType()}_${Math.round(pos.x)}_${Math.round(pos.y)}`;
-    }
-
-    private findBuildingById(buildingId: string): TiledBuilding | null {
-        if (!this.scene.buildingManager) return null;
-
-        return this.scene.buildingManager.getBuildings().find((building: TiledBuilding) => {
-            const pos = building.getPosition();
-            const id = `${building.getType()}_${Math.round(pos.x)}_${Math.round(pos.y)}`;
-            return id === buildingId;
-        }) || null;
     }
 }

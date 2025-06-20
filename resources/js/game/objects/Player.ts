@@ -1,10 +1,8 @@
-import Phaser from 'phaser'
-type Scene = typeof Phaser.Scene;
+import { Scene } from 'phaser'
+type Scene = typeof Scene;
 
-import { AnimationType } from '@/game/types/AnimationTypes'
-import { AnimationUtils } from '@/game/utils/AnimationUtils'
-import { PlayerLevelSystem } from '@/game/services/PlayerLevelSystem'
-import { ResourceType } from '@/game/types/ResourceSystemTypes'
+import { AnimationType } from '../services/AnimationRegistry'
+import { AnimationUtils } from '../utils/AnimationUtils'
 
 interface PlayerConfig {
     moveSpeed: number
@@ -24,7 +22,7 @@ interface PathNode {
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     public readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys
-
+    
     private readonly config: PlayerConfig = {
         moveSpeed: 80,
         bodyWidth: 12,
@@ -35,24 +33,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private path: PathNode[] = []
     private currentTargetIndex: number = 0
     private animationHandler: ReturnType<typeof AnimationUtils.createAnimationHandler>
-    private levelSystem: PlayerLevelSystem
 
     constructor(scene: Scene, x: number, y: number) {
         super(scene, x, y, 'player-idle')
 
         this.cursors = scene.input.keyboard.createCursorKeys()
-        this.levelSystem = PlayerLevelSystem.getInstance()
-
+        
         this.initializePlayer()
         this.setupAnimations()
-        this.setupLevelSystem()
         this.animationHandler.idle(AnimationType.PLAYER_IDLE)
     }
 
     private initializePlayer(): void {
         this.scene.add.existing(this)
         this.scene.physics.add.existing(this)
-
+        
         this.setCollideWorldBounds(true)
         this.setupHitbox()
     }
@@ -71,102 +66,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     private setupAnimations(): void {
         AnimationUtils.initializeEntityAnimations(this, 'player')
+
         this.animationHandler = AnimationUtils.createAnimationHandler(this)
     }
 
-    private setupLevelSystem(): void {
-        // Écouter les événements de level up pour créer des effets visuels
-        window.addEventListener('player:levelUp', (event: CustomEvent) => {
-            this.showLevelUpEffect(event.detail);
-        });
-    }
-
-    private showLevelUpEffect(levelData: any): void {
-        // Créer un effet de texte flottant
-        const levelUpText = this.scene.add.text(
-            this.x,
-            this.y - 40,
-            "LEVEL UP!",
-            {
-                fontSize: '24px',
-                fontStyle: 'bold',
-                color: '#FFD700',
-                stroke: '#000000',
-                strokeThickness: 4
-            }
-        ).setOrigin(0.5);
-
-        // Animation de l'effet
-        this.scene.tweens.add({
-            targets: levelUpText,
-            y: levelUpText.y - 60,
-            alpha: 0,
-            duration: 2000,
-            ease: 'Power1',
-            onComplete: () => levelUpText.destroy()
-        });
-
-        // Ajouter des particules d'or si disponibles
-        if (this.scene.textures.exists('gold-particle')) {
-            const particles = this.scene.add.particles(0, 0, 'gold-particle', {
-                x: this.x,
-                y: this.y,
-                speed: { min: 50, max: 150 },
-                angle: { min: 0, max: 360 },
-                scale: { start: 0.5, end: 0 },
-                lifespan: 1500,
-                quantity: 30,
-                blendMode: 'ADD'
-            });
-
-            // Auto-destruction des particules
-            this.scene.time.delayedCall(1500, () => {
-                particles.destroy();
-            });
-        }
-
-        console.log(`Player leveled up to level ${levelData.newLevel}! Gold bonus: ${levelData.goldBonus}`);
-    }
-
-    // Nouvelles méthodes pour la gestion de l'expérience
-    public gainExperience(amount: number, source: string = 'action', resourceType?: ResourceType): void {
-        this.levelSystem.addExperience(amount, source, resourceType);
-    }
-
-    public gainExperienceFromResource(resourceType: ResourceType, resourceAmount: number, source: string = 'resource_harvest'): void {
-        const baseExperiencePerResource = 2;
-        const totalExperience = baseExperiencePerResource * resourceAmount;
-        this.levelSystem.addExperience(totalExperience, source, resourceType);
-    }
-
-    // Getters pour accéder aux données de niveau
-    public getLevel(): number {
-        return this.levelSystem.getLevel();
-    }
-
-    public getCurrentExperience(): number {
-        return this.levelSystem.getCurrentExperience();
-    }
-
-    public getNextLevelExperience(): number {
-        return this.levelSystem.getNextLevelExperience();
-    }
-
-    public getExperienceProgress(): number {
-        return this.levelSystem.getExperienceProgress();
-    }
-
-    public setPath(path: PathNode[] | null): void {
-        if (!path) {
-            this.path = [];
-            this.stopMovement();
-            return;
-        }
-
+    public setPath(path: PathNode[]): void {
         if (path.length > 0) {
             const firstTile = path[0]
             const currentTile = this.getCurrentTilePosition()
-
+            
             if (firstTile.x === currentTile.x && firstTile.y === currentTile.y) {
                 path.shift()
             }
@@ -194,7 +102,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.isChopping) return
 
         this.isChopping = true
-
+        
         try {
             if (onHitFrame) {
                 await this.animationHandler.action(AnimationType.PLAYER_CHOP, 7, onHitFrame)
@@ -237,7 +145,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         const targetTile = this.path[this.currentTargetIndex]
         const targetWorldPos = this.tileToWorldPosition(targetTile)
-
+        
         const distance = Phaser.Math.Distance.Between(
             this.x, this.y,
             targetWorldPos.x, targetWorldPos.y
@@ -259,11 +167,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     private moveToNextPathNode(): void {
         this.currentTargetIndex++
-
+        
         if (this.currentTargetIndex >= this.path.length) {
             this.path = []
             this.stopMovement()
-            this.scene.events.emit('player_path_complete');
         }
     }
 
@@ -271,11 +178,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const dx = target.x - this.x
         const dy = target.y - this.y
         const distance = Math.sqrt(dx * dx + dy * dy)
-
+        
         if (distance > 0) {
             const velocityX = (dx / distance) * this.config.moveSpeed
             const velocityY = (dy / distance) * this.config.moveSpeed
-
+            
             this.setVelocity(velocityX, velocityY)
             this.updateMovementAnimation(velocityX, velocityY)
         }
@@ -284,7 +191,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private updateMovementAnimation(velocityX: number, velocityY: number): void {
         // Use the animation handler to manage movement animations
         this.animationHandler.movement(
-            velocityX,
+            velocityX, 
             velocityY,
             AnimationType.PLAYER_IDLE,
             AnimationType.PLAYER_WALK
@@ -294,12 +201,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private stopMovement(): void {
         this.setVelocity(0, 0)
         this.animationHandler.idle(AnimationType.PLAYER_IDLE)
-    }
-
-    destroy(fromScene?: boolean): void {
-        // Nettoyer les event listeners
-        window.removeEventListener('player:levelUp', this.showLevelUpEffect);
-        super.destroy(fromScene);
     }
 
     update(): void {

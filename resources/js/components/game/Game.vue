@@ -102,24 +102,12 @@ onMounted(async () => {
   // Wait for DOM to be ready
   await nextTick()
 
-  // Prevent context menu on right-click in game container
-  if (gameContainer.value) {
-    gameContainer.value.addEventListener('contextmenu', (e) => {
-      e.preventDefault()
-    })
-    // Hide default cursor
-    gameContainer.value.style.cursor = 'none'
-  }
-
   try {
     const cleanup = await createGame()
 
     onBeforeUnmount(() => {
       cleanup?.()
       destroyGame()
-      if (gameContainer.value) {
-        gameContainer.value.removeEventListener('contextmenu', (e) => e.preventDefault())
-      }
     })
   } catch (error) {
     console.error('Failed to initialize game:', error)
