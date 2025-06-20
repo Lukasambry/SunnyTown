@@ -4,6 +4,7 @@ use App\Http\Controllers\ForumCategoryController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ThreadController;
 use Inertia\Inertia;
+use App\Http\Controllers\GameController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BlogPostController;
@@ -72,6 +73,8 @@ Route::delete('/user/two-factor-authentication', [TwoFactorAuthenticationControl
 Route::post('/user/two-factor-recovery-codes', [TwoFactorAuthenticationController::class, 'generateRecoveryCodes'])
     ->name('two-factor.recovery-codes');
 
+
+Route::get('/game', [GameController::class, 'index'])->name('game.index');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
