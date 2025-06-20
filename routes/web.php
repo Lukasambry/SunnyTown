@@ -31,6 +31,11 @@ Route::prefix('forum')->name('forums.')->group(function(){
 
     Route::post('{category:id}/threads', [ThreadController::class, 'store'])
         ->name('threads.store')->middleware('auth');
+Route::get('/game', [GameController::class, 'index'])->name('game.index');
+
+Route::middleware('auth')->group(function(){
+    Route::post('/threads',  [ThreadController::class,  'store'])->name('threads.store');
+    Route::post('/messages',[MessageController::class,'store'])->name('messages.store');
 });
 
 Route::middleware('auth')->group(function(){
@@ -78,8 +83,6 @@ Route::delete('/user/two-factor-authentication', [TwoFactorAuthenticationControl
 Route::post('/user/two-factor-recovery-codes', [TwoFactorAuthenticationController::class, 'generateRecoveryCodes'])
     ->name('two-factor.recovery-codes');
 
-
-Route::get('/game', [GameController::class, 'index'])->name('game.index');
 
 Route::get('/game', [GameController::class, 'index'])->name('game.index');
 
