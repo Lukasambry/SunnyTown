@@ -4,6 +4,7 @@ use App\Http\Controllers\ForumCategoryController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ThreadController;
 use Inertia\Inertia;
+use App\Http\Controllers\GameController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BlogPostController;
@@ -39,6 +40,8 @@ Route::middleware(['auth'])->group(function () {
 //    });
 });
 
+
+Route::get('/game', [GameController::class, 'index'])->name('game.index');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
