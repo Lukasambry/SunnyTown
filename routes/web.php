@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ForumCategoryController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ThreadController;
 use Inertia\Inertia;
@@ -33,6 +32,12 @@ Route::prefix('forum')->name('forums.')->group(function(){
     Route::post('{category:id}/threads', [ThreadController::class, 'store'])
         ->name('threads.store')->middleware('auth');
 });
+
+Route::middleware('auth')->group(function(){
+    Route::post('/threads',  [ThreadController::class,  'store'])->name('threads.store');
+    Route::post('/messages',[MessageController::class,'store'])->name('messages.store');
+})
+
 Route::post('/messages',[MessageController::class,'store'])->name('messages.store')->middleware('auth');
 
 Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');
