@@ -108,6 +108,16 @@ export class MainScene extends Scene {
         this.load.image('cursor-grab', 'ui/cursor-grab.png');
         this.load.image('cursor-grabbing', 'ui/cursor-grabbing.png');
 
+        // Corners
+        this.load.image('corner-top-left', 'ui/corner-top-left.png');
+        this.load.image('corner-top-right', 'ui/corner-top-right.png');
+        this.load.image('corner-bottom-left', 'ui/corner-bottom-left.png');
+        this.load.image('corner-bottom-right', 'ui/corner-bottom-right.png');
+
+        // Validation/Invalidation buttons
+        this.load.image('building-confirm-button', 'ui/building-confirm-button.png');
+        this.load.image('building-cancel-button', 'ui/building-cancel-button.png');
+
         // Housing
         this.load.image('house', 'buildings/house.png');
         this.load.image('sawmill', 'buildings/sawmill.png');
@@ -381,6 +391,9 @@ export class MainScene extends Scene {
         this.rebuildPathfindingGrid();
         this.setupVueEventListeners();
 
+        window.addEventListener('game:confirmBuildingPlacement', this.onConfirmBuildingPlacement.bind(this));
+        window.addEventListener('game:cancelBuildingPlacement', this.onCancelBuildingPlacement.bind(this));
+
         /* TODO: Test a supprimer: */
         this.time.delayedCall(2000, () => {
             this.testWorkerSystem();
@@ -400,6 +413,77 @@ export class MainScene extends Scene {
         } catch (error) {
             console.error('Error setting up Vue resource sync:', error);
         }
+    }
+
+    private onConfirmBuildingPlacement(event: CustomEvent): void {
+        if (!this.buildingPreview || !this.selectedBuildingType) return;
+
+        const position = event.detail.position;
+        const isValid = event.detail.isValid;
+
+        if (isValid) {
+            if (!this.canAffordBuilding(this.selectedBuildingType)) {
+                console.log('Cannot afford building anymore');
+
+                window.dispatchEvent(
+                    new CustomEvent('game:notification', {
+                        detail: {
+                            type: 'error',
+                            title: 'Ressources insuffisantes',
+                            message: "Vous n'avez plus assez de ressources pour ce bâtiment",
+                        },
+                    }),
+                );
+
+                this.onBuildingDeselectedFromVue();
+                return;
+            }
+
+            const building = this.buildingManager.placeBuilding(
+                this.selectedBuildingType,
+                position.x,
+                position.y
+            );
+
+            this.deductBuildingCost(this.selectedBuildingType);
+            this.onBuildingDeselectedFromVue();
+
+            window.dispatchEvent(
+                new CustomEvent('game:notification', {
+                    detail: {
+                        type: 'success',
+                        title: 'Bâtiment placé',
+                        message: `${this.selectedBuildingType} a été placé avec succès !`,
+                    },
+                }),
+            );
+        } else {
+            this.buildingPreview.flashInvalid();
+
+            window.dispatchEvent(
+                new CustomEvent('game:notification', {
+                    detail: {
+                        type: 'error',
+                        title: 'Placement invalide',
+                        message: 'Impossible de placer le bâtiment à cet endroit',
+                    },
+                }),
+            );
+        }
+    }
+
+    private onCancelBuildingPlacement(): void {
+        this.onBuildingDeselectedFromVue();
+
+        window.dispatchEvent(
+            new CustomEvent('game:notification', {
+                detail: {
+                    type: 'info',
+                    title: 'Placement annulé',
+                    message: 'Placement du bâtiment annulé',
+                },
+            }),
+        );
     }
 
     private notifyVueResourceChange(event: any): void {
@@ -1162,6 +1246,9 @@ export class MainScene extends Scene {
     }
 
     destroy(): void {
+        window.removeEventListener('game:confirmBuildingPlacement', this.onConfirmBuildingPlacement.bind(this));
+        window.removeEventListener('game:cancelBuildingPlacement', this.onCancelBuildingPlacement.bind(this));
+
         this.animationRegistry.cleanupSceneAnimations(this);
         super.destroy();
     }
