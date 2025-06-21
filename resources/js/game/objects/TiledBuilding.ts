@@ -11,6 +11,13 @@ import {
 } from '../types';
 import { ResourceManager } from '../services/ResourceManager';
 
+interface CollisionObject {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 interface BuildingZone {
     readonly zone: Phaser.GameObjects.Zone;
     readonly layersToHide: readonly string[];
@@ -91,6 +98,7 @@ export class TiledBuilding {
         return tileset;
     }
 
+    /*
     private createInteractionZone(): void {
         const bounds = this.getWorldBounds();
         const padding = 16;
@@ -113,6 +121,7 @@ export class TiledBuilding {
         this.interactionZone.on('pointerout', this.handlePointerOut, this);
         this.interactionZone.on('pointerdown', this.handlePointerDown, this);
     }
+    */
 
     private handlePointerOver(): void {
         if (this.scene.uiScene) {
