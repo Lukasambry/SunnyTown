@@ -14,7 +14,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         name: 'Scierie',
         template: 'sawmill-template',
         icon: 'sawmill',
-        cost: { [ResourceType.WOOD]: 200 },
+        cost: { [ResourceType.WOOD]: 10 },
         description: 'Traite le bois et stocke les ressources'
     },
     {
