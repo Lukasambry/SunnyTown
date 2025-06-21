@@ -129,6 +129,111 @@
         },
     
         {
+         "draworder":"topdown",
+         "id":14,
+         "name":"Collision",
+         "objects":[
+                {
+                 "height":48,
+                 "id":6,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":80,
+                 "x":0,
+                 "y":16
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":15,
+         "name":"Corners",
+         "objects":[
+                {
+                 "height":0,
+                 "id":7,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"bottom-right"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":80,
+                 "y":80
+                }, 
+                {
+                 "height":0,
+                 "id":8,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"bottom-left"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":0,
+                 "y":80
+                }, 
+                {
+                 "height":0,
+                 "id":9,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"top-left"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":0,
+                 "y":16
+                }, 
+                {
+                 "height":0,
+                 "id":10,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"top-right"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":80,
+                 "y":16
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
          "data":[0, 0, 0, 0, 0,
             0, 0, 0, 0, 0,
             0, 0, 0, 0, 0,
@@ -193,7 +298,8 @@
          "width":5,
          "x":0,
          "y":0
-        }, 
+        },
+    
         {
          "data":[981, 982, 985, 988, 989,
             737, 726, 721, 2147484253, 739,
@@ -211,7 +317,7 @@
                  "value":2
                 }],
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":5,
          "x":0,
          "y":0
@@ -242,8 +348,7 @@
          "width":5,
          "x":0,
          "y":0
-        },
-    
+        }, 
         {
          "draworder":"topdown",
          "id":6,
@@ -267,7 +372,7 @@
                  "rotation":0,
                  "type":"entrance",
                  "visible":true,
-                 "width":48.0489130434783,
+                 "width":48.0489,
                  "x":16,
                  "y":24.9605
                 }],
@@ -277,17 +382,17 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":14,
- "nextobjectid":6,
+ "nextlayerid":16,
+ "nextobjectid":11,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.11.1",
+ "tiledversion":"1.11.2",
  "tileheight":16,
  "tilesets":[
         {
          "columns":64,
          "firstgid":1,
-         "image":"..\/..\/tilesets\/tileset.png",
+         "image":"..\/..\/..\/..\/..\/..\/..\/..\/..\/Education\/Ingien\u00e9rie du web\/4IW\/Projet Annuel\/Assets\/Sunnyside_World_ASSET_PACK_V2.1\/Sunnyside_World_ASSET_PACK_V2.1\/Sunnyside_World_Assets\/Tileset\/spr_tileset_sunnysideworld_16px.png",
          "imageheight":1024,
          "imagewidth":1024,
          "margin":0,
@@ -7539,7 +7644,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":12.9032909090909,
+                             "height":12.9033,
                              "id":2,
                              "name":"",
                              "rotation":0,
@@ -7547,7 +7652,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":3.09673909090909
+                             "y":3.09674
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -8556,7 +8661,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":5.08695652173913,
+                             "height":5.08696,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -8564,7 +8669,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":10.9130434782609
+                             "y":10.913
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -20442,7 +20547,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":3.04347826086956,
+                             "height":3.04348,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -20450,7 +20555,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":12.9565217391304
+                             "y":12.9565
                             }],
                      "opacity":1,
                      "type":"objectgroup",
