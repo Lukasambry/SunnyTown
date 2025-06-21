@@ -36,13 +36,21 @@ export class TiledBuildingPreview {
     private dragOffset: Position = { x: 0, y: 0 };
     private initialPosition: Position = { x: 0, y: 0 };
 
+    private cornerPoints: {position: Position, type: string}[] = [];
+    private cornerSprites: Phaser.GameObjects.Sprite[] = [];
+    private static readonly CORNER_TYPES = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
+    private confirmButton: Phaser.GameObjects.Image | null = null;
+    private cancelButton: Phaser.GameObjects.Image | null = null;
+    private buttonPadding: number = 3;
+
     constructor(scene: Scene, templateKey: string) {
         this.scene = scene;
 
         this.config = {
             validTint: 0xffffff,
-            invalidTint: 0xff0000,
-            previewAlpha: 0.6,
+            invalidTint: 0xF6757A,
+            previewAlpha: 0.8,
             previewDepthOffset: 100
         };
 
@@ -51,6 +59,8 @@ export class TiledBuildingPreview {
             this.tileset = this.initializeTileset(templateKey);
             this.createPreviewLayers();
             this.loadCollisionObjects();
+            this.loadCornerPoints();
+            this.createActionButtons();
             this.setupDragEvents();
         } catch (error) {
             console.error(`Erreur lors de la création du preview pour ${templateKey}:`, error);
@@ -98,7 +108,7 @@ export class TiledBuildingPreview {
                     height: obj.height || 0
                 });
 
-                // Si on est en mode développement, afficher les zones de collision
+                /*
                 if (process.env.NODE_ENV === 'development') {
                     const rect = this.scene.add.rectangle(
                         this.currentPosition.x + obj.x + (obj.width || 0) / 2,
@@ -112,6 +122,7 @@ export class TiledBuildingPreview {
                     rect.setDepth(1000);  // Mettre au premier plan
                     this.collisionVisuals.push(rect);
                 }
+                */
             });
         }
     }
@@ -162,6 +173,140 @@ export class TiledBuildingPreview {
             }
         });
     }
+
+    private loadCornerPoints(): void {
+        // Chercher le layer d'objets "Corners"
+        const cornersLayer = this.map.getObjectLayer('Corners');
+
+        if (cornersLayer && cornersLayer.objects) {
+            // Parcourir tous les objets de points de coin définis
+            cornersLayer.objects.forEach(obj => {
+                // Récupérer le type de coin depuis les propriétés de l'objet
+                let cornerType = 'top-left'; // Type par défaut
+
+                if (obj.properties && Array.isArray(obj.properties)) {
+                    const typeProperty = obj.properties.find(p => p.name === 'type');
+                    if (typeProperty && TiledBuildingPreview.CORNER_TYPES.includes(typeProperty.value)) {
+                        cornerType = typeProperty.value;
+                    }
+                }
+
+                this.cornerPoints.push({
+                    position: { x: obj.x, y: obj.y },
+                    type: cornerType
+                });
+
+                this.createCornerSprite(obj.x, obj.y, cornerType);
+            });
+        }
+    }
+
+    private createCornerSprite(x: number, y: number, type: string): void {
+        const sprite = this.scene.add.sprite(
+            this.currentPosition.x + x,
+            this.currentPosition.y + y,
+            `corner-${type}`
+        );
+
+        sprite.setOrigin(0.5, 0.5);
+        sprite.setDepth(2000);
+        sprite.setScale(1);
+
+        this.createCornerAnimation(sprite, type);
+        this.cornerSprites.push(sprite);
+    }
+
+    private createCornerAnimation(sprite: Phaser.GameObjects.Sprite, type: string): void {
+        // Définir le déplacement en fonction du type de coin
+        let xMove = 0;
+        let yMove = 0;
+
+        switch (type) {
+            case 'top-left':
+                xMove = 3;
+                yMove = 3;
+                break;
+            case 'top-right':
+                xMove = -3;
+                yMove = 3;
+                break;
+            case 'bottom-left':
+                xMove = 3;
+                yMove = -3;
+                break;
+            case 'bottom-right':
+                xMove = -3;
+                yMove = -3;
+                break;
+        }
+
+        // Créer l'animation de va-et-vient
+        this.scene.tweens.add({
+            targets: sprite,
+            x: sprite.x + xMove,
+            y: sprite.y + yMove,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    private createActionButtons(): void {
+        const bounds = this.getWorldBounds();
+
+        this.confirmButton = this.scene.add.image(
+            bounds.right,
+            bounds.bottom + this.buttonPadding,
+            'building-confirm-button'
+        );
+        this.confirmButton.setOrigin(1, 0);
+        this.confirmButton.setInteractive({ useHandCursor: false });
+        this.confirmButton.setDepth(2000);
+
+        this.confirmButton.on('pointerover', () => {
+            this.confirmButton?.setScale(1.1);
+        });
+        this.confirmButton.on('pointerout', () => {
+            this.confirmButton?.setScale(1.0);
+        });
+
+        this.confirmButton.on('pointerdown', () => {
+            if (this.isValid) {
+                const event = new CustomEvent('game:confirmBuildingPlacement', {
+                    detail: {
+                        position: this.currentPosition,
+                        isValid: this.isValid
+                    }
+                });
+                window.dispatchEvent(event);
+            } else {
+                this.flashInvalid();
+            }
+        });
+
+        // Créer le bouton d'annulation
+        this.cancelButton = this.scene.add.image(
+            bounds.right - this.confirmButton.width - this.buttonPadding,
+            bounds.bottom + this.buttonPadding,
+            'building-cancel-button'
+        );
+        this.cancelButton.setOrigin(1, 0);
+        this.cancelButton.setInteractive({ useHandCursor: false });
+        this.cancelButton.setDepth(2000);
+
+        this.cancelButton.on('pointerover', () => {
+            this.cancelButton?.setScale(1.1);
+        });
+        this.cancelButton.on('pointerout', () => {
+            this.cancelButton?.setScale(1.0);
+        });
+
+        this.cancelButton.on('pointerdown', () => {
+            window.dispatchEvent(new CustomEvent('game:cancelBuildingPlacement'));
+        });
+    }
+
 
     private startDragging(pointer: Phaser.Input.Pointer): void {
         this.isDragging = true;
@@ -348,7 +493,44 @@ export class TiledBuildingPreview {
                 }
             }
         }
+
+        // Mettre à jour la position des sprites de coin
+        if (this.cornerSprites.length > 0) {
+            for (let i = 0; i < this.cornerSprites.length; i++) {
+                if (i < this.cornerPoints.length) {
+                    const point = this.cornerPoints[i];
+
+                    // Arrêter l'animation existante
+                    this.scene.tweens.killTweensOf(this.cornerSprites[i]);
+
+                    // Repositionner le sprite
+                    this.cornerSprites[i].setPosition(
+                        this.currentPosition.x + point.position.x,
+                        this.currentPosition.y + point.position.y
+                    );
+
+                    // Recréer l'animation
+                    this.createCornerAnimation(this.cornerSprites[i], point.type);
+                }
+            }
+        }
+
+        // Mettre à jour la position des boutons d'action
+        if (this.confirmButton && this.cancelButton) {
+            const bounds = this.getWorldBounds();
+
+            this.confirmButton.setPosition(
+                bounds.right,
+                bounds.bottom + this.buttonPadding
+            );
+
+            this.cancelButton.setPosition(
+                bounds.right - this.confirmButton.width - this.buttonPadding,
+                bounds.bottom + this.buttonPadding
+            );
+        }
     }
+
 
     public setValidPlacement(isValid: boolean): void {
         if (this.isValid === isValid) return;
@@ -395,6 +577,15 @@ export class TiledBuildingPreview {
         this.collisionVisuals.forEach(visual => {
             visual.setVisible(visible);
         });
+
+        // Mettre à jour la visibilité des sprites de coin
+        this.cornerSprites.forEach(sprite => {
+            sprite.setVisible(visible);
+        });
+
+        // Mettre à jour la visibilité des boutons d'action
+        if (this.confirmButton) this.confirmButton.setVisible(visible);
+        if (this.cancelButton) this.cancelButton.setVisible(visible);
     }
 
     public setAlpha(alpha: number): void {
@@ -473,6 +664,26 @@ export class TiledBuildingPreview {
             visual.destroy();
         });
         this.collisionVisuals = [];
+
+        // Arrêter les animations et détruire les sprites de coin
+        this.cornerSprites.forEach(sprite => {
+            this.scene.tweens.killTweensOf(sprite);
+            sprite.destroy();
+        });
+        this.cornerSprites = [];
+
+        // Détruire les boutons d'action
+        if (this.confirmButton) {
+            this.confirmButton.removeAllListeners();
+            this.confirmButton.destroy();
+            this.confirmButton = null;
+        }
+
+        if (this.cancelButton) {
+            this.cancelButton.removeAllListeners();
+            this.cancelButton.destroy();
+            this.cancelButton = null;
+        }
 
         this.scene.input.off('pointermove');
         this.scene.input.off('pointerup');
