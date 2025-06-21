@@ -882,26 +882,6 @@ export class MainScene extends Scene {
             this.markBuildingCollisions(newBuilding);
             this.rebuildPathfindingGrid();
 
-            window.dispatchEvent(
-                new CustomEvent('game:buildingPlaced', {
-                    detail: {
-                        building: newBuilding,
-                        type: this.selectedBuildingType,
-                        cost: cost,
-                        position: { x: position.x, y: position.y },
-                    },
-                }),
-            );
-
-            window.dispatchEvent(
-                new CustomEvent('game:buildingPlacementComplete', {
-                    detail: {
-                        buildingType: this.selectedBuildingType,
-                        resourcesDeducted: cost,
-                    },
-                }),
-            );
-
             this.buildingPreview.destroy();
             this.buildingPreview = null;
             this.selectedBuildingType = null;
