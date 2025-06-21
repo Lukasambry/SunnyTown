@@ -1,6 +1,7 @@
-import type { BuildingConfig } from '../types/BuildingTypes';
-import { ResourceType } from '../types/ResourceSystemTypes';
+import type { BuildingConfig } from '@/game/types/BuildingTypes';
+import { ResourceType } from '@/game//types/ResourceSystemTypes';
 import { ResourceManager } from './ResourceManager';
+import { BUILDING_CONFIGS } from '@/game/configs/BuildingConfigs';
 
 export class BuildingRegistry {
   private static instance: BuildingRegistry;
@@ -18,45 +19,7 @@ export class BuildingRegistry {
   }
 
   private initializeBuildings(): void {
-    const buildingConfigs: BuildingConfig[] = [
-      {
-        key: 'house',
-        name: 'Maison',
-        template: 'house-template',
-        icon: 'house',
-        cost: { [ResourceType.WOOD]: 30 },
-        description: 'Logement pour les ouvriers, améliore leur efficacité'
-      },
-      {
-        key: 'sawmill',
-        name: 'Scierie',
-        template: 'sawmill-template',
-        icon: 'sawmill',
-        cost: { [ResourceType.WOOD]: 200 },
-        description: 'Traite le bois et stocke les ressources'
-      },
-      {
-        key: 'mine',
-        name: 'Mine',
-        template: 'mine-template',
-        icon: 'mine',
-        cost: {
-          [ResourceType.WOOD]: 15,
-          [ResourceType.STONE]: 10
-        },
-        description: 'Extrait pierre et métaux du sous-sol'
-      },
-      {
-        key: 'farm',
-        name: 'Ferme',
-        template: 'farm-template',
-        icon: 'farm',
-        cost: { [ResourceType.WOOD]: 12 },
-        description: 'Produit de la nourriture pour les ouvriers'
-      }
-    ];
-
-    buildingConfigs.forEach(config => {
+    BUILDING_CONFIGS.forEach(config => {
       this.buildings.set(config.key, config);
     });
   }
