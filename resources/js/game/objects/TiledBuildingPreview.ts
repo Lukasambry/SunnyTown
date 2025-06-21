@@ -14,12 +14,21 @@ interface PreviewConfig {
     readonly previewDepthOffset: number;
 }
 
+interface CollisionObject {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
 export class TiledBuildingPreview {
     private readonly scene: Scene;
     private readonly layers: Phaser.Tilemaps.TilemapLayer[] = [];
     private readonly map: Phaser.Tilemaps.Tilemap;
     private readonly tileset: Phaser.Tilemaps.Tileset;
     private readonly config: PreviewConfig;
+    private readonly collisionObjects: CollisionObject[] = [];
+    private collisionVisuals: Phaser.GameObjects.Rectangle[] = [];
 
     private isValid: boolean = true;
     private currentPosition: Position = { x: 0, y: 0 };
@@ -41,6 +50,7 @@ export class TiledBuildingPreview {
             this.map = scene.make.tilemap({ key: templateKey });
             this.tileset = this.initializeTileset(templateKey);
             this.createPreviewLayers();
+            this.loadCollisionObjects();
             this.setupDragEvents();
         } catch (error) {
             console.error(`Erreur lors de la création du preview pour ${templateKey}:`, error);
@@ -71,6 +81,39 @@ export class TiledBuildingPreview {
                 this.layers.push(layer);
             }
         });
+    }
+
+    private loadCollisionObjects(): void {
+        // Chercher le layer d'objets "Collision"
+        const collisionLayer = this.map.getObjectLayer('Collision');
+
+        if (collisionLayer && collisionLayer.objects) {
+            // Parcourir tous les objets de collision définis
+            collisionLayer.objects.forEach(obj => {
+                // Stocker les informations de collision
+                this.collisionObjects.push({
+                    x: obj.x,
+                    y: obj.y,
+                    width: obj.width || 0,
+                    height: obj.height || 0
+                });
+
+                // Si on est en mode développement, afficher les zones de collision
+                if (process.env.NODE_ENV === 'development') {
+                    const rect = this.scene.add.rectangle(
+                        this.currentPosition.x + obj.x + (obj.width || 0) / 2,
+                        this.currentPosition.y + obj.y + (obj.height || 0) / 2,
+                        obj.width || 0,
+                        obj.height || 0,
+                        0xff0000,
+                        0.3
+                    );
+                    rect.setOrigin(0.5, 0.5);
+                    rect.setDepth(1000);  // Mettre au premier plan
+                    this.collisionVisuals.push(rect);
+                }
+            });
+        }
     }
 
     private setupPreviewLayer(layer: Phaser.Tilemaps.TilemapLayer, layerData: Phaser.Tilemaps.LayerData): void {
@@ -191,6 +234,12 @@ export class TiledBuildingPreview {
         tilePos: Position,
         dimensions: BuildingDimensions
     ): boolean {
+        // Si on a des objets de collision définis, utiliser cette méthode
+        if (this.collisionObjects.length > 0) {
+            return this.hasNoObjectCollisions(mapLayers);
+        }
+
+        // Sinon, utiliser la méthode actuelle basée sur les tiles
         for (let x = 0; x < dimensions.tilesWidth; x++) {
             for (let y = 0; y < dimensions.tilesHeight; y++) {
                 const checkPos = {
@@ -200,6 +249,32 @@ export class TiledBuildingPreview {
 
                 if (this.hasCollisionAtPosition(mapLayers, checkPos)) {
                     return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private hasNoObjectCollisions(mapLayers: Map<string, LayerConfig>): boolean {
+        // Pour chaque objet de collision défini dans le bâtiment
+        for (const obj of this.collisionObjects) {
+            // Convertir la position de l'objet en position mondiale
+            const worldX = this.currentPosition.x + obj.x;
+            const worldY = this.currentPosition.y + obj.y;
+
+            // Convertir en position de tuile
+            const tileStartX = Math.floor(worldX / 16);
+            const tileStartY = Math.floor(worldY / 16);
+            const tileEndX = Math.floor((worldX + obj.width) / 16);
+            const tileEndY = Math.floor((worldY + obj.height) / 16);
+
+            // Vérifier toutes les tuiles dans la zone de l'objet de collision
+            for (let tx = tileStartX; tx <= tileEndX; tx++) {
+                for (let ty = tileStartY; ty <= tileEndY; ty++) {
+                    const checkPos = { x: tx, y: ty };
+                    if (this.hasCollisionAtPosition(mapLayers, checkPos)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -260,6 +335,19 @@ export class TiledBuildingPreview {
         this.layers.forEach(layer => {
             layer.setPosition(this.currentPosition.x, this.currentPosition.y);
         });
+
+        // Mettre à jour les visualisations de collision
+        if (this.collisionVisuals && this.collisionVisuals.length > 0) {
+            for (let i = 0; i < this.collisionVisuals.length; i++) {
+                if (i < this.collisionObjects.length) {
+                    const obj = this.collisionObjects[i];
+                    this.collisionVisuals[i].setPosition(
+                        this.currentPosition.x + obj.x + obj.width / 2,
+                        this.currentPosition.y + obj.y + obj.height / 2
+                    );
+                }
+            }
+        }
     }
 
     public setValidPlacement(isValid: boolean): void {
@@ -301,6 +389,11 @@ export class TiledBuildingPreview {
     public setVisible(visible: boolean): void {
         this.layers.forEach(layer => {
             layer.setVisible(visible);
+        });
+
+        // Mettre à jour aussi la visibilité des visualisations de collision
+        this.collisionVisuals.forEach(visual => {
+            visual.setVisible(visible);
         });
     }
 
@@ -374,6 +467,12 @@ export class TiledBuildingPreview {
                 console.error('Erreur lors de la destruction d\'une layer de preview:', error);
             }
         });
+
+        // Détruire les visualisations de collision
+        this.collisionVisuals.forEach(visual => {
+            visual.destroy();
+        });
+        this.collisionVisuals = [];
 
         this.scene.input.off('pointermove');
         this.scene.input.off('pointerup');
