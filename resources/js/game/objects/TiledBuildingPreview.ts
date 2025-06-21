@@ -50,7 +50,7 @@ export class TiledBuildingPreview {
         this.config = {
             validTint: 0xffffff,
             invalidTint: 0xF6757A,
-            previewAlpha: 0.8,
+            previewAlpha: 0.6,
             previewDepthOffset: 100
         };
 
