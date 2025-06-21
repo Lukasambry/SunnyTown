@@ -1,4 +1,4 @@
-import { BuildingConfig, ResourceType, WorkerType } from '@/game/types';
+import { BuildingConfig, ResourceType } from '@/game/types';
 
 export const BUILDING_CONFIGS: BuildingConfig[] = [
     {
@@ -7,8 +7,6 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         template: 'house-template',
         icon: 'house',
         cost: { [ResourceType.WOOD]: 10 },
-        workerType: WorkerType.NEUTRAL,
-        maxWorkers: 1,
         description: 'Logement pour les ouvriers, améliore leur efficacité'
     },
     {
@@ -16,9 +14,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         name: 'Scierie',
         template: 'sawmill-template',
         icon: 'sawmill',
-        cost: { [ResourceType.WOOD]: 10 },
-        workerType: WorkerType.LUMBERJACK,
-        maxWorkers: 3,
+        cost: { [ResourceType.WOOD]: 200 },
         description: 'Traite le bois et stocke les ressources'
     },
     {
@@ -30,8 +26,6 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
             [ResourceType.WOOD]: 15,
             [ResourceType.STONE]: 10
         },
-        workerType: WorkerType.MINER,
-        maxWorkers: 2,
         description: 'Extrait pierre et métaux du sous-sol'
     },
     {
@@ -40,8 +34,6 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         template: 'farm-template',
         icon: 'farm',
         cost: { [ResourceType.WOOD]: 12 },
-        workerType: WorkerType.FARMER,
-        maxWorkers: 2,
         description: 'Produit de la nourriture pour les ouvriers'
     }
 ];
