@@ -53,6 +53,12 @@ export class MainScene extends Scene {
 
     private workerManager!: WorkerManager;
 
+    private isCameraFollowingPlayer: boolean = true;
+    private isDraggingCamera: boolean = false;
+    private lastPointerPosition: { x: number; y: number } | null = null;
+    private targetIndicator: Phaser.GameObjects.Image | null = null;
+    private targetIndicatorTween: Phaser.Tweens.Tween | null = null;
+
     constructor() {
         super({ key: 'MainScene' });
         this.easyStar = new EasyStar.js();
@@ -128,6 +134,7 @@ export class MainScene extends Scene {
         // Load icons for UI
         this.load.image('house-icon', 'ui/icons/house.png');
         this.load.image('sawmill-icon', 'ui/icons/sawmill.png');
+        this.load.image('target-indicator', 'ui/sm-arrow-down.png');
     }
 
     create() {
@@ -239,6 +246,7 @@ export class MainScene extends Scene {
         this.player.setDepth(1);
 
         this.cameras.main.startFollow(this.player);
+        this.isCameraFollowingPlayer = true;
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
@@ -354,38 +362,42 @@ export class MainScene extends Scene {
         this.easyStar.setIterationsPerCalculation(1000);
         this.easyStar.disableCornerCutting();
 
+        // Player movement: only on left click, not when right is used for camera drag
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             if ((this.buildingPreview && this.buildingPreview.isDraggingActive()) || pointer.event.defaultPrevented) {
                 return;
             }
+            // Only move player if left button is pressed and not right
+            if (pointer.leftButtonDown() && !pointer.rightButtonDown()) {
+                const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+                let targetTileX = Math.floor(worldPoint.x / this.tileWidth);
+                let targetTileY = Math.floor(worldPoint.y / this.tileHeight);
 
-            const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
-            let targetTileX = Math.floor(worldPoint.x / this.tileWidth);
-            let targetTileY = Math.floor(worldPoint.y / this.tileHeight);
+                const playerTileX = Math.floor(this.player.x / this.tileWidth);
+                const playerTileY = Math.floor(this.player.y / this.tileHeight);
 
-            const playerTileX = Math.floor(this.player.x / this.tileWidth);
-            const playerTileY = Math.floor(this.player.y / this.tileHeight);
-
-            if (this.baseGrid[targetTileY][targetTileX] === 1) {
-                const nearestTile = this.findNearestWalkableTile(targetTileX, targetTileY);
-                if (nearestTile) {
-                    targetTileX = nearestTile.x;
-                    targetTileY = nearestTile.y;
-                } else {
-                    console.log('No accessible tile found nearby');
-                    return;
+                if (this.baseGrid[targetTileY][targetTileX] === 1) {
+                    const nearestTile = this.findNearestWalkableTile(targetTileX, targetTileY);
+                    if (nearestTile) {
+                        targetTileX = nearestTile.x;
+                        targetTileY = nearestTile.y;
+                    } else {
+                        console.log('No accessible tile found nearby');
+                        return;
+                    }
                 }
+
+                this.easyStar.findPath(playerTileX, playerTileY, targetTileX, targetTileY, (path) => {
+                    if (path === null) {
+                        console.log('No path found!');
+                    } else {
+                        this.player.setPath(path);
+                        this.createTargetIndicator(path);
+                    }
+                });
+
+                this.easyStar.calculate();
             }
-
-            this.easyStar.findPath(playerTileX, playerTileY, targetTileX, targetTileY, (path) => {
-                if (path === null) {
-                    console.log('No path found!');
-                } else {
-                    this.player.setPath(path);
-                }
-            });
-
-            this.easyStar.calculate();
         });
 
         this.rebuildPathfindingGrid();
@@ -399,6 +411,86 @@ export class MainScene extends Scene {
             this.testWorkerSystem();
         });
         /* ----------------------- */
+
+        // Helper to show/hide custom cursors
+        const setCustomCursor = (type: 'default' | 'grabbing' | 'none') => {
+            if (this.uiScene) {
+                this.uiScene.defaultCursor.setVisible(type === 'default');
+                this.uiScene.grabCursor.setVisible(false); // never show grab in free camera mode
+                this.uiScene.grabbingCursor.setVisible(type === 'grabbing');
+                this.uiScene.hoverCursor.setVisible(false);
+            }
+        };
+        // Always hide system cursor
+        this.input.setDefaultCursor('none');
+
+        // Camera drag logic for free camera mode (right mouse button)
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            if (!this.isCameraFollowingPlayer && pointer.rightButtonDown()) {
+                this.isDraggingCamera = true;
+                this.lastPointerPosition = { x: pointer.x, y: pointer.y };
+                setCustomCursor('grabbing');
+            } else if (!this.isCameraFollowingPlayer) {
+                setCustomCursor('default');
+            }
+        });
+        this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+            if (!this.isCameraFollowingPlayer) {
+                this.isDraggingCamera = false;
+                this.lastPointerPosition = null;
+                setCustomCursor('default');
+            }
+        });
+        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+            if (!this.isCameraFollowingPlayer && this.isDraggingCamera && this.lastPointerPosition) {
+                const dx = pointer.x - this.lastPointerPosition.x;
+                const dy = pointer.y - this.lastPointerPosition.y;
+                this.cameras.main.scrollX -= dx / this.cameras.main.zoom;
+                this.cameras.main.scrollY -= dy / this.cameras.main.zoom;
+                this.lastPointerPosition = { x: pointer.x, y: pointer.y };
+                setCustomCursor('grabbing'); // Always show grabbing while dragging
+            } else if (!this.isCameraFollowingPlayer && !this.isDraggingCamera) {
+                setCustomCursor('default');
+            }
+        });
+        // Handle pointer leaving the game area
+        this.input.on('pointerout', () => {
+            if (!this.isCameraFollowingPlayer) {
+                this.isDraggingCamera = false;
+                this.lastPointerPosition = null;
+                setCustomCursor('default');
+            }
+        });
+        this.input.on('pointerleave', () => {
+            if (!this.isCameraFollowingPlayer) {
+                this.isDraggingCamera = false;
+                this.lastPointerPosition = null;
+                setCustomCursor('default');
+            }
+        });
+        // On camera mode toggle, update cursor state
+        window.addEventListener('game:toggleCameraMode', () => {
+            this.isCameraFollowingPlayer = !this.isCameraFollowingPlayer;
+            if (this.isCameraFollowingPlayer) {
+                this.cameras.main.startFollow(this.player);
+                setCustomCursor('default');
+            } else {
+                this.cameras.main.stopFollow();
+                setCustomCursor('default');
+            }
+            this.input.setDefaultCursor('none'); // Always hide system cursor
+        });
+        // Listen for path completion
+        this.events.on('player_path_complete', () => {
+            if (this.targetIndicator) {
+                this.targetIndicator.destroy();
+                this.targetIndicator = null;
+            }
+            if (this.targetIndicatorTween) {
+                this.targetIndicatorTween.stop();
+                this.targetIndicatorTween = null;
+            }
+        });
     }
 
     private setupVueResourceSync(): void {
@@ -1292,5 +1384,33 @@ export class MainScene extends Scene {
                 console.error('Error in resource sync debug:', error);
             }
         }
+    }
+
+    private createTargetIndicator(path: { x: number; y: number }[]): void {
+        if (!path || path.length === 0) {
+            return;
+        }
+        if (this.targetIndicator) {
+            this.targetIndicator.destroy();
+        }
+        if (this.targetIndicatorTween) {
+            this.targetIndicatorTween.stop();
+        }
+
+        const lastTile = path[path.length - 1];
+        const targetX = lastTile.x * this.tileWidth + this.tileWidth / 2;
+        const targetY = lastTile.y * this.tileHeight; // top of the tile
+
+        this.targetIndicator = this.add.image(targetX, targetY, 'target-indicator');
+        this.targetIndicator.setDepth(1);
+
+        this.targetIndicatorTween = this.tweens.add({
+            targets: this.targetIndicator,
+            y: targetY - 8,
+            duration: 400,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1,
+        });
     }
 }

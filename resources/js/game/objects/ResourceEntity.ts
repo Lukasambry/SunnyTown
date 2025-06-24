@@ -1,11 +1,11 @@
 import { Scene } from 'phaser';
 type Scene = typeof Scene;
 
-import { AnimationType } from '../services/AnimationRegistry';
-import { AnimationUtils } from '../utils/AnimationUtils';
-import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '../types/ResourceEntityTypes';
-import { ResourceType } from '../types/ResourceSystemTypes';
-import { ResourceManager } from '../services/ResourceManager';
+import { AnimationType } from '@/game/types/AnimationTypes';
+import { AnimationUtils } from '@/game/utils/AnimationUtils';
+import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '@/game/types/ResourceEntityTypes';
+import { ResourceType } from '@/game/types/ResourceSystemTypes';
+import { ResourceManager } from '@/game/services/ResourceManager';
 
 interface ResourceEntityState {
     isDestroyed: boolean;

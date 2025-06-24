@@ -61,7 +61,7 @@ export class TiledBuilding {
     constructor(scene: Scene, x: number, y: number, templateKey: string) {
         this.scene = scene;
         this.position = { x, y };
-        this.buildingType = templateKey.replace('-template', '');
+        // this.buildingType = templateKey.replace('-template', '');
         this.resourceManager = ResourceManager.getInstance();
 
         this.config = {
