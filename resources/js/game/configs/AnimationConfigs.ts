@@ -5,7 +5,7 @@ export const ANIMATION_CONFIGS: AnimationConfig[] = [
         key: AnimationType.PLAYER_IDLE,
         texture: 'player-idle',
         frames: { start: 0, end: 8 },
-        frameRate: 8,
+        frameRate: 10,
         repeat: -1,
         description: 'Player idle animation'
     },
