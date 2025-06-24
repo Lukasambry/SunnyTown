@@ -20,8 +20,8 @@ const submit = () => {
     <div class="min-h-screen flex items-center justify-center p-6">
         <div class="w-full max-w-md">
 
-            <div class="pixel-border pixel-border-gold mb-6">
-                <div class="pixel-border pixel-border-dirt p-8">
+            <div class="pixel-border pixel-border-dirt mb-6">
+                <div class="pixel-border pixel-border-dark-dirt dark:!bg-transparent dark:!shadow-none p-8">
 
                     <div class="pixel-border pixel-border-stone mb-6 px-4 py-3 text-center">
                         <h1 class="font-mono font-bold text-xl text-black">
@@ -40,7 +40,7 @@ const submit = () => {
 
                         <div class="space-y-2">
                             <div class="px-3 py-1 inline-block">
-                                <label for="email" class="font-mono font-bold text-black text-sm">
+                                <label for="email" class="font-mono font-bold text-white dark:text-black text-sm">
                                     Adresse email
                                 </label>
                             </div>
@@ -76,7 +76,7 @@ const submit = () => {
                                     <div v-if="form.processing" class="animate-spin">
                                         <div class="pixel-border pixel-border-dirt w-4 h-4"></div>
                                     </div>
-                                    <span class="font-mono font-bold text-black">
+                                    <span class="font-mono font-bold text-white dark:text-black">
                                         {{ form.processing ? 'Envoi en cours...' : 'Envoyer le lien' }}
                                     </span>
                                 </div>
@@ -84,14 +84,14 @@ const submit = () => {
                         </div>
                     </form>
                     <div class="px-4 py-3 text-center mt-6">
-                        <span class="font-mono text-sm text-black">
+                        <span class="font-mono text-sm text-white dark:text-black">
                             Ou retourner à la
                         </span>
                         <a
                             :href="route('login')"
                             class="duration-200 inline-block ml-2 pixel-border pixel-border-gold px-2 py-1"
                         >
-                            <span class="font-mono text-sm font-bold text-black">Connexion</span>
+                            <span class="font-mono text-sm font-bold text-white dark:text-black">Connexion</span>
                         </a>
                     </div>
                 </div>
