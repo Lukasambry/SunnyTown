@@ -1,8 +1,8 @@
-import { Scene } from 'phaser'
-type Scene = typeof Scene;
+import Phaser from 'phaser'
+type Scene = typeof Phaser.Scene;
 
-import { AnimationType } from '../services/AnimationRegistry'
-import { AnimationUtils } from '../utils/AnimationUtils'
+import { AnimationType } from '@/game/types/AnimationTypes'
+import { AnimationUtils } from '@/game/utils/AnimationUtils'
 
 interface PlayerConfig {
     moveSpeed: number
@@ -22,7 +22,7 @@ interface PathNode {
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     public readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys
-    
+
     private readonly config: PlayerConfig = {
         moveSpeed: 80,
         bodyWidth: 12,
@@ -38,7 +38,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         super(scene, x, y, 'player-idle')
 
         this.cursors = scene.input.keyboard.createCursorKeys()
-        
+
         this.initializePlayer()
         this.setupAnimations()
         this.animationHandler.idle(AnimationType.PLAYER_IDLE)
@@ -47,7 +47,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private initializePlayer(): void {
         this.scene.add.existing(this)
         this.scene.physics.add.existing(this)
-        
+
         this.setCollideWorldBounds(true)
         this.setupHitbox()
     }
@@ -70,11 +70,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.animationHandler = AnimationUtils.createAnimationHandler(this)
     }
 
-    public setPath(path: PathNode[]): void {
+    public setPath(path: PathNode[] | null): void {
+        if (!path) {
+            this.path = [];
+            this.stopMovement();
+            return;
+        }
+
         if (path.length > 0) {
             const firstTile = path[0]
             const currentTile = this.getCurrentTilePosition()
-            
+
             if (firstTile.x === currentTile.x && firstTile.y === currentTile.y) {
                 path.shift()
             }
@@ -102,7 +108,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.isChopping) return
 
         this.isChopping = true
-        
+
         try {
             if (onHitFrame) {
                 await this.animationHandler.action(AnimationType.PLAYER_CHOP, 7, onHitFrame)
@@ -145,7 +151,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         const targetTile = this.path[this.currentTargetIndex]
         const targetWorldPos = this.tileToWorldPosition(targetTile)
-        
+
         const distance = Phaser.Math.Distance.Between(
             this.x, this.y,
             targetWorldPos.x, targetWorldPos.y
@@ -167,10 +173,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     private moveToNextPathNode(): void {
         this.currentTargetIndex++
-        
+
         if (this.currentTargetIndex >= this.path.length) {
             this.path = []
             this.stopMovement()
+            this.scene.events.emit('player_path_complete');
         }
     }
 
@@ -178,11 +185,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         const dx = target.x - this.x
         const dy = target.y - this.y
         const distance = Math.sqrt(dx * dx + dy * dy)
-        
+
         if (distance > 0) {
             const velocityX = (dx / distance) * this.config.moveSpeed
             const velocityY = (dy / distance) * this.config.moveSpeed
-            
+
             this.setVelocity(velocityX, velocityY)
             this.updateMovementAnimation(velocityX, velocityY)
         }
@@ -191,7 +198,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     private updateMovementAnimation(velocityX: number, velocityY: number): void {
         // Use the animation handler to manage movement animations
         this.animationHandler.movement(
-            velocityX, 
+            velocityX,
             velocityY,
             AnimationType.PLAYER_IDLE,
             AnimationType.PLAYER_WALK

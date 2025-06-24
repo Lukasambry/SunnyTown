@@ -1,5 +1,14 @@
 <template>
   <div class="game-ui-overlay">
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-2">
+      <ActionButton
+        :icon="isCameraFollowingPlayer ? 'info' : 'settings'"
+        :label="isCameraFollowingPlayer ? 'Suivi joueur' : 'Caméra libre'"
+        variant="primary"
+        size="md"
+        @click="toggleCameraMode"
+      />
+    </div>
     <!-- Resource Display -->
     <ResourceDisplay :show-resource-list="true" :max-visible-resources="8" />
 
@@ -37,6 +46,7 @@ import BuildingFabButton from './BuildingFabButton.vue'
 import BuildingInfoModal from './BuildingInfoModal.vue'
 import NotificationSystem from './NotificationSystem.vue'
 import DebugPanel from './DebugPanel.vue'
+import ActionButton from './ActionButton.vue'
 
 const gameStore = useGameStore()
 
@@ -44,6 +54,7 @@ const isDevelopment = import.meta.env.DEV
 
 const resourceUpdateCount = ref(0)
 const totalResources = ref(0)
+const isCameraFollowingPlayer = ref(true)
 
 const handleGameEvents = () => {
   const handleResourceUpdate = (event: CustomEvent) => {
@@ -199,6 +210,11 @@ const setupStoreWatchers = () => {
       gameStore.forceResourceUpdate()
     }
   })
+}
+
+function toggleCameraMode() {
+  isCameraFollowingPlayer.value = !isCameraFollowingPlayer.value
+  window.dispatchEvent(new CustomEvent('game:toggleCameraMode'))
 }
 
 // Lifecycle
