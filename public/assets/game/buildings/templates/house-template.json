@@ -405,6 +405,35 @@
         }, 
         {
          "draworder":"topdown",
+         "id":20,
+         "name":"Points",
+         "objects":[
+                {
+                 "height":0,
+                 "id":35,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"center"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":48,
+                 "y":32
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":6,
          "name":"Zones",
          "objects":[
@@ -458,8 +487,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":20,
- "nextobjectid":35,
+ "nextlayerid":21,
+ "nextobjectid":36,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
