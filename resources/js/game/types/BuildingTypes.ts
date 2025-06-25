@@ -10,6 +10,7 @@ export interface BuildingConfig {
     readonly template: string;
     readonly icon: string;
     readonly cost: BuildingCost;
+    readonly workerType: string;
     readonly description?: string;
     //readonly category?: BuildingCategory;
 }

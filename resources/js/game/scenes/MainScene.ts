@@ -868,6 +868,10 @@ export class MainScene extends Scene {
 
         if (this.workerManager) {
             console.log('WorkerManager is available');
+            
+            for (let i = 0; i < 3; i++) {
+                this.workerManager.createWorker(WorkerType.NEUTRAL, this.player.x + 50, this.player.y + (i * 16));
+            }
 
             const testWorker = this.createWorker(WorkerType.LUMBERJACK, this.player.x + 50, this.player.y);
             if (testWorker) {
