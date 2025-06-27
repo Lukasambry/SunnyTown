@@ -32,8 +32,8 @@ export const useGameStore = defineStore('game', () => {
 
     // Player data
     const playerAvatar = ref<string>('');
-    const playerLevel = ref<number>(32);
-    const playerGold = ref<number>(10000);
+    const playerLevel = ref<number>(1);
+    const playerGold = ref<number>(0);
     const playerHealth = ref<{ current: number, max: number }>({ current: 100, max: 100 });
     const playerExperience = ref<{ current: number, nextLevel: number }>({ current: 0, nextLevel: 100 });
 
