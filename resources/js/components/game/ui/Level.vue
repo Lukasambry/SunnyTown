@@ -114,6 +114,14 @@ export default {
     box-shadow:
         0 0 8px rgba(229, 62, 62, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background-image: linear-gradient(45deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 75%,
+    transparent);
     background-size: 8px 8px;
     animation: pulse-glow 2s ease-in-out infinite;
 }
@@ -123,6 +131,14 @@ export default {
     box-shadow:
         0 0 8px rgba(49, 130, 206, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    background-image: linear-gradient(45deg,
+    rgba(255, 255, 255, 0.1) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.1) 75%,
+    transparent 75%,
+    transparent);
     background-size: 8px 8px;
     animation: pulse-glow 2s ease-in-out infinite;
 }
