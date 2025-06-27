@@ -2,13 +2,12 @@
 
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\ThreadController;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BlogPostController;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', ['appEnv' => env('APP_ENV')]);
-})->name('home');
+Route::get('/', [LandingController::class, 'index'])->name('home');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
