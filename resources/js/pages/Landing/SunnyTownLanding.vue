@@ -1,6 +1,5 @@
 <template>
   <div class="bg-gray-900 text-white min-h-screen font-sans antialiased overflow-x-hidden" @mousemove="handleMouseMove">
-    <!-- Header avec stats en temps réel -->
     <header class="fixed top-0 left-0 right-0 z-50 bg-[#182c55]/95 backdrop-blur-sm shadow-lg border-b-2 border-yellow-400/30">
       <nav class="container mx-auto px-4 py-3">
         <div class="flex justify-between items-center">
@@ -134,7 +133,6 @@
         />
       </div>
 
-      <!-- Community Section -->
       <section id="community" class="bg-[#1a202c] py-16 needs-fade-in">
         <div class="container mx-auto px-4 text-center">
           <h2 class="text-4xl font-bold text-amber-300 mb-6 uppercase" style="font-family: 'Georgia', 'Times New Roman', serif;">Rejoignez Notre Communauté !</h2>
@@ -184,7 +182,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, reactive } from 'vue';
 import { Twitter, Facebook, MessageCircle, ArrowUp, Users } from 'lucide-vue-next';
 import GameFeatureSection from '../../components/GameFeatureSection.vue'; // Assurez-vous que le chemin est correct
