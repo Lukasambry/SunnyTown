@@ -22,7 +22,7 @@
                             <button
                                 class="w-8 h-8 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
                                 @click="handleClose">
-                                <ActionIcon icon="close" :size="16" />
+                                x
                             </button>
                         </div>
 
@@ -62,6 +62,8 @@
                                 </div>
                             </div>
 
+                            <WorkerAssignmentUI :building="buildingData" />
+
                             <!-- Actions -->
                             <div v-if="availableActions.length > 0" class="space-y-3">
                                 <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
@@ -83,11 +85,11 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { useGameStore } from '@game/stores/gameStore.ts'
-import type { TiledBuilding } from '@game/objects/TiledBuilding.ts'
-import type { ResourceType } from '@game/types'
+import { useGameStore } from '@/game/stores/gameStore'
+import WorkerAssignmentUI from './WorkerAssignmentUI.vue'
+import { WorkerType } from '@/game/types/WorkerConfigTypes'
+import type { ResourceType } from '@/game/types'
 import BuildingIcon from './BuildingIcon.vue'
-import ActionIcon from './ActionIcon.vue'
 import ActionButton from './ActionButton.vue'
 import ResourceBar from './ResourceBar.vue'
 
@@ -100,10 +102,7 @@ interface BuildingAction {
 }
 
 const gameStore = useGameStore()
-
-// Computed
 const isVisible = computed(() => gameStore.state?.showBuildingInfo || false)
-
 const buildingData = computed(() => gameStore.state?.currentBuildingInfo || null)
 
 const buildingDisplayName = computed(() => {
