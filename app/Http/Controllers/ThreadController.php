@@ -2,78 +2,66 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ForumCategory;
+use App\Models\Thread;
 use App\Models\Message;
 use App\Models\MessageImage;
-use App\Models\Thread;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ThreadController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function show(ForumCategory $category, Thread $thread)
     {
-        //
+        $thread->load(['messages.user', 'messages.images', 'user', 'forumCategory']);
+        return Inertia::render('threads/Show', [
+            'thread' => $thread
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function create(ForumCategory $category)
+    {
+        return Inertia::render('threads/Create', [
+            'category' => $category,
+        ]);
+    }
+
+
+    public function store(Request $request, ForumCategory $category)
     {
         $data = $request->validate([
-            'title'               => 'required|string|max:255',
-            'forum_category_id'   => 'required|exists:forum_categories,id',
-            'content'             => 'required|string',
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'images.*' => 'nullable|image|mimes:jpeg,png,gif|max:2048',
         ]);
 
-        $thread = Thread::create([
-            'title'             => $data['title'],
-            'forum_category_id' => $data['forum_category_id'],
-            'user_id'           => auth()->id(),
+        $thread = $category->threads()->create([
+            'title' => $data['title'],
+            'content' => $data['content'],
+//            'user_id'             => auth()->id(),
+            'user_id' => 1,
+            'slug' => Str::slug($data['title']) . '-' . uniqid(),
         ]);
 
-        $message = Message::create([
-            'thread_id' => $thread->id,
-            'user_id'   => auth()->id(),
-            'content'   => $data['content'],
+        $message = $thread->messages()->create([
+//            'user_id' => auth()->id(),
+            'user_id' => 1,
+            'content' => $data['content'],
         ]);
 
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('message_images', 'public');
-                MessageImage::create([
-                    'message_id' => $message->id,
-                    'path'       => $path,
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('message_images', 'public');
+                $message->images()->create([
+                    'path' => $path,
                 ]);
             }
         }
 
-         return redirect()->route('threads.show', $thread);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Thread $thread)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Thread $thread)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Thread $thread)
-    {
-        //
+        return redirect()->route('forums.threads.show', [
+            'category' => $category->slug,
+            'thread' => $thread->slug,
+        ]);
     }
 }
