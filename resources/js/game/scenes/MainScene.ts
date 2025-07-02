@@ -18,6 +18,7 @@ import { WorkerType } from '@/game/types';
 import { ResourceType } from '@/game/types/ResourceSystemTypes';
 import { AnimationUtils } from '@/game/utils/AnimationUtils';
 import { WorkerRegistry } from '@/game/services';
+import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -1482,6 +1483,8 @@ export class MainScene extends Scene {
             }
         });
 
+        const pathfinder = WorkerPathfinder.getInstance();
+        pathfinder.initializeGrid(fullGrid);
         this.easyStar.setGrid(fullGrid);
     }
 

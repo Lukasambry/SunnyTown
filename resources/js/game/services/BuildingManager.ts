@@ -40,7 +40,6 @@ export class BuildingManager {
         this.rebuildPathfindingGrid();
 
         this.emit('buildingPlaced', building);
-
         return building;
     }
 
@@ -179,7 +178,6 @@ export class BuildingManager {
         }
 
         this.rebuildPathfindingGrid();
-
         this.emit('allBuildingsCleared');
     }
 
