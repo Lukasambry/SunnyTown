@@ -53,12 +53,40 @@
                             <!-- Resources -->
                             <div v-if="hasResources" class="space-y-3">
                                 <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Ressources stockées
+                                    Stockage des ressources
                                 </h3>
-                                <div class="space-y-2">
-                                    <ResourceBar v-for="[resourceType, amount] in storedResources" :key="resourceType"
-                                        :resource-type="resourceType" :current="amount"
-                                        :max="getResourceCapacity(resourceType)" :width="280" />
+                                <div class="space-y-3">
+                                    <div v-for="resource in storedResources" :key="resource.resourceType"
+                                         class="bg-gray-800/50 rounded-lg p-3">
+                                        <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-white">
+                        {{ getResourceName(resource.resourceType) }}
+                    </span>
+                                            <span class="text-xs text-gray-400">
+                        {{ resource.current }}/{{ resource.capacity }}
+                    </span>
+                                        </div>
+                                        <ResourceBar
+                                            :resource-type="resource.resourceType"
+                                            :current="resource.current"
+                                            :max="resource.capacity"
+                                            :width="280"
+                                            :show-text="false"
+                                        />
+                                        <div class="mt-1 text-xs text-gray-500">
+                                            {{ Math.round(resource.percentage) }}% utilisé
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Empty Storage Message -->
+                            <div v-else class="space-y-3">
+                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
+                                    Stockage des ressources
+                                </h3>
+                                <div class="bg-gray-800/50 rounded-lg p-4 text-center">
+                                    <p class="text-gray-400 text-sm">Aucun stockage configuré pour ce bâtiment</p>
                                 </div>
                             </div>
 
@@ -88,7 +116,7 @@ import { computed, watch } from 'vue'
 import { useGameStore } from '@/game/stores/gameStore'
 import WorkerAssignmentUI from './WorkerAssignmentUI.vue'
 import { WorkerType } from '@/game/types/WorkerConfigTypes'
-import type { ResourceType } from '@/game/types'
+import { ResourceType } from '@/game/types/ResourceSystemTypes'
 import BuildingIcon from './BuildingIcon.vue'
 import ActionButton from './ActionButton.vue'
 import ResourceBar from './ResourceBar.vue'
@@ -139,8 +167,18 @@ const buildingDescription = computed(() => {
 const storedResources = computed(() => {
     if (!buildingData.value) return []
 
-    const resources = buildingData.value.getAllBuildingResources()
-    return Array.from(resources.entries()).filter(([_, amount]) => amount > 0)
+    const capacities = buildingData.value.getAllBuildingResourceCapacities()
+    const stored = buildingData.value.getAllBuildingResources()
+
+    return Array.from(capacities.entries())
+        .filter(([_, capacity]) => capacity > 0)
+        .map(([resourceType, capacity]) => ({
+            resourceType,
+            current: stored.get(resourceType) || 0,
+            capacity,
+            percentage: capacity > 0 ? ((stored.get(resourceType) || 0) / capacity) * 100 : 0
+        }))
+        .sort((a, b) => a.resourceType.localeCompare(b.resourceType))
 })
 
 const hasResources = computed(() => storedResources.value.length > 0)
@@ -151,15 +189,27 @@ const availableActions = computed((): BuildingAction[] => {
     const actions: BuildingAction[] = []
     const type = buildingData.value.getType()
 
-    // Collect resources action for storage buildings
-    if (type === 'sawmill' && hasResources.value) {
-        const hasAnyResources = storedResources.value.some(([_, amount]) => amount > 0)
+    // Collect resources action for any building with stored resources
+    const hasAnyStoredResources = storedResources.value.some(resource => resource.current > 0)
+
+    if (hasAnyStoredResources) {
         actions.push({
             key: 'collect',
             label: 'Collecter tout',
             icon: 'plus',
             variant: 'success',
-            disabled: !hasAnyResources
+            disabled: false
+        })
+    }
+
+    // Add building-specific actions
+    if (type === 'sawmill') {
+        actions.push({
+            key: 'process',
+            label: 'Traiter le bois',
+            icon: 'cog',
+            variant: 'primary',
+            disabled: storedResources.value.find(r => r.resourceType === ResourceType.WOOD)?.current === 0
         })
     }
 
@@ -190,22 +240,39 @@ const handleAction = (actionKey: string) => {
     }
 }
 
+// Methods
+const getResourceName = (resourceType: ResourceType): string => {
+    const names: Record<ResourceType, string> = {
+        [ResourceType.WOOD]: '🪵 Bois',
+        [ResourceType.PLANKS]: '🪵 Planches',
+        [ResourceType.STONE]: '🪨 Pierre',
+        [ResourceType.METAL_ORE]: '⛏️ Minerai de métal',
+        [ResourceType.COAL_ORE]: '⚫ Minerai de charbon',
+        [ResourceType.METAL]: '🔩 Métal',
+        [ResourceType.FOOD]: '🍞 Nourriture',
+        [ResourceType.TOOLS]: '🔨 Outils',
+        [ResourceType.ENERGY]: '⚡ Énergie',
+        [ResourceType.POPULATION]: '👥 Population'
+    }
+    return names[resourceType] || resourceType
+}
+
+
 const collectAllResources = () => {
     if (!buildingData.value) return
 
     const building = buildingData.value
     let totalCollected = 0
 
-    storedResources.value.forEach(([resourceType, amount]) => {
-        if (amount > 0) {
-            const removed = building.removeResourceFromBuilding(resourceType, amount)
+    storedResources.value.forEach(({ resourceType, current }) => {
+        if (current > 0) {
+            const removed = building.removeResourceFromBuilding(resourceType, current)
             gameStore.addResource(resourceType, removed)
             totalCollected += removed
         }
     })
 
     if (totalCollected > 0) {
-        // Emit event to update the main scene
         window.dispatchEvent(new CustomEvent('game:resourcesCollected', {
             detail: { building, totalCollected }
         }))
@@ -228,6 +295,24 @@ watch(isVisible, (visible) => {
         }
     }
 })
+watch(() => buildingData.value, (newBuilding) => {
+    if (newBuilding) {
+        // Écouter les changements de ressources spécifiques à ce bâtiment
+        const handleResourceChange = (event: CustomEvent) => {
+            if (event.detail.buildingId === newBuilding.getBuildingId()) {
+                // Force re-computation of stored resources
+                console.log('Building resource changed, updating display')
+            }
+        }
+
+        window.addEventListener('game:buildingResourceChanged', handleResourceChange)
+
+        // Cleanup
+        return () => {
+            window.removeEventListener('game:buildingResourceChanged', handleResourceChange)
+        }
+    }
+}, { immediate: true })
 </script>
 
 <style scoped>
