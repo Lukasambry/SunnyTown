@@ -348,8 +348,15 @@ export class Worker extends Sprite {
     }
 
     private moveToTarget(target: ResourceEntity | TiledBuilding, newState: WorkerState): void {
-        const targetPos = target instanceof ResourceEntity ? { x: target.x, y: target.y } : target.getPosition();
+        if (target instanceof ResourceEntity) {
+            if (!target.setHarvester(this)) {
+                this.blacklistTarget(target);
+                this.setWorkerState(WorkerState.IDLE);
+                return;
+            }
+        }
 
+        const targetPos = target instanceof ResourceEntity ? { x: target.x, y: target.y } : target.getPosition();
         this.moveToPosition(targetPos, newState);
     }
 
@@ -492,15 +499,21 @@ export class Worker extends Sprite {
             if (!success || targetDestroyed) {
                 if (!success) {
                     this.blacklistTarget(this.currentTarget);
-                } else {
-                    this.currentTarget = null;
                 }
 
+                if (this.currentTarget instanceof ResourceEntity) {
+                    this.currentTarget.releaseHarvester();
+                }
+
+                this.currentTarget = null;
                 this.setWorkerState(WorkerState.IDLE);
                 return;
             }
 
             if (this.isInventoryFull()) {
+                if (this.currentTarget instanceof ResourceEntity) {
+                    this.currentTarget.releaseHarvester();
+                }
                 this.setWorkerState(WorkerState.IDLE);
                 return;
             }
@@ -513,6 +526,9 @@ export class Worker extends Sprite {
         } catch (error) {
             if (this.currentTarget) {
                 this.blacklistTarget(this.currentTarget);
+                if (this.currentTarget instanceof ResourceEntity) {
+                    this.currentTarget.releaseHarvester();
+                }
             }
             this.currentTarget = null;
             this.setWorkerState(WorkerState.IDLE);
@@ -785,6 +801,11 @@ export class Worker extends Sprite {
 
     public forceIdle(): void {
         this.clearTimers();
+
+        if (this.currentTarget instanceof ResourceEntity) {
+            this.currentTarget.releaseHarvester();
+        }
+
         this.currentTarget = null;
         this.isMoving = false;
         (this.body as Phaser.Physics.Arcade.Body)?.stop();
@@ -844,6 +865,10 @@ export class Worker extends Sprite {
 
     public destroy(): void {
         this.clearTimers();
+
+        if (this.currentTarget instanceof ResourceEntity) {
+            this.currentTarget.releaseHarvester();
+        }
 
         if (this.mainLoopTimer) {
             this.mainLoopTimer.destroy();
