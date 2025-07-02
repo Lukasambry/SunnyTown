@@ -14,6 +14,7 @@ import { AnimationUtils } from '@/game/utils/AnimationUtils';
 import Sprite = Phaser.GameObjects.Sprite;
 import { WorkerRegistry } from '@/game/services';
 import { GlobalWorkerStorage } from '@/game/stores/GlobalWorkerStorage';
+import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
 
 export class Worker extends Sprite {
     private assignedBuildingId: string | null = null;
@@ -352,7 +353,7 @@ export class Worker extends Sprite {
         this.moveToPosition(targetPos, newState);
     }
 
-    private moveToPosition(targetPos: WorkerPosition, newState: WorkerState): void {
+    private async moveToPosition(targetPos: WorkerPosition, newState: WorkerState): Promise<void> {
         this.setWorkerState(newState);
         this.isMoving = true;
 
@@ -362,14 +363,54 @@ export class Worker extends Sprite {
             console.warn('Worker: Could not play walking animation:', error);
         }
 
-        this.scene.physics.moveTo(this.getThisGameObject(), targetPos.x, targetPos.y, this.config.moveSpeed);
+        const pathfinder = WorkerPathfinder.getInstance();
+        const path = await pathfinder.findPath(this.x, this.y, targetPos.x, targetPos.y);
 
-        const distance = Phaser.Math.Distance.Between(this.x, this.y, targetPos.x, targetPos.y);
-        const travelTime = (distance / this.config.moveSpeed) * 1000;
+        if (!path || path.length === 0) {
+            const nearestWalkable = pathfinder.findNearestWalkableTile(targetPos.x, targetPos.y);
+            if (nearestWalkable) {
+                const fallbackPath = await pathfinder.findPath(this.x, this.y, nearestWalkable.x, nearestWalkable.y);
+                if (fallbackPath && fallbackPath.length > 0) {
+                    this.followPath(fallbackPath);
+                    return;
+                }
+            }
 
-        this.scene.time.delayedCall(Math.max(travelTime, 1000), () => {
+            console.warn('Worker: No path found to target');
+            this.setWorkerState(WorkerState.IDLE);
+            this.isMoving = false;
+            return;
+        }
+
+        this.followPath(path);
+    }
+
+    private followPath(path: { x: number; y: number }[]): void {
+        if (path.length === 0) {
             this.onPathCompleted();
-        });
+            return;
+        }
+
+        let currentWaypointIndex = 0;
+        const moveToNextWaypoint = () => {
+            if (currentWaypointIndex >= path.length) {
+                this.onPathCompleted();
+                return;
+            }
+
+            const waypoint = path[currentWaypointIndex];
+            this.scene.physics.moveTo(this.getThisGameObject(), waypoint.x, waypoint.y, this.config.moveSpeed);
+
+            const distance = Phaser.Math.Distance.Between(this.x, this.y, waypoint.x, waypoint.y);
+            const travelTime = (distance / this.config.moveSpeed) * 1000;
+
+            this.scene.time.delayedCall(Math.max(travelTime, 100), () => {
+                currentWaypointIndex++;
+                moveToNextWaypoint();
+            });
+        };
+
+        moveToNextWaypoint();
     }
 
     private onPathCompleted(): void {
