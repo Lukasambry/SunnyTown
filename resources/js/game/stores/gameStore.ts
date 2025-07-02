@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed, readonly, type Ref, watch, nextTick } from 'vue';
+import { ref, computed, readonly, type Ref, nextTick } from 'vue';
 import { ResourceType, type ResourceStack } from '@/game/types/ResourceSystemTypes';
 import { ResourceManager } from '@/game/services/ResourceManager';
 import { BuildingRegistry } from '@/game/services/BuildingRegistry';
@@ -60,11 +60,11 @@ export const useGameStore = defineStore('game', () => {
     };
 
     const updatePlayerHealth = (health: { current: number, max: number }) => {
-        playerHealth.value.current = health;
+        playerHealth.value = {...health};
     };
 
-    const updatePlayerExperience = (experience: { current: number, max: number }) => {
-        playerExperience.value.current = experience;
+    const updatePlayerExperience = (experience: { current: number, nextLevel: number }) => {
+        playerExperience.value = {...experience};
     };
 
     const resourcesMap = ref<Map<ResourceType, number>>(new Map());
@@ -141,12 +141,13 @@ export const useGameStore = defineStore('game', () => {
     const isGameReady = computed(() => state.value.isGameLoaded);
 
     const resourceList = computed((): ResourceStack[] => {
-        resourceUpdateTrigger.value;
+        void resourceUpdateTrigger.value;
 
         if (!resourceManager) return [];
 
         try {
-            return resourceManager.getGlobalInventory().getNonZeroResources();
+            const resources = resourceManager.getGlobalInventory().getNonZeroResources();
+            return [...resources];
         } catch (error) {
             console.error('Error getting resource list:', error);
             return [];
@@ -154,7 +155,7 @@ export const useGameStore = defineStore('game', () => {
     });
 
     const totalResources = computed(() => {
-        resourceUpdateTrigger.value;
+        void resourceUpdateTrigger.value;
 
         if (!resourceManager) return 0;
 
@@ -170,7 +171,7 @@ export const useGameStore = defineStore('game', () => {
     const workerCount = computed(() => state.value.workers.length);
 
     const canAffordBuilding = computed(() => (buildingType: string, cost?: Record<string, number>) => {
-        resourceUpdateTrigger.value;
+        void resourceUpdateTrigger.value;
 
         if (!initializeManagers() || !resourceManager || !buildingRegistry) {
             return false;
@@ -195,7 +196,7 @@ export const useGameStore = defineStore('game', () => {
     });
 
     const getResourceAmount = computed(() => (type: ResourceType): number => {
-        resourceUpdateTrigger.value;
+        void resourceUpdateTrigger.value;
 
         if (!resourceManager) return 0;
 
