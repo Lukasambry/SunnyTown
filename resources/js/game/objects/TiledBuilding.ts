@@ -329,19 +329,60 @@ export class TiledBuilding {
     private getStorageConfig(): Record<ResourceType, number> {
         const configs: Record<string, Record<ResourceType, number>> = {
             sawmill: {
-                [ResourceType.WOOD]: 200,
-                [ResourceType.PLANKS]: 100
+                [ResourceType.WOOD]: 500,
+                [ResourceType.PLANKS]: 300,
+                [ResourceType.TOOLS]: 50
             },
             house: {
-                [ResourceType.FOOD]: 50
+                [ResourceType.FOOD]: 200,
+                [ResourceType.POPULATION]: 10
             },
             mine: {
-                [ResourceType.STONE]: 150,
-                [ResourceType.METAL]: 50
+                [ResourceType.STONE]: 400,
+                [ResourceType.METAL_ORE]: 200,
+                [ResourceType.COAL_ORE]: 150,
+                [ResourceType.METAL]: 100
+            },
+            farm: {
+                [ResourceType.FOOD]: 300,
+                [ResourceType.WOOD]: 100
             }
         };
 
         return configs[this.buildingType] || {};
+    }
+
+    public getAllBuildingResourceCapacities(): ReadonlyMap<ResourceType, number> {
+        return new Map(this.resourceStorage.capacity);
+    }
+
+    private notifyResourceChange(type: ResourceType, oldAmount: number, newAmount: number): void {
+        window.dispatchEvent(new CustomEvent('game:buildingResourceChanged', {
+            detail: {
+                building: this,
+                buildingId: this.buildingId,
+                resourceType: type,
+                oldAmount,
+                newAmount,
+                capacity: this.getBuildingResourceCapacity(type)
+            }
+        }));
+    }
+
+    public getBuildingResourceInfo(type: ResourceType): { current: number, capacity: number, percentage: number } {
+        const current = this.getBuildingResource(type);
+        const capacity = this.getBuildingResourceCapacity(type);
+        const percentage = capacity > 0 ? (current / capacity) * 100 : 0;
+
+        return { current, capacity, percentage };
+    }
+
+    public getStorageUtilization(): { total: number, used: number, percentage: number } {
+        const total = Array.from(this.resourceStorage.capacity.values()).reduce((sum, cap) => sum + cap, 0);
+        const used = Array.from(this.resourceStorage.stored.values()).reduce((sum, amount) => sum + amount, 0);
+        const percentage = total > 0 ? (used / total) * 100 : 0;
+
+        return { total, used, percentage };
     }
 
     private createLayers(x: number, y: number): void {
@@ -713,7 +754,9 @@ export class TiledBuilding {
         const canAdd = Math.min(amount, capacity - currentStored);
 
         if (canAdd > 0) {
-            this.resourceStorage.stored.set(type, currentStored + canAdd);
+            const newAmount = currentStored + canAdd;
+            this.resourceStorage.stored.set(type, newAmount);
+            this.notifyResourceChange(type, currentStored, newAmount);
         }
 
         return canAdd;
@@ -724,7 +767,9 @@ export class TiledBuilding {
         const canRemove = Math.min(amount, currentStored);
 
         if (canRemove > 0) {
-            this.resourceStorage.stored.set(type, currentStored - canRemove);
+            const newAmount = currentStored - canRemove;
+            this.resourceStorage.stored.set(type, newAmount);
+            this.notifyResourceChange(type, currentStored, newAmount);
         }
 
         return canRemove;
