@@ -146,8 +146,7 @@ export const useGameStore = defineStore('game', () => {
         if (!resourceManager) return [];
 
         try {
-            const resources = resourceManager.getGlobalInventory().getNonZeroResources();
-            return [...resources];
+            return resourceManager.getGlobalInventory().getNonZeroResources();
         } catch (error) {
             console.error('Error getting resource list:', error);
             return [];
@@ -215,6 +214,35 @@ export const useGameStore = defineStore('game', () => {
             return null;
         }
         return resourceManager;
+    };
+
+    const getPlayerInventorySpace = (resourceType: ResourceType): number => {
+        if (!initializeManagers() || !resourceManager) {
+            return 0;
+        }
+
+        try {
+            const inventory = resourceManager.getGlobalInventory();
+            const currentAmount = inventory.getResource(resourceType);
+            const maxStack = resourceManager.getStackSize(resourceType);
+            return maxStack - currentAmount;
+        } catch (error) {
+            console.error('Error getting player inventory space:', error);
+            return 0;
+        }
+    };
+
+    const getStackSize = (resourceType: ResourceType): number => {
+        if (!initializeManagers() || !resourceManager) {
+            return 0;
+        }
+
+        try {
+            return resourceManager.getStackSize(resourceType);
+        } catch (error) {
+            console.error('Error getting stack size:', error);
+            return 0;
+        }
     };
 
     const getBuildingRegistry = () => {
