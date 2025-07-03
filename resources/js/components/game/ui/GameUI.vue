@@ -18,11 +18,12 @@
         <!-- Building FAB Button -->
         <BuildingFabButton />
 
-        <!-- Building Info Modal -->
-        <BuildingInfoModal />
+    <!-- Building Info Modal -->
+    <BuildingInfoModal />
+	<BuildingSelectionOverlay />
 
-        <!-- Notification System -->
-        <NotificationSystem />
+    <!-- Notification System -->
+    <NotificationSystem />
 
         <Level
             :avatar="gameStore.playerAvatar"
@@ -45,16 +46,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { useGameStore } from '@game/stores/gameStore.ts';
-import { ResourceType } from '@game/types/ResourceSystemTypes.ts';
-import ResourceDisplay from './ResourceDisplay.vue';
-import BuildingUI from './BuildingUI.vue';
-import BuildingFabButton from './BuildingFabButton.vue';
-import BuildingInfoModal from './BuildingInfoModal.vue';
-import NotificationSystem from './NotificationSystem.vue';
-import DebugPanel from './DebugPanel.vue';
-import ActionButton from './ActionButton.vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useGameStore } from '@game/stores/gameStore.ts'
+import { ResourceType } from '@game/types/ResourceSystemTypes.ts'
+import ResourceDisplay from './ResourceDisplay.vue'
+import BuildingUI from './BuildingUI.vue'
+import BuildingFabButton from './BuildingFabButton.vue'
+import BuildingInfoModal from './BuildingInfoModal.vue'
+import BuildingSelectionOverlay from './BuildingSelectionOverlay.vue'
+import NotificationSystem from './NotificationSystem.vue'
+import DebugPanel from './DebugPanel.vue'
+import ActionButton from './ActionButton.vue'
 import Level from '@/components/game/ui/Level.vue';
 
 const gameStore = useGameStore();

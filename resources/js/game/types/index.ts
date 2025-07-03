@@ -14,6 +14,7 @@ export {
 } from './BuildingTypes';
 
 export * from './WorkerTypes';
+export * from './CameraTypes';
 
 export interface Position {
     readonly x: number;
