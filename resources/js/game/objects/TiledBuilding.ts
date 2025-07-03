@@ -712,10 +712,13 @@ export class TiledBuilding {
     }
 
     private startStationaryTimer(): void {
+        return;
+        /*
         this.playerStationaryTimer = this.scene.time.delayedCall(
             this.config.playerStationaryTime,
             () => this.openBuildingInterface()
         );
+        */
     }
 
     private openBuildingInterface(): void {
