@@ -19,6 +19,8 @@ import { ResourceType } from '@/game/types/ResourceSystemTypes';
 import { AnimationUtils } from '@/game/utils/AnimationUtils';
 import { WorkerRegistry } from '@/game/services';
 import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
+import { CameraService } from '../services/CameraService';
+import { BuildingSelectionService } from '../services/BuildingSelectionService';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -54,6 +56,8 @@ export class MainScene extends Scene {
     public resourceManager!: ResourceManager;
 
     private workerManager!: WorkerManager;
+    private cameraService!: CameraService;
+    private buildingSelectionService!: BuildingSelectionService;
 
     private isCameraFollowingPlayer: boolean = true;
     private isDraggingCamera: boolean = false;
@@ -208,6 +212,11 @@ export class MainScene extends Scene {
         // Initialize resource manager and inventory
         this.resourceManager = ResourceManager.getInstance();
         this.resourceManager.prepareSceneLoading(this);
+      
+        this.cameraService = new CameraService(this);
+        this.cameraService.setPlayer(this.player);
+
+        this.buildingSelectionService = new BuildingSelectionService(this, this.cameraService);
 
         this.buildingRegistry = BuildingRegistry.getInstance();
 
@@ -475,15 +484,15 @@ export class MainScene extends Scene {
         });
         // On camera mode toggle, update cursor state
         window.addEventListener('game:toggleCameraMode', () => {
-            this.isCameraFollowingPlayer = !this.isCameraFollowingPlayer;
-            if (this.isCameraFollowingPlayer) {
-                this.cameras.main.startFollow(this.player);
-                setCustomCursor('default');
+            const currentMode = this.cameraService.getCurrentMode();
+            
+            if (currentMode === CameraMode.FOLLOW_PLAYER) {
+                this.cameraService.enableFreeCamera();
             } else {
-                this.cameras.main.stopFollow();
-                setCustomCursor('default');
+                this.cameraService.returnToPlayer();
             }
-            this.input.setDefaultCursor('none'); // Always hide system cursor
+            
+            this.input.setDefaultCursor('none');
         });
         // Listen for path completion
         this.events.on('player_path_complete', () => {
@@ -698,7 +707,9 @@ export class MainScene extends Scene {
         };
 
         window.addEventListener('game:selectBuilding', handleBuildingSelection);
-        window.addEventListener('game:deselectBuilding', handleBuildingDeselection);
+        window.addEventListener('game:deselectBuilding', () => {
+            this.buildingSelectionService.deselectBuilding();
+        });
         window.addEventListener('game:createWorkerCommand', handleWorkerCreation);
     }
 

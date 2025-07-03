@@ -20,7 +20,8 @@
 
     <!-- Building Info Modal -->
     <BuildingInfoModal />
-
+	<BuildingSelectionOverlay />
+    
     <!-- Notification System -->
     <NotificationSystem />
 
@@ -44,6 +45,7 @@ import ResourceDisplay from './ResourceDisplay.vue'
 import BuildingUI from './BuildingUI.vue'
 import BuildingFabButton from './BuildingFabButton.vue'
 import BuildingInfoModal from './BuildingInfoModal.vue'
+import BuildingSelectionOverlay from './BuildingSelectionOverlay.vue'
 import NotificationSystem from './NotificationSystem.vue'
 import DebugPanel from './DebugPanel.vue'
 import ActionButton from './ActionButton.vue'
