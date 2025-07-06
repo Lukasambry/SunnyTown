@@ -17,6 +17,7 @@ import type { WorkerPosition } from '../types';
 import { WorkerType } from '../types';
 import { ResourceType } from '../types/ResourceSystemTypes';
 import { AnimationUtils } from '../utils/AnimationUtils';
+import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -58,6 +59,7 @@ export class MainScene extends Scene {
     private lastPointerPosition: { x: number; y: number } | null = null;
     private targetIndicator: Phaser.GameObjects.Image | null = null;
     private targetIndicatorTween: Phaser.Tweens.Tween | null = null;
+    private playerLevelSystem!: PlayerLevelSystem;
 
     constructor() {
         super({ key: 'MainScene' });
@@ -202,6 +204,8 @@ export class MainScene extends Scene {
         // Create player before layers that should appear above
         this.player = new Player(this, 830, 700);
         this.player.setScale(1);
+
+        this.playerLevelSystem = PlayerLevelSystem.getInstance();
 
         // Initialize resource manager and inventory
         this.resourceManager = ResourceManager.getInstance();
@@ -505,6 +509,10 @@ export class MainScene extends Scene {
         } catch (error) {
             console.error('Error setting up Vue resource sync:', error);
         }
+    }
+
+    public getPlayer(): Player {
+        return this.player;
     }
 
     private onConfirmBuildingPlacement(event: CustomEvent): void {
