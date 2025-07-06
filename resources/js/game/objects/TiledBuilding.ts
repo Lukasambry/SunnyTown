@@ -1,5 +1,5 @@
-import { Scene } from 'phaser';
-type Scene = typeof Scene;
+import Phaser from 'phaser';
+type Scene = typeof Phaser.Scene;
 
 import { BuildingInfoUI } from '../ui/BuildingInfoUI';
 import {
@@ -7,16 +7,11 @@ import {
     type ResourceStorage,
     createResourceStorage,
     type BuildingPosition,
-    type BuildingDimensions
+    type BuildingDimensions, WorkerType
 } from '../types';
-import { ResourceManager } from '../services/ResourceManager';
-
-interface CollisionObject {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
+import { ResourceManager } from '@/game/services/ResourceManager';
+import { BuildingRegistry } from '@/game/services';
+import { GlobalWorkerStorage } from '@/game/stores/GlobalWorkerStorage';
 
 interface BuildingZone {
     readonly zone: Phaser.GameObjects.Zone;
@@ -51,18 +46,29 @@ export class TiledBuilding {
     private readonly interactiveZones: BuildingZone[] = [];
     private readonly layerStates = new Map<string, LayerState>();
 
+    private maxWorkers: number = 0;
+    private buildingId: string = '';
+
     private playerInside: boolean = false;
+    private lastInteractionTime: number = 0;
     private playerStationaryTimer: Phaser.Time.TimerEvent | null = null;
     private lastPlayerPosition: BuildingPosition | null = null;
-    private lastInteractionTime: number = 0;
 
     private readonly resourceStorage: ResourceStorage;
 
     constructor(scene: Scene, x: number, y: number, templateKey: string) {
         this.scene = scene;
         this.position = { x, y };
-        // this.buildingType = templateKey.replace('-template', '');
+
+        if (templateKey.endsWith('-template')) {
+            this.buildingType = templateKey.replace('-template', '');
+        } else {
+            this.buildingType = templateKey;
+        }
+
         this.resourceManager = ResourceManager.getInstance();
+        this.maxWorkers = this.getMaxWorkersForBuilding();
+        this.buildingId = this.generateBuildingId();
 
         this.config = {
             playerStationaryTime: 500,
@@ -84,6 +90,23 @@ export class TiledBuilding {
         }
     }
 
+    private generateBuildingId(): string {
+        if (!this.buildingType || this.buildingType.trim() === '') {
+            console.error('Building type is empty or undefined!');
+            return `unknown_${Math.round(this.position.x)}_${Math.round(this.position.y)}_${Date.now()}`;
+        }
+
+        const x = this.position.x;
+        const y = this.position.y;
+
+        if (isNaN(x) || isNaN(y)) {
+            console.error('Position contains NaN values!', this.position);
+            return `${this.buildingType}_invalid_position_${Date.now()}`;
+        }
+
+        return `${this.buildingType.trim()}_${Math.round(x)}_${Math.round(y)}`;
+    }
+
     private initializeTileset(): Phaser.Tilemaps.Tileset {
         const tilesetName = this.map.tilesets[0]?.name;
         if (!tilesetName) {
@@ -98,30 +121,167 @@ export class TiledBuilding {
         return tileset;
     }
 
-    /*
-    private createInteractionZone(): void {
-        const bounds = this.getWorldBounds();
-        const padding = 16;
-
-        this.interactionZone = this.scene.add.zone(
-            bounds.centerX,
-            bounds.centerY,
-            bounds.width + padding * 2,
-            bounds.height + padding * 2
-        );
-
-        this.scene.physics.world.enable(this.interactionZone);
-
-        this.interactionZone.setInteractive({
-            useHandCursor: true
-        });
-
-        // Configurer les événements de la zone
-        this.interactionZone.on('pointerover', this.handlePointerOver, this);
-        this.interactionZone.on('pointerout', this.handlePointerOut, this);
-        this.interactionZone.on('pointerdown', this.handlePointerDown, this);
+    public getMaxWorkersForBuilding(): number {
+        const config = BuildingRegistry.getInstance().getBuildingConfig(this.buildingType);
+        return config?.maxWorkers || 0;
     }
-    */
+
+    public getMaxWorkers(): number {
+        return this.maxWorkers;
+    }
+
+    public canAssignWorker(): boolean {
+        return this.getAssignedWorkerCount() < this.maxWorkers;
+    }
+
+    public clearAllWorkers(): void {
+        const previousCount = this.getAssignedWorkerCount();
+        GlobalWorkerStorage.clearBuildingWorkers(this.buildingId);
+
+        console.log(`Cleared all workers from building. Previous count: ${previousCount}`);
+
+        window.dispatchEvent(new CustomEvent('game:buildingWorkersCleared', {
+            detail: {
+                buildingId: this.buildingId,
+                previousCount,
+                newCount: 0
+            }
+        }));
+    }
+
+    public getWorkerAssignmentInfo(): {
+        assigned: number;
+        max: number;
+        canAssign: boolean;
+        workerIds: string[];
+    } {
+        return {
+            assigned: this.getAssignedWorkerCount(),
+            max: this.maxWorkers,
+            canAssign: this.canAssignWorker(),
+            workerIds: this.getAssignedWorkerIds() as string[]
+        };
+    }
+
+    public assignWorker(workerId: string): boolean {
+        console.log(`\n=== TiledBuilding.assignWorker (GLOBAL) ===`);
+        console.log(`WorkerId: "${workerId}"`);
+        console.log(`Building type: "${this.buildingType}"`);
+        console.log(`Building ID: "${this.buildingId}"`);
+
+        if (!workerId || workerId.trim() === '') {
+            console.error('Invalid worker ID provided');
+            return false;
+        }
+
+        if (!this.canAssignWorker()) {
+            console.error('Cannot assign worker - building at capacity');
+            return false;
+        }
+
+        // Utiliser le stockage global
+        const success = GlobalWorkerStorage.assignWorkerToBuilding(workerId, this.buildingId, this.maxWorkers);
+
+        if (success) {
+            // Vérification immédiate après assignation
+            const newCount = this.getAssignedWorkerCount();
+            console.log(`Post-assignment verification: ${newCount} workers`);
+
+            // Déclencher l'événement avec les bonnes données
+            window.dispatchEvent(new CustomEvent('game:workerAssignedToBuilding', {
+                detail: {
+                    buildingId: this.buildingId,
+                    workerId,
+                    assignedCount: newCount,
+                    maxWorkers: this.maxWorkers
+                }
+            }));
+
+            console.log(`Worker assigned successfully. Event sent with count: ${newCount}`);
+        } else {
+            console.error('Global assignment failed');
+        }
+
+        console.log(`=== END assignWorker ===\n`);
+        return success;
+    }
+
+    public getAssignedWorkerCount(): number {
+        const count = GlobalWorkerStorage.getWorkerCount(this.buildingId);
+        console.log(`getAssignedWorkerCount: ${count} workers assigned`);
+        return count;
+    }
+
+    public debugWorkerAssignment(): void {
+        console.log('\n=== BUILDING WORKER DEBUG (GLOBAL) ===');
+        console.log('Building type:', this.buildingType);
+        console.log('Building ID:', this.buildingId);
+        console.log('Position:', this.position);
+        console.log('Global worker count:', GlobalWorkerStorage.getWorkerCount(this.buildingId));
+        console.log('Global worker IDs:', GlobalWorkerStorage.getWorkersForBuilding(this.buildingId));
+        console.log('Max workers:', this.maxWorkers);
+        console.log('Worker type for building:', this.getWorkerType());
+        console.log('Can assign worker:', this.canAssignWorker());
+
+        // Debug du stockage global
+        GlobalWorkerStorage.debugStorage();
+
+        console.log('=== END BUILDING DEBUG ===\n');
+    }
+
+    public unassignWorker(workerId: string): boolean {
+        console.log(`\n=== TiledBuilding.unassignWorker (GLOBAL) ===`);
+        console.log(`WorkerId: "${workerId}"`);
+        console.log(`Building ID: "${this.buildingId}"`);
+
+        if (!workerId || workerId.trim() === '') {
+            console.error('Invalid worker ID provided');
+            return false;
+        }
+
+        const success = GlobalWorkerStorage.unassignWorkerFromBuilding(workerId);
+
+        if (success) {
+            const newCount = this.getAssignedWorkerCount();
+
+            window.dispatchEvent(new CustomEvent('game:workerUnassignedFromBuilding', {
+                detail: {
+                    buildingId: this.buildingId,
+                    workerId,
+                    assignedCount: newCount,
+                    maxWorkers: this.maxWorkers
+                }
+            }));
+            console.log(`Worker unassigned successfully. New count: ${newCount}`);
+        } else {
+            console.warn('Global unassignment failed');
+        }
+
+        console.log(`=== END unassignWorker ===\n`);
+        return success;
+    }
+
+
+    public getAssignedWorkerIds(): readonly string[] {
+        const workers = GlobalWorkerStorage.getWorkersForBuilding(this.buildingId);
+        console.log(`getAssignedWorkerIds: [${workers.join(', ')}]`);
+        return workers;
+    }
+
+    public isWorkerAssigned(workerId: string): boolean {
+        const assignedBuildingId = GlobalWorkerStorage.getBuildingForWorker(workerId);
+        return assignedBuildingId === this.buildingId;
+    }
+
+
+    public getBuildingId(): string {
+        return this.buildingId;
+    }
+
+    public getWorkerType(): WorkerType {
+        const config = BuildingRegistry.getInstance().getBuildingConfig(this.buildingType);
+        return config?.workerType || WorkerType.NEUTRAL;
+    }
 
     private handlePointerOver(): void {
         if (this.scene.uiScene) {
@@ -169,19 +329,60 @@ export class TiledBuilding {
     private getStorageConfig(): Record<ResourceType, number> {
         const configs: Record<string, Record<ResourceType, number>> = {
             sawmill: {
-                [ResourceType.WOOD]: 200,
-                [ResourceType.PLANKS]: 100
+                [ResourceType.WOOD]: 500,
+                [ResourceType.PLANKS]: 300,
+                [ResourceType.TOOLS]: 50
             },
             house: {
-                [ResourceType.FOOD]: 50
+                [ResourceType.FOOD]: 200,
+                [ResourceType.POPULATION]: 10
             },
             mine: {
-                [ResourceType.STONE]: 150,
-                [ResourceType.METAL]: 50
+                [ResourceType.STONE]: 400,
+                [ResourceType.METAL_ORE]: 200,
+                [ResourceType.COAL_ORE]: 150,
+                [ResourceType.METAL]: 100
+            },
+            farm: {
+                [ResourceType.FOOD]: 300,
+                [ResourceType.WOOD]: 100
             }
         };
 
         return configs[this.buildingType] || {};
+    }
+
+    public getAllBuildingResourceCapacities(): ReadonlyMap<ResourceType, number> {
+        return new Map(this.resourceStorage.capacity);
+    }
+
+    private notifyResourceChange(type: ResourceType, oldAmount: number, newAmount: number): void {
+        window.dispatchEvent(new CustomEvent('game:buildingResourceChanged', {
+            detail: {
+                building: this,
+                buildingId: this.buildingId,
+                resourceType: type,
+                oldAmount,
+                newAmount,
+                capacity: this.getBuildingResourceCapacity(type)
+            }
+        }));
+    }
+
+    public getBuildingResourceInfo(type: ResourceType): { current: number, capacity: number, percentage: number } {
+        const current = this.getBuildingResource(type);
+        const capacity = this.getBuildingResourceCapacity(type);
+        const percentage = capacity > 0 ? (current / capacity) * 100 : 0;
+
+        return { current, capacity, percentage };
+    }
+
+    public getStorageUtilization(): { total: number, used: number, percentage: number } {
+        const total = Array.from(this.resourceStorage.capacity.values()).reduce((sum, cap) => sum + cap, 0);
+        const used = Array.from(this.resourceStorage.stored.values()).reduce((sum, amount) => sum + amount, 0);
+        const percentage = total > 0 ? (used / total) * 100 : 0;
+
+        return { total, used, percentage };
     }
 
     private createLayers(x: number, y: number): void {
@@ -511,10 +712,13 @@ export class TiledBuilding {
     }
 
     private startStationaryTimer(): void {
+        return;
+        /*
         this.playerStationaryTimer = this.scene.time.delayedCall(
             this.config.playerStationaryTime,
             () => this.openBuildingInterface()
         );
+        */
     }
 
     private openBuildingInterface(): void {
@@ -553,7 +757,9 @@ export class TiledBuilding {
         const canAdd = Math.min(amount, capacity - currentStored);
 
         if (canAdd > 0) {
-            this.resourceStorage.stored.set(type, currentStored + canAdd);
+            const newAmount = currentStored + canAdd;
+            this.resourceStorage.stored.set(type, newAmount);
+            this.notifyResourceChange(type, currentStored, newAmount);
         }
 
         return canAdd;
@@ -564,7 +770,9 @@ export class TiledBuilding {
         const canRemove = Math.min(amount, currentStored);
 
         if (canRemove > 0) {
-            this.resourceStorage.stored.set(type, currentStored - canRemove);
+            const newAmount = currentStored - canRemove;
+            this.resourceStorage.stored.set(type, newAmount);
+            this.notifyResourceChange(type, currentStored, newAmount);
         }
 
         return canRemove;

@@ -22,7 +22,7 @@
                             <button
                                 class="w-8 h-8 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
                                 @click="handleClose">
-                                <ActionIcon icon="close" :size="16" />
+                                x
                             </button>
                         </div>
 
@@ -53,14 +53,63 @@
                             <!-- Resources -->
                             <div v-if="hasResources" class="space-y-3">
                                 <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Ressources stockées
+                                    Stockage des ressources
                                 </h3>
-                                <div class="space-y-2">
-                                    <ResourceBar v-for="[resourceType, amount] in storedResources" :key="resourceType"
-                                        :resource-type="resourceType" :current="amount"
-                                        :max="getResourceCapacity(resourceType)" :width="280" />
+                                <div class="space-y-3">
+                                    <div v-for="resource in storedResources" :key="resource.resourceType"
+                                         class="bg-gray-800/50 rounded-lg p-3">
+                                        <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-white">
+                        {{ getResourceName(resource.resourceType) }}
+                    </span>
+                                            <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-400">
+                            {{ resource.current }}/{{ resource.capacity }}
+                        </span>
+                                                <!-- Bouton de récolte individuel -->
+                                                <button
+                                                    v-if="resource.current > 0"
+                                                    @click="collectSingleResource(resource.resourceType, resource.current)"
+                                                    class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                                                    :disabled="!canCollectResource(resource.resourceType, resource.current)"
+                                                    :class="{ 'opacity-50 cursor-not-allowed': !canCollectResource(resource.resourceType, resource.current) }"
+                                                >
+                                                    Récolter
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <ResourceBar
+                                            :resource-type="resource.resourceType"
+                                            :current="resource.current"
+                                            :max="resource.capacity"
+                                            :width="280"
+                                            :show-text="false"
+                                        />
+                                        <div class="flex justify-between items-center mt-1">
+                                            <div class="text-xs text-gray-500">
+                                                {{ Math.round(resource.percentage) }}% utilisé
+                                            </div>
+                                            <!-- Message de capacité si applicable -->
+                                            <div v-if="resource.current > 0 && !canCollectResource(resource.resourceType, resource.current)"
+                                                 class="text-xs text-yellow-400">
+                                                Inventaire plein
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- Empty Storage Message -->
+                            <div v-else class="space-y-3">
+                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
+                                    Stockage des ressources
+                                </h3>
+                                <div class="bg-gray-800/50 rounded-lg p-4 text-center">
+                                    <p class="text-gray-400 text-sm">Aucun stockage configuré pour ce bâtiment</p>
+                                </div>
+                            </div>
+
+                            <WorkerAssignmentUI :building="buildingData" />
 
                             <!-- Actions -->
                             <div v-if="availableActions.length > 0" class="space-y-3">
@@ -82,12 +131,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useGameStore } from '@game/stores/gameStore.ts'
-import type { TiledBuilding } from '@game/objects/TiledBuilding.ts'
-import type { ResourceType } from '@game/types'
+import { computed, ref, watch } from 'vue';
+import { useGameStore } from '@/game/stores/gameStore'
+import WorkerAssignmentUI from './WorkerAssignmentUI.vue'
+import { WorkerType } from '@/game/types/WorkerConfigTypes'
+import { ResourceType } from '@/game/types/ResourceSystemTypes'
 import BuildingIcon from './BuildingIcon.vue'
-import ActionIcon from './ActionIcon.vue'
 import ActionButton from './ActionButton.vue'
 import ResourceBar from './ResourceBar.vue'
 
@@ -100,11 +149,9 @@ interface BuildingAction {
 }
 
 const gameStore = useGameStore()
-
-// Computed
 const isVisible = computed(() => gameStore.state?.showBuildingInfo || false)
-
 const buildingData = computed(() => gameStore.state?.currentBuildingInfo || null)
+const resourceUpdateTrigger = ref(0)
 
 const buildingDisplayName = computed(() => {
     const type = buildingData.value?.getType()
@@ -138,10 +185,22 @@ const buildingDescription = computed(() => {
 })
 
 const storedResources = computed(() => {
+    resourceUpdateTrigger.value // Force la re-évaluation
+
     if (!buildingData.value) return []
 
-    const resources = buildingData.value.getAllBuildingResources()
-    return Array.from(resources.entries()).filter(([_, amount]) => amount > 0)
+    const capacities = buildingData.value.getAllBuildingResourceCapacities()
+    const stored = buildingData.value.getAllBuildingResources()
+
+    return Array.from(capacities.entries())
+        .filter(([_, capacity]) => capacity > 0)
+        .map(([resourceType, capacity]) => ({
+            resourceType,
+            current: stored.get(resourceType) || 0,
+            capacity,
+            percentage: capacity > 0 ? ((stored.get(resourceType) || 0) / capacity) * 100 : 0
+        }))
+        .sort((a, b) => a.resourceType.localeCompare(b.resourceType))
 })
 
 const hasResources = computed(() => storedResources.value.length > 0)
@@ -152,15 +211,27 @@ const availableActions = computed((): BuildingAction[] => {
     const actions: BuildingAction[] = []
     const type = buildingData.value.getType()
 
-    // Collect resources action for storage buildings
-    if (type === 'sawmill' && hasResources.value) {
-        const hasAnyResources = storedResources.value.some(([_, amount]) => amount > 0)
+    // Collect resources action for any building with stored resources
+    const hasAnyStoredResources = storedResources.value.some(resource => resource.current > 0)
+
+    if (hasAnyStoredResources) {
         actions.push({
             key: 'collect',
             label: 'Collecter tout',
             icon: 'plus',
             variant: 'success',
-            disabled: !hasAnyResources
+            disabled: false
+        })
+    }
+
+    // Add building-specific actions
+    if (type === 'sawmill') {
+        actions.push({
+            key: 'process',
+            label: 'Traiter le bois',
+            icon: 'cog',
+            variant: 'primary',
+            disabled: storedResources.value.find(r => r.resourceType === ResourceType.WOOD)?.current === 0
         })
     }
 
@@ -177,6 +248,145 @@ const handleClose = () => {
     gameStore.hideBuildingInfo()
 }
 
+
+const getPlayerInventorySpace = (resourceType: ResourceType): number => {
+    const resourceManager = gameStore.getResourceManager()
+    if (!resourceManager) return 0
+
+    try {
+        const inventory = resourceManager.getGlobalInventory()
+        const currentAmount = inventory.getResource(resourceType)
+        const maxStack = resourceManager.getStackSize(resourceType)
+        return maxStack - currentAmount
+    } catch (error) {
+        console.error('Error getting player inventory space:', error)
+        return 0
+    }
+}
+
+const collectSingleResource = (resourceType: ResourceType, amount: number) => {
+    if (!buildingData.value) return
+
+    const building = buildingData.value
+    const availableSpace = getPlayerInventorySpace(resourceType)
+
+    if (availableSpace <= 0) {
+        window.dispatchEvent(new CustomEvent('game:notification', {
+            detail: {
+                type: 'warning',
+                title: 'Inventaire plein',
+                message: `Impossible de récolter ${getResourceName(resourceType)}, votre inventaire est plein.`
+            }
+        }))
+        return
+    }
+
+    const amountToCollect = Math.min(amount, availableSpace)
+
+    try {
+        // Retirer du bâtiment
+        const removed = building.removeResourceFromBuilding(resourceType, amountToCollect)
+
+        if (removed > 0) {
+            // Ajouter à l'inventaire du joueur
+            const added = gameStore.addResource(resourceType, removed)
+
+            // Si on n'a pas pu tout ajouter, remettre la différence dans le bâtiment
+            if (added < removed) {
+                building.addResourceToBuilding(resourceType, removed - added)
+            }
+
+            // Forcer la mise à jour de l'affichage
+            resourceUpdateTrigger.value++
+
+            // Notification de succès
+            window.dispatchEvent(new CustomEvent('game:notification', {
+                detail: {
+                    type: 'success',
+                    title: 'Ressource récoltée',
+                    message: `+${added} ${getResourceName(resourceType)}`
+                }
+            }))
+
+            // Émettre un événement pour mettre à jour d'autres parties du jeu
+            window.dispatchEvent(new CustomEvent('game:resourceCollected', {
+                detail: {
+                    building,
+                    resourceType,
+                    amount: added,
+                    source: 'individual_collect'
+                }
+            }))
+        }
+    } catch (error) {
+        console.error('Error collecting resource:', error)
+        window.dispatchEvent(new CustomEvent('game:notification', {
+            detail: {
+                type: 'error',
+                title: 'Erreur',
+                message: 'Impossible de récolter cette ressource.'
+            }
+        }))
+    }
+}
+
+const collectAllResources = () => {
+    if (!buildingData.value) return
+
+    const building = buildingData.value
+    let totalCollected = 0
+    let totalSkipped = 0
+
+    storedResources.value.forEach(({ resourceType, current }) => {
+        if (current > 0) {
+            const availableSpace = getPlayerInventorySpace(resourceType)
+            const amountToCollect = Math.min(current, availableSpace)
+
+            if (amountToCollect > 0) {
+                const removed = building.removeResourceFromBuilding(resourceType, amountToCollect)
+                if (removed > 0) {
+                    const added = gameStore.addResource(resourceType, removed)
+                    totalCollected += added
+
+                    // Si on n'a pas pu tout ajouter, remettre la différence
+                    if (added < removed) {
+                        building.addResourceToBuilding(resourceType, removed - added)
+                    }
+                }
+            } else {
+                totalSkipped += current
+            }
+        }
+    })
+
+    if (totalCollected > 0) {
+        window.dispatchEvent(new CustomEvent('game:notification', {
+            detail: {
+                type: 'success',
+                title: 'Ressources récoltées',
+                message: `${totalCollected} ressource${totalCollected > 1 ? 's' : ''} récoltée${totalCollected > 1 ? 's' : ''}${totalSkipped > 0 ? ` (${totalSkipped} ignorée${totalSkipped > 1 ? 's' : ''} - inventaire plein)` : ''}`
+            }
+        }))
+
+        window.dispatchEvent(new CustomEvent('game:resourcesCollected', {
+            detail: { building, totalCollected, totalSkipped }
+        }))
+    } else if (totalSkipped > 0) {
+        window.dispatchEvent(new CustomEvent('game:notification', {
+            detail: {
+                type: 'warning',
+                title: 'Inventaire plein',
+                message: 'Impossible de récolter les ressources, votre inventaire est plein.'
+            }
+        }))
+    }
+}
+
+const canCollectResource = (resourceType: ResourceType, amount: number): boolean => {
+    const availableSpace = getPlayerInventorySpace(resourceType)
+    return availableSpace > 0
+}
+
 const handleOverlayClick = () => {
     handleClose()
 }
@@ -191,27 +401,23 @@ const handleAction = (actionKey: string) => {
     }
 }
 
-const collectAllResources = () => {
-    if (!buildingData.value) return
-
-    const building = buildingData.value
-    let totalCollected = 0
-
-    storedResources.value.forEach(([resourceType, amount]) => {
-        if (amount > 0) {
-            const removed = building.removeResourceFromBuilding(resourceType, amount)
-            gameStore.addResource(resourceType, removed)
-            totalCollected += removed
-        }
-    })
-
-    if (totalCollected > 0) {
-        // Emit event to update the main scene
-        window.dispatchEvent(new CustomEvent('game:resourcesCollected', {
-            detail: { building, totalCollected }
-        }))
+// Methods
+const getResourceName = (resourceType: ResourceType): string => {
+    const names: Record<ResourceType, string> = {
+        [ResourceType.WOOD]: '🪵 Bois',
+        [ResourceType.PLANKS]: '🪵 Planches',
+        [ResourceType.STONE]: '🪨 Pierre',
+        [ResourceType.METAL_ORE]: '⛏️ Minerai de métal',
+        [ResourceType.COAL_ORE]: '⚫ Minerai de charbon',
+        [ResourceType.METAL]: '🔩 Métal',
+        [ResourceType.FOOD]: '🍞 Nourriture',
+        [ResourceType.TOOLS]: '🔨 Outils',
+        [ResourceType.ENERGY]: '⚡ Énergie',
+        [ResourceType.POPULATION]: '👥 Population'
     }
+    return names[resourceType] || resourceType
 }
+
 
 // Keyboard handling
 watch(isVisible, (visible) => {
@@ -229,6 +435,41 @@ watch(isVisible, (visible) => {
         }
     }
 })
+watch(() => buildingData.value, (newBuilding) => {
+    if (newBuilding) {
+        const handleResourceChange = (event: CustomEvent) => {
+            if (event.detail.buildingId === newBuilding.getBuildingId()) {
+                console.log('Building resource changed, forcing update')
+                resourceUpdateTrigger.value++
+            }
+        }
+
+        const handleResourceCollected = (event: CustomEvent) => {
+            if (event.detail.building === newBuilding) {
+                console.log('Resource collected, forcing update')
+                resourceUpdateTrigger.value++
+            }
+        }
+
+        window.addEventListener('game:buildingResourceChanged', handleResourceChange)
+        window.addEventListener('game:resourceCollected', handleResourceCollected)
+
+        return () => {
+            window.removeEventListener('game:buildingResourceChanged', handleResourceChange)
+            window.removeEventListener('game:resourceCollected', handleResourceCollected)
+        }
+    }
+}, { immediate: true })
+
+watch(() => {
+    if (!buildingData.value) return null
+    return buildingData.value.getAllBuildingResources()
+}, (newResources) => {
+    if (newResources) {
+        console.log('Building resources changed directly:', newResources)
+        resourceUpdateTrigger.value++
+    }
+}, { deep: true })
 </script>
 
 <style scoped>

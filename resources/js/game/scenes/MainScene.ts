@@ -1,22 +1,26 @@
 import EasyStar from 'easystarjs';
 import { Scene } from 'phaser';
-import { Building } from '../objects/Building';
-import { BuildingPreview } from '../objects/BuildingPreview';
-import { Player } from '../objects/Player';
-import type { TiledBuilding } from '../objects/TiledBuilding';
-import { TiledBuildingPreview } from '../objects/TiledBuildingPreview';
-import { Worker } from '../objects/workers';
-import { AnimationRegistry } from '../services/AnimationRegistry';
-import { BuildingManager } from '../services/BuildingManager';
-import { BuildingRegistry } from '../services/BuildingRegistry';
-import { DialogService } from '../services/DialogService';
-import { ResourceEntityManager } from '../services/ResourceEntityManager';
-import { ResourceManager } from '../services/ResourceManager';
-import { WorkerManager } from '../services/WorkerManager';
-import type { WorkerPosition } from '../types';
-import { WorkerType } from '../types';
-import { ResourceType } from '../types/ResourceSystemTypes';
-import { AnimationUtils } from '../utils/AnimationUtils';
+import { Building } from '@/game/objects/Building';
+import { BuildingPreview } from '@/game/objects/BuildingPreview';
+import { Player } from '@/game/objects/Player';
+import type { TiledBuilding } from '@/game/objects/TiledBuilding';
+import { TiledBuildingPreview } from '@/game/objects/TiledBuildingPreview';
+import { Worker } from '@/game/objects/workers';
+import { AnimationRegistry } from '@/game/services/AnimationRegistry';
+import { BuildingManager } from '@/game/services/BuildingManager';
+import { BuildingRegistry } from '@/game/services/BuildingRegistry';
+import { DialogService } from '@/game/services/DialogService';
+import { ResourceEntityManager } from '@/game/services/ResourceEntityManager';
+import { ResourceManager } from '@/game/services/ResourceManager';
+import { WorkerManager } from '@/game/services/WorkerManager';
+import type { ResourceStack, WorkerPosition } from '@/game/types';
+import { WorkerType } from '@/game/types';
+import { ResourceType } from '@/game/types/ResourceSystemTypes';
+import { AnimationUtils } from '@/game/utils/AnimationUtils';
+import { WorkerRegistry } from '@/game/services';
+import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
+import { CameraService } from '../services/CameraService';
+import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 
 interface LayerConfig {
@@ -53,6 +57,8 @@ export class MainScene extends Scene {
     public resourceManager!: ResourceManager;
 
     private workerManager!: WorkerManager;
+    private cameraService!: CameraService;
+    private buildingSelectionService!: BuildingSelectionService;
 
     private isCameraFollowingPlayer: boolean = true;
     private isDraggingCamera: boolean = false;
@@ -211,6 +217,11 @@ export class MainScene extends Scene {
         this.resourceManager = ResourceManager.getInstance();
         this.resourceManager.prepareSceneLoading(this);
 
+        this.cameraService = new CameraService(this);
+        this.cameraService.setPlayer(this.player);
+
+        this.buildingSelectionService = new BuildingSelectionService(this, this.cameraService);
+
         this.buildingRegistry = BuildingRegistry.getInstance();
 
         // Launch resource UI
@@ -330,7 +341,10 @@ export class MainScene extends Scene {
         }*/
 
         this.buildingManager = new BuildingManager(this);
+
         this.workerManager = new WorkerManager(this);
+        this.setupWorkerAssignmentListeners();
+
         this.buildingManager.loadState();
         this.rebuildPathfindingGrid();
 
@@ -474,15 +488,15 @@ export class MainScene extends Scene {
         });
         // On camera mode toggle, update cursor state
         window.addEventListener('game:toggleCameraMode', () => {
-            this.isCameraFollowingPlayer = !this.isCameraFollowingPlayer;
-            if (this.isCameraFollowingPlayer) {
-                this.cameras.main.startFollow(this.player);
-                setCustomCursor('default');
+            const currentMode = this.cameraService.getCurrentMode();
+
+            if (currentMode === CameraMode.FOLLOW_PLAYER) {
+                this.cameraService.enableFreeCamera();
             } else {
-                this.cameras.main.stopFollow();
-                setCustomCursor('default');
+                this.cameraService.returnToPlayer();
             }
-            this.input.setDefaultCursor('none'); // Always hide system cursor
+
+            this.input.setDefaultCursor('none');
         });
         // Listen for path completion
         this.events.on('player_path_complete', () => {
@@ -701,8 +715,504 @@ export class MainScene extends Scene {
         };
 
         window.addEventListener('game:selectBuilding', handleBuildingSelection);
-        window.addEventListener('game:deselectBuilding', handleBuildingDeselection);
+        window.addEventListener('game:deselectBuilding', () => {
+            this.buildingSelectionService.deselectBuilding();
+        });
         window.addEventListener('game:createWorkerCommand', handleWorkerCreation);
+    }
+
+    private setupWorkerAssignmentListeners(): void {
+        window.addEventListener('game:assignWorkerToBuilding', this.handleAssignWorker.bind(this))
+        window.addEventListener('game:unassignWorkerFromBuilding', this.handleUnassignWorker.bind(this))
+        window.addEventListener('game:requestAvailableWorkers', this.handleAvailableWorkersRequest.bind(this))
+    }
+
+    private testBuildingSetFunctionality(building: TiledBuilding): void {
+        console.log('\n=== TESTING SET FUNCTIONALITY ===');
+
+        // Test direct du Set
+        const testSet = new Set<string>();
+        console.log('New Set size:', testSet.size);
+        testSet.add('test1');
+        console.log('After adding test1:', testSet.size);
+        testSet.add('test2');
+        console.log('After adding test2:', testSet.size);
+        console.log('Set contents:', Array.from(testSet));
+
+        // Test sur le bâtiment
+        console.log('\nTesting building Set...');
+        const buildingSet = (building as any).assignedWorkers;
+        console.log('Building Set type:', typeof buildingSet);
+        console.log('Building Set constructor:', buildingSet?.constructor?.name);
+        console.log('Has add method:', typeof buildingSet?.add === 'function');
+
+        console.log('=== END SET TEST ===\n');
+    }
+
+    private handleAssignWorker(event: CustomEvent): void {
+        console.log('=== ASSIGN WORKER EVENT ===');
+        const { building } = event.detail;
+
+        if (!this.workerManager) {
+            console.error('WorkerManager not available');
+            return;
+        }
+
+        const buildingId = building.getBuildingId();
+        if (!buildingId || buildingId.trim() === '') {
+            console.error('Building ID is invalid:', buildingId);
+            return;
+        }
+
+        console.log(`Building ID: "${buildingId}"`);
+        console.log(`Building type: "${building.getType()}"`);
+
+        building.debugWorkerAssignment();
+
+        if (!building.canAssignWorker()) {
+            console.warn('Building cannot accept more workers');
+            return;
+        }
+
+        const availableWorkers = this.workerManager.getAllWorkers().filter(worker => {
+            const isNeutral = worker.getConfig().id === WorkerType.NEUTRAL;
+            const isUnassigned = !worker.isAssignedToBuilding();
+            return isNeutral && isUnassigned;
+        });
+
+        console.log(`Available workers for assignment: ${availableWorkers.length}`);
+
+        if (availableWorkers.length === 0) {
+            console.warn('No available workers to assign');
+            return;
+        }
+
+        const worker = availableWorkers[0];
+        const workerId = worker.getWorkerId();
+
+        console.log(`Attempting assignment with worker ID: "${workerId}"`);
+
+        try {
+            // Étape 1: Vérifier les prérequis
+            if (worker.getConfig().id !== WorkerType.NEUTRAL) {
+                throw new Error(`Worker is not neutral type, current type: ${worker.getConfig().id}`);
+            }
+
+            if (worker.isAssignedToBuilding()) {
+                throw new Error(`Worker is already assigned to building: ${worker.getAssignedBuildingId()}`);
+            }
+
+            // Étape 2: Obtenir la configuration du type de worker cible
+            const targetWorkerType = building.getWorkerType();
+            const newConfig = WorkerRegistry.getInstance().getWorkerConfig(targetWorkerType);
+
+            if (!newConfig) {
+                throw new Error(`No config found for worker type ${targetWorkerType}`);
+            }
+
+            // Étape 3: Essayer l'assignation normale, puis fallback si échec
+            console.log('=== STEP 3: Trying normal assignment ===');
+            let assignmentResult = building.assignWorker(workerId);
+
+            if (!assignmentResult) {
+                console.log('=== Normal assignment failed, trying fallback ===');
+
+                // Vérifier si la méthode fallback existe
+                if (typeof building.assignWorkerFallback === 'function') {
+                    assignmentResult = building.assignWorkerFallback(workerId);
+                    console.log(`Fallback assignment result: ${assignmentResult}`);
+                } else {
+                    throw new Error('Both normal and fallback assignment methods failed');
+                }
+            }
+
+            if (!assignmentResult) {
+                throw new Error('All assignment methods failed');
+            }
+
+            // Étape 4: Convertir le worker
+            console.log('=== STEP 4: Converting worker ===');
+
+            try {
+                worker.convertToSpecializedWorker(newConfig, buildingId);
+                console.log(`Worker converted to ${targetWorkerType}`);
+
+                if (worker.getConfig().id !== targetWorkerType) {
+                    throw new Error(`Worker conversion failed: expected ${targetWorkerType}, got ${worker.getConfig().id}`);
+                }
+
+                if (worker.getAssignedBuildingId() !== buildingId) {
+                    throw new Error(`Worker building assignment failed: expected ${buildingId}, got ${worker.getAssignedBuildingId()}`);
+                }
+
+            } catch (conversionError) {
+                console.error('Worker conversion failed:', conversionError);
+                // Rollback l'assignation
+                building.unassignWorker(workerId);
+                throw conversionError;
+            }
+
+            // Étape 5: Configurer le point de dépôt
+            console.log('=== STEP 5: Setting deposit point ===');
+            const pos = building.getPosition();
+            const dim = building.getDimensions();
+
+            const depositPoint = {
+                x: pos.x + (dim.tilesWidth * 16) / 2,
+                y: pos.y + dim.tilesHeight * 16 + 16
+            };
+
+            worker.setDepositPoint(depositPoint);
+
+            // Étape 6: Diagnostiquer l'état final
+            console.log('=== STEP 6: Final state verification ===');
+            building.debugWorkerAssignment();
+
+            // Obtenir le count selon la méthode utilisée
+            let finalAssignedCount;
+            if (typeof building.getAssignedWorkerCountFallback === 'function') {
+                // Vérifier si on utilise le fallback
+                const normalCount = building.getAssignedWorkerCount();
+                const fallbackCount = building.getAssignedWorkerCountFallback();
+
+                console.log(`Normal count: ${normalCount}, Fallback count: ${fallbackCount}`);
+
+                // Utiliser le count le plus élevé (celui qui fonctionne)
+                finalAssignedCount = Math.max(normalCount, fallbackCount);
+            } else {
+                finalAssignedCount = building.getAssignedWorkerCount();
+            }
+
+            console.log(`Final assigned count: ${finalAssignedCount}`);
+
+            // Étape 7: Mettre à jour et notifier
+            this.handleAvailableWorkersRequest();
+
+            window.dispatchEvent(new CustomEvent('game:workerAssignedToBuilding', {
+                detail: {
+                    buildingId,
+                    buildingType: building.getType(),
+                    workerId,
+                    workerType: targetWorkerType,
+                    assignedCount: finalAssignedCount,
+                    maxWorkers: building.getMaxWorkers(),
+                    success: true,
+                    timestamp: Date.now()
+                }
+            }));
+
+            window.dispatchEvent(new CustomEvent('game:notification', {
+                detail: {
+                    type: 'success',
+                    title: 'Ouvrier assigné',
+                    message: `Un ${newConfig.name} a été assigné à la ${building.getBuildingName()}`,
+                    duration: 3000
+                }
+            }));
+
+            console.log('Worker assignment completed successfully');
+
+        } catch (error) {
+            console.error('Error during worker assignment:', error);
+
+            // Rollback complet
+            try {
+                building.unassignWorker(workerId);
+                if (worker.convertToNeutral) {
+                    worker.convertToNeutral();
+                }
+                if (worker.setDepositPoint) {
+                    worker.setDepositPoint(null);
+                }
+                console.log('Rollback completed successfully');
+            } catch (rollbackError) {
+                console.error('Rollback failed:', rollbackError);
+            }
+
+            // Notifier l'échec
+            window.dispatchEvent(new CustomEvent('game:workerAssignmentFailed', {
+                detail: {
+                    buildingId,
+                    buildingType: building.getType(),
+                    workerId,
+                    reason: 'assignment_error',
+                    error: error.message,
+                    assignedCount: building.getAssignedWorkerCount(),
+                    maxWorkers: building.getMaxWorkers(),
+                    timestamp: Date.now()
+                }
+            }));
+
+            window.dispatchEvent(new CustomEvent('game:notification', {
+                detail: {
+                    type: 'error',
+                    title: 'Échec d\'assignation',
+                    message: `Impossible d'assigner l'ouvrier: ${error.message}`,
+                    duration: 5000
+                }
+            }));
+
+            this.handleAvailableWorkersRequest();
+        }
+
+        console.log('=== END ASSIGN WORKER EVENT ===');
+    }
+
+
+    private handleAvailableWorkersRequest(): void {
+        console.log('=== HANDLING AVAILABLE WORKERS REQUEST ===');
+
+        if (!this.workerManager) {
+            console.warn('WorkerManager not available');
+            window.dispatchEvent(new CustomEvent('game:availableWorkersUpdate', {
+                detail: { count: 0 }
+            }));
+            return;
+        }
+
+        try {
+            const allWorkers = this.workerManager.getAllWorkers();
+            console.log(`Total workers in manager: ${allWorkers.length}`);
+
+            // Diagnostiquer tous les workers
+            allWorkers.forEach((worker, index) => {
+                const config = worker.getConfig();
+                const isAssigned = worker.isAssignedToBuilding?.() || false;
+                const assignedBuildingId = worker.getAssignedBuildingId?.() || 'none';
+
+                console.log(`Worker ${index}: id=${worker.getWorkerId()}, type=${config.id}, assigned=${isAssigned}, buildingId=${assignedBuildingId}`);
+            });
+
+            // Filtrer les workers neutres non assignés
+            const neutralWorkers = allWorkers.filter(worker => {
+                const isNeutral = worker.getConfig().id === WorkerType.NEUTRAL;
+                const isAssigned = worker.isAssignedToBuilding?.() || false;
+
+                console.log(`Worker ${worker.getWorkerId()}: neutral=${isNeutral}, assigned=${isAssigned}`);
+                return isNeutral && !isAssigned;
+            });
+
+            console.log(`Available neutral workers: ${neutralWorkers.length}`);
+
+            // Notifier l'UI
+            window.dispatchEvent(new CustomEvent('game:availableWorkersUpdate', {
+                detail: {
+                    count: neutralWorkers.length,
+                    totalWorkers: allWorkers.length,
+                    neutralWorkers: neutralWorkers.length
+                }
+            }));
+
+        } catch (error) {
+            console.error('Error in handleAvailableWorkersRequest:', error);
+            window.dispatchEvent(new CustomEvent('game:availableWorkersUpdate', {
+                detail: { count: 0, error: error.message }
+            }));
+        }
+
+        console.log('=== END AVAILABLE WORKERS REQUEST ===');
+    }
+
+    private handleUnassignWorker(event: CustomEvent): void {
+        console.log('=== UNASSIGN WORKER EVENT ===');
+        const { building } = event.detail;
+
+        if (!this.workerManager) {
+            console.error('WorkerManager not available');
+            return;
+        }
+
+        const buildingId = building.getBuildingId();
+        if (!buildingId || buildingId.trim() === '') {
+            console.error('Building ID is invalid for unassignment');
+            return;
+        }
+
+        console.log(`Building ID: "${buildingId}"`);
+        console.log(`Building type: "${building.getType()}"`);
+
+        // Diagnostiquer l'état avant désassignation
+        console.log('=== BUILDING STATE BEFORE UNASSIGNMENT ===');
+        building.debugWorkerAssignment();
+
+        // Récupérer les workers assignés à ce bâtiment
+        const assignedWorkerIds = building.getAssignedWorkerIds();
+        console.log(`Workers assigned to building: [${assignedWorkerIds.join(', ')}]`);
+
+        if (assignedWorkerIds.length === 0) {
+            console.warn('No workers assigned to this building');
+            return;
+        }
+
+        // Prendre le premier worker assigné pour le désassigner
+        const workerIdToUnassign = assignedWorkerIds[0];
+        const worker = this.workerManager.getWorker(workerIdToUnassign);
+
+        if (!worker) {
+            console.error(`Worker ${workerIdToUnassign} not found in manager`);
+            // Nettoyer l'assignation du bâtiment même si le worker n'existe plus
+            building.unassignWorker(workerIdToUnassign);
+            return;
+        }
+
+        console.log(`Attempting to unassign worker ${workerIdToUnassign}`);
+
+        try {
+            // Étape 1: Désassigner du bâtiment
+            const unassignResult = building.unassignWorker(workerIdToUnassign);
+            console.log(`Unassignment from building result: ${unassignResult}`);
+
+            if (unassignResult) {
+                // Étape 2: Convertir le worker en neutre
+                worker.convertToNeutral();
+                worker.setDepositPoint(null);
+
+                console.log(`Worker ${workerIdToUnassign} converted back to NEUTRAL`);
+
+                // Étape 3: Diagnostiquer l'état final
+                console.log('=== BUILDING STATE AFTER UNASSIGNMENT ===');
+                building.debugWorkerAssignment();
+
+                // Étape 4: Mettre à jour les compteurs
+                this.handleAvailableWorkersRequest();
+
+                // Notifier le succès
+                window.dispatchEvent(new CustomEvent('game:workerUnassignedFromBuilding', {
+                    detail: {
+                        buildingId,
+                        workerId: workerIdToUnassign,
+                        assignedCount: building.getAssignedWorkerCount(),
+                        maxWorkers: building.getMaxWorkers(),
+                        success: true
+                    }
+                }));
+
+                console.log('Worker unassignment completed successfully');
+
+            } else {
+                console.error('Failed to unassign worker from building');
+            }
+
+        } catch (error) {
+            console.error('Error during worker unassignment:', error);
+
+            // Notifier l'échec
+            window.dispatchEvent(new CustomEvent('game:workerUnassignmentFailed', {
+                detail: {
+                    buildingId,
+                    workerId: workerIdToUnassign,
+                    reason: 'unassignment_error',
+                    error: error.message
+                }
+            }));
+        }
+
+        console.log('=== END UNASSIGN WORKER EVENT ===');
+    }
+
+
+    private unassignWorkerFromBuilding(workerId: string): boolean {
+        const worker = this.workerManager.getWorker(workerId);
+        if (!worker) {
+            console.warn(`Worker ${workerId} not found`);
+            return false;
+        }
+
+        const buildingId = worker.getAssignedBuildingId();
+        if (!buildingId) {
+            console.warn('Worker is not assigned to any building');
+            return false;
+        }
+
+        const building = this.findBuildingById(buildingId);
+        if (building && building.unassignWorker(workerId)) {
+            worker.convertToNeutral();
+            worker.setDepositPoint(null);
+
+            console.log(`Worker ${workerId} unassigned and converted to NEUTRAL`);
+            return true;
+        }
+
+        return false;
+    }
+
+    private findBuildingById(buildingId: string): TiledBuilding | null {
+        if (!this.buildingManager || !buildingId || buildingId.trim() === '') {
+            return null;
+        }
+
+        try {
+            const buildings = this.buildingManager.getBuildings();
+            console.log(`Searching for building ID "${buildingId}" among ${buildings.length} buildings`);
+
+            for (const building of buildings) {
+                const currentBuildingId = building.getBuildingId();
+                console.log(`Checking building: "${currentBuildingId}" vs "${buildingId}"`);
+
+                if (currentBuildingId === buildingId) {
+                    console.log('Building found!');
+                    return building;
+                }
+            }
+
+            console.log('Building not found');
+            return null;
+
+        } catch (error) {
+            console.error('Error finding building by ID:', error);
+            return null;
+        }
+    }
+
+
+    private assignWorkerToBuilding(worker: Worker, building: TiledBuilding): boolean {
+        const workerId = worker.getWorkerId();
+        console.log(`=== ASSIGNING WORKER ${workerId} ===`);
+
+        console.log(`Worker found: ${workerId}, type: ${worker.getConfig().id}`);
+
+        if (!building.canAssignWorker()) {
+            console.error('Building cannot accept more workers');
+            return false;
+        }
+
+        if (worker.getConfig().id !== WorkerType.NEUTRAL) {
+            console.error(`Worker is not neutral type, current type: ${worker.getConfig().id}`);
+            return false;
+        }
+
+        const targetWorkerType = building.getWorkerType();
+        const newConfig = WorkerRegistry.getInstance().getWorkerConfig(targetWorkerType);
+
+        if (!newConfig) {
+            console.error(`No config found for worker type ${targetWorkerType}`);
+            return false;
+        }
+
+        const buildingId = building.getBuildingId();
+        console.log(`Building ID: ${buildingId}`);
+        console.log(`Assigning worker ${workerId} to building...`);
+
+        // Assigner le worker au bâtiment AVANT la conversion
+        if (building.assignWorker(workerId)) {
+            console.log('Worker assigned to building successfully');
+
+            // Convertir le worker après l'assignment
+            worker.convertToSpecializedWorker(newConfig, buildingId);
+            const pos = building.getPosition();
+            worker.setDepositPoint({ x: pos.x, y: pos.y });
+
+            console.log(`Worker ${workerId} converted to ${targetWorkerType}`);
+
+            return true;
+        } else {
+            console.error('Building failed to assign worker');
+            return false;
+        }
+    }
+
+    private getBuildingId(building: TiledBuilding): string {
+        return building.getBuildingId();
     }
 
     private onBuildingSelectedFromVue(buildingType: string): void {
@@ -869,6 +1379,20 @@ export class MainScene extends Scene {
         if (this.workerManager) {
             console.log('WorkerManager is available');
 
+            for (let i = 0; i < 3; i++) {
+                const worker = this.workerManager.createWorker(WorkerType.NEUTRAL, this.player.x + 50, this.player.y + (i * 16));
+                if (worker) {
+                    console.log(`Created NEUTRAL worker ${i+1}:`, worker.getConfig().id);
+                } else {
+                    console.error(`Failed to create NEUTRAL worker ${i+1}`);
+                }
+            }
+
+            const allWorkers = this.workerManager.getAllWorkers();
+            const neutralWorkers = this.workerManager.getWorkersByType(WorkerType.NEUTRAL);
+            console.log(`Total workers created: ${allWorkers.length}`);
+            console.log(`Neutral workers: ${neutralWorkers.length}`);
+
             const testWorker = this.createWorker(WorkerType.LUMBERJACK, this.player.x + 50, this.player.y);
             if (testWorker) {
                 console.log('Test worker created successfully!');
@@ -978,6 +1502,8 @@ export class MainScene extends Scene {
             }
         });
 
+        const pathfinder = WorkerPathfinder.getInstance();
+        pathfinder.initializeGrid(fullGrid);
         this.easyStar.setGrid(fullGrid);
     }
 
