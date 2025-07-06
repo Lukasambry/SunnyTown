@@ -344,10 +344,6 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     private dropResourcesForPlayer(): void {
-        const gameStore = useGameStore();
-        const baseExperience = 2; // Expérience de base
-        let totalExperienceGain = 0;
-
         this.config.resources.forEach(resource => {
             if (Math.random() <= resource.chance) {
                 try {
@@ -359,10 +355,15 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
                     );
 
                     if (added > 0) {
-                        // ÉTAPE 2: Calculer l'expérience en fonction des ressources récoltées
-                        const resourceMultiplier = this.getResourceExperienceMultiplier(resource.type);
-                        const experienceForThisResource = baseExperience * resourceMultiplier * added;
-                        totalExperienceGain += experienceForThisResource;
+                        // ÉTAPE 2: Donner l'expérience au joueur via sa propre classe
+                        const player = (this.scene as any).player;
+                        if (player && typeof player.gainExperienceFromResource === 'function') {
+                            player.gainExperienceFromResource(
+                                resource.type as ResourceType,
+                                added,
+                                'resource_harvest'
+                            );
+                        }
 
                         window.dispatchEvent(new CustomEvent('game:resourceHarvested', {
                             detail: {
@@ -378,122 +379,6 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
                     console.error(`ResourceEntity: Error adding resource ${resource.type}:`, error);
                 }
             }
-        });
-
-        // Ajouter l'expérience au joueur si des ressources ont été récoltées
-        if (totalExperienceGain > 0) {
-            this.addExperienceToPlayer(totalExperienceGain);
-        }
-    }
-
-// Méthode pour déterminer le multiplicateur d'expérience selon le type de ressource
-    private getResourceExperienceMultiplier(resourceType: string): number {
-        switch (resourceType as ResourceType) {
-            case ResourceType.WOOD:
-                return 1.0;
-            case ResourceType.STONE:
-                return 1.5;
-            case ResourceType.FOOD:
-                return 0.8;
-            default:
-                return 1.0;
-        }
-    }
-
-// Méthode pour ajouter l'expérience au joueur et gérer sa progression
-    private addExperienceToPlayer(amount: number): void {
-        const gameStore = useGameStore();
-
-        // Récupérer les données actuelles du joueur
-        const currentExp = gameStore.getPlayerCurrentExperience;
-        const nextLevelExp = gameStore.getPlayerNextLevelExperience;
-        const currentLevel = gameStore.getPlayerLevel;
-
-        // Calculer la nouvelle expérience
-        let newExp = currentExp + amount;
-        let newLevel = currentLevel;
-        let newNextLevelExp = nextLevelExp;
-
-        // Vérifier si le joueur monte de niveau
-        if (newExp >= nextLevelExp) {
-            // Le joueur monte de niveau
-            newLevel++;
-            newExp -= nextLevelExp;
-            newNextLevelExp = this.calculateNextLevelExperience(newLevel);
-
-            // Afficher un message de félicitations
-            this.showLevelUpEffect();
-
-            // Soigner le joueur lors du gain de niveau
-            gameStore.updatePlayerHealth({
-                current: gameStore.getPlayerMaxHealth,
-                max: gameStore.getPlayerMaxHealth
-            });
-
-            // Bonus de pièces d'or pour le gain de niveau
-            const goldBonus = newLevel * 5;
-            gameStore.updatePlayerGold(gameStore.getPlayerGold + goldBonus);
-        }
-
-        // Mettre à jour le store
-        gameStore.updatePlayerLevel(newLevel);
-        gameStore.updatePlayerExperience({
-            current: newExp,
-            nextLevel: newNextLevelExp
-        });
-
-        // Émettre un événement pour les effets UI
-        window.dispatchEvent(new CustomEvent('player:experienceGained', {
-            detail: {
-                amount,
-                newExperience: newExp,
-                newLevel,
-                isLevelUp: newLevel > currentLevel
-            }
-        }));
-    }
-
-// Calcul de l'expérience requise pour le prochain niveau
-    private calculateNextLevelExperience(level: number): number {
-        // Formule simple: 100 * niveau
-        return Math.floor(100 * Math.pow(1.2, level - 1));
-    }
-
-// Affichage d'un effet lors de la montée de niveau
-    private showLevelUpEffect(): void {
-        // Créer un effet de texte flottant
-        const levelUpText = this.scene.add.text(
-            this.x,
-            this.y - 40,
-            "LEVEL UP!",
-            { fontSize: '24px', fontStyle: 'bold', color: '#FFD700', stroke: '#000000', strokeThickness: 4 }
-        ).setOrigin(0.5);
-
-        // Animation de l'effet
-        this.scene.tweens.add({
-            targets: levelUpText,
-            y: levelUpText.y - 60,
-            alpha: 0,
-            duration: 2000,
-            ease: 'Power1',
-            onComplete: () => levelUpText.destroy()
-        });
-
-        // Ajouter des particules d'or
-        const particles = this.scene.add.particles(0, 0, 'gold-particle', {
-            x: this.x,
-            y: this.y,
-            speed: { min: 50, max: 150 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.5, end: 0 },
-            lifespan: 1500,
-            quantity: 30,
-            blendMode: 'ADD'
-        });
-
-        // Auto-destruction des particules
-        this.scene.time.delayedCall(1500, () => {
-            particles.destroy();
         });
     }
 
