@@ -1,5 +1,5 @@
 { "compressionlevel":-1,
- "height":7,
+ "height":6,
  "infinite":false,
  "layers":[
         {
@@ -8,9 +8,8 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":5,
          "name":"Shadows",
          "opacity":1,
@@ -32,9 +31,8 @@
             0, 578, 578, 578, 578, 143, 143, 143, 536871119, 0,
             0, 578, 578, 587, 587, 143, 143, 143, 143, 536871118,
             0, 1573, 587, 0, 3221225616, 143, 143, 143, 143, 144,
-            3758096783, 536871247, 536871311, 0, 206, 2684354704, 207, 2684354704, 207, 208,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+            3758096783, 536871247, 536871311, 0, 206, 2684354704, 207, 2684354704, 207, 208],
+         "height":6,
          "id":1,
          "name":"Ground",
          "opacity":1,
@@ -56,9 +54,8 @@
             775, 0, 0, 0, 0, 836, 0, 0, 0, 0,
             775, 0, 0, 834, 0, 836, 0, 0, 0, 0,
             647, 0, 0, 836, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":2,
          "name":"Walls",
          "opacity":1,
@@ -85,9 +82,8 @@
             0, 2216, 2227, 2224, 2219, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":9,
          "name":"Interiors",
          "opacity":1,
@@ -109,9 +105,8 @@
             0, 0, 0, 0, 2162, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 2226, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":15,
          "name":"InteriorsDetails",
          "opacity":1,
@@ -127,9 +122,8 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 642, 646, 648, 0, 0, 0, 0,
             0, 0, 646, 648, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":11,
          "name":"Facade",
          "opacity":1,
@@ -156,9 +150,8 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 847, 0, 0, 0, 0, 0,
             0, 0, 847, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":14,
          "name":"Windows",
          "opacity":1,
@@ -180,9 +173,8 @@
             0, 0, 0, 0, 0, 2147484779, 1126, 1127, 0, 0,
             0, 0, 0, 0, 0, 2147484843, 2147484842, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 1190, 1191,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":12,
          "name":"Exteriors",
          "opacity":1,
@@ -204,9 +196,8 @@
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":8,
          "name":"Details",
          "opacity":1,
@@ -228,9 +219,8 @@
             784, 785, 785, 788, 661, 786, 0, 0, 0, 0,
             784, 785, 785, 851, 913, 850, 0, 0, 0, 0,
             848, 0, 913, 850, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":3,
          "name":"Roof",
          "opacity":1,
@@ -246,7 +236,7 @@
                  "value":true
                 }],
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":10,
          "x":0,
          "y":0
@@ -258,9 +248,8 @@
             0, 350, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+         "height":6,
          "id":10,
          "name":"Roof2",
          "opacity":1,
@@ -276,7 +265,7 @@
                  "value":true
                 }],
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":10,
          "x":0,
          "y":0
@@ -287,9 +276,8 @@
             0, 0, 0, 0, 0, 0, 0, 1422, 0, 0,
             0, 0, 0, 436, 437, 1002, 0, 0, 0, 0,
             0, 0, 0, 500, 501, 1066, 0, 0, 0, 0,
-            2231, 0, 0, 564, 565, 0, 0, 0, 2231, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         "height":7,
+            2231, 0, 0, 564, 565, 0, 0, 0, 2231, 0],
+         "height":6,
          "id":13,
          "name":"ExteriorsDetails",
          "opacity":1,
@@ -312,11 +300,145 @@
         }, 
         {
          "draworder":"topdown",
+         "id":18,
+         "name":"Collision",
+         "objects":[
+                {
+                 "height":64,
+                 "id":29,
+                 "name":"",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":160,
+                 "x":0,
+                 "y":32
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":19,
+         "name":"Corners",
+         "objects":[
+                {
+                 "height":0,
+                 "id":31,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"top-right"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":160,
+                 "y":32
+                }, 
+                {
+                 "height":0,
+                 "id":32,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"bottom-right"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":160,
+                 "y":96
+                }, 
+                {
+                 "height":0,
+                 "id":33,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"bottom-left"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":0,
+                 "y":96
+                }, 
+                {
+                 "height":0,
+                 "id":34,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"top-left"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":0,
+                 "y":32
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":20,
+         "name":"Points",
+         "objects":[
+                {
+                 "height":0,
+                 "id":35,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"center"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":48,
+                 "y":32
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":6,
          "name":"Zones",
          "objects":[
                 {
-                 "height":41.5780636363636,
+                 "height":41.5781,
                  "id":16,
                  "name":"",
                  "properties":[
@@ -334,11 +456,11 @@
                  "type":"entrance",
                  "visible":true,
                  "width":32.0489,
-                 "x":15.9528227272727,
-                 "y":32.02915
+                 "x":15.9528,
+                 "y":32.0292
                 }, 
                 {
-                 "height":25.3962454545455,
+                 "height":25.3962,
                  "id":19,
                  "name":"",
                  "properties":[
@@ -356,8 +478,8 @@
                  "type":"entrance",
                  "visible":true,
                  "width":32.0489,
-                 "x":48.0437318181818,
-                 "y":32.1200590909091
+                 "x":48.0437,
+                 "y":32.1201
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -365,17 +487,17 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":16,
- "nextobjectid":20,
+ "nextlayerid":21,
+ "nextobjectid":36,
  "orientation":"orthogonal",
  "renderorder":"right-down",
- "tiledversion":"1.11.1",
+ "tiledversion":"1.11.2",
  "tileheight":16,
  "tilesets":[
         {
          "columns":64,
          "firstgid":1,
-         "image":"..\/..\/tilesets\/tileset.png",
+         "image":"..\/..\/..\/..\/..\/..\/..\/..\/..\/Education\/Ingien\u00e9rie du web\/4IW\/Projet Annuel\/Assets\/Sunnyside_World_ASSET_PACK_V2.1\/Sunnyside_World_ASSET_PACK_V2.1\/Sunnyside_World_Assets\/Tileset\/spr_tileset_sunnysideworld_16px.png",
          "imageheight":1024,
          "imagewidth":1024,
          "margin":0,
@@ -5703,7 +5825,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":5.52173913043478,
+                             "height":5.52174,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -5711,7 +5833,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":10.4782608695652
+                             "y":10.4783
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -6318,7 +6440,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":5.34782608695652,
+                             "height":5.34783,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -6326,7 +6448,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":10.6521739130435
+                             "y":10.6522
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -6440,7 +6562,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":5.34782608695652,
+                             "height":5.34783,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -6448,7 +6570,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":10.6521739130435
+                             "y":10.6522
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -7697,7 +7819,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":12.9565217391304,
+                             "height":12.9565,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -7705,7 +7827,7 @@
                              "visible":true,
                              "width":16,
                              "x":0,
-                             "y":3.04347826086957
+                             "y":3.04348
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -20638,7 +20760,7 @@
                              "rotation":0,
                              "type":"",
                              "visible":true,
-                             "width":14.0434782608696,
+                             "width":14.0435,
                              "x":1,
                              "y":2
                             }],
@@ -20742,7 +20864,7 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":3.1304347826087,
+                             "height":3.13043,
                              "id":1,
                              "name":"",
                              "rotation":0,
@@ -20750,7 +20872,7 @@
                              "visible":true,
                              "width":14,
                              "x":0,
-                             "y":12.8695652173913
+                             "y":12.8696
                             }],
                      "opacity":1,
                      "type":"objectgroup",
@@ -21329,14 +21451,14 @@
                      "name":"",
                      "objects":[
                             {
-                             "height":4.95652173913044,
+                             "height":4.95652,
                              "id":1,
                              "name":"",
                              "rotation":0,
                              "type":"",
                              "visible":true,
-                             "width":13.8695652173913,
-                             "x":1.08695652173913,
+                             "width":13.8696,
+                             "x":1.08696,
                              "y":0
                             }],
                      "opacity":1,
@@ -30303,6 +30425,10 @@
                         }]
                 }],
          "tilewidth":16
+        }, 
+        {
+         "firstgid":4097,
+         "source":"..\/..\/..\/..\/..\/..\/..\/..\/..\/Education\/Ingien\u00e9rie du web\/4IW\/Projet Annuel\/Tiled\/House_tileset.tsx"
         }],
  "tilewidth":16,
  "type":"map",

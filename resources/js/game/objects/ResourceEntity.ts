@@ -1,11 +1,12 @@
 import { Scene } from 'phaser';
 type Scene = typeof Scene;
 
-import { AnimationType } from '../services/AnimationRegistry';
-import { AnimationUtils } from '../utils/AnimationUtils';
-import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '../types/ResourceEntityTypes';
-import { ResourceType } from '../types/ResourceSystemTypes';
-import { ResourceManager } from '../services/ResourceManager';
+import { AnimationType } from '@/game/types/AnimationTypes';
+import { AnimationUtils } from '@/game/utils/AnimationUtils';
+import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '@/game/types/ResourceEntityTypes';
+import { ResourceType } from '@/game/types/ResourceSystemTypes';
+import { ResourceManager } from '@/game/services/ResourceManager';
+import { useGameStore } from '@/game/stores/gameStore';
 
 interface ResourceEntityState {
     isDestroyed: boolean;
@@ -354,6 +355,16 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
                     );
 
                     if (added > 0) {
+                        // ÉTAPE 2: Donner l'expérience au joueur via sa propre classe
+                        const player = (this.scene as any).player;
+                        if (player && typeof player.gainExperienceFromResource === 'function') {
+                            player.gainExperienceFromResource(
+                                resource.type as ResourceType,
+                                added,
+                                'resource_harvest'
+                            );
+                        }
+
                         window.dispatchEvent(new CustomEvent('game:resourceHarvested', {
                             detail: {
                                 type: resource.type,

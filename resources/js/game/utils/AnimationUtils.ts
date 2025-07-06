@@ -4,7 +4,9 @@ import { AnimationRegistry, AnimationType, type AnimationFrameConfig } from '../
  * Utility class for common animation operations
  */
 export class AnimationUtils {
-  private static registry = AnimationRegistry.getInstance()
+  private static get registry() {
+    return AnimationRegistry.getInstance()
+  }
 
   /**
    * Initialize animations for a sprite-based entity
