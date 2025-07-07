@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts" setup>
-import MessageForm from '@/Components/form/MessageForm.vue';
+import MessageForm from '@/components/form/MessageForm.vue';
 
 defineProps<{
     thread: {
