@@ -34,8 +34,7 @@ class MessageController extends Controller
 
             $message = new Message();
             $message->thread_id = $thread->id;
-//            $message->user_id = auth()->id();
-            $message->user_id = 1;
+            $message->user_id = auth()->id();
             $message->content = $validated['content'];
             $message->save();
 

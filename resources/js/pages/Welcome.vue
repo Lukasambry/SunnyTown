@@ -7,7 +7,7 @@ defineProps({appEnv: String})
 
 <template>
     <Head title="Welcome">
-        <link rel="preconnect" href="https://rsms.me/" />
-        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+        <Link rel="preconnect" href="https://rsms.me/" />
+        <Link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
 </template>

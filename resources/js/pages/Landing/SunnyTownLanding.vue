@@ -13,7 +13,7 @@
             <a href="#community" class="text-yellow-200 hover:text-white transition-colors">
               COMMUNAUTÉ
             </a>
-            <a href="#forum" class="text-yellow-200 hover:text-white transition-colors">
+            <a href="/forum" class="text-yellow-200 hover:text-white transition-colors">
               FORUM
             </a>
           </div>

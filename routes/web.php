@@ -14,8 +14,7 @@ Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-//Route::middleware('auth')->group(function(){
-Route::prefix('forums')->name('forums.')->group(function(){
+Route::prefix('forum')->name('forums.')->group(function(){
     Route::get('/', [ForumCategoryController::class, 'index'])->name('index');
 
     Route::get('{category:id}', [ForumCategoryController::class, 'show'])
@@ -25,13 +24,12 @@ Route::prefix('forums')->name('forums.')->group(function(){
         ->name('threads.show');
 
     Route::get('/threads/{category:id}/create', [ThreadController::class, 'create'])
-        ->name('threads.create');
+        ->name('threads.create')->middleware('auth');
 
     Route::post('{category:id}/threads', [ThreadController::class, 'store'])
-        ->name('threads.store');
+        ->name('threads.store')->middleware('auth');
 });
-    Route::post('/messages',[MessageController::class,'store'])->name('messages.store');
-//});
+    Route::post('/messages',[MessageController::class,'store'])->name('messages.store')->middleware('auth');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');

@@ -14,10 +14,11 @@ class ThreadController extends Controller
 {
     public function show(ForumCategory $category, Thread $thread)
     {
-        $thread->load(['messages.user', 'messages.images', 'user', 'forumCategory']);
+        $thread->load(['messages.user', 'user', 'forumCategory']);
         return Inertia::render('threads/Show', [
-            'thread' => $thread
-        ]);
+        'category' => $category,
+        'thread' => $thread,
+    ]);
     }
 
     public function create(ForumCategory $category)
@@ -39,14 +40,12 @@ class ThreadController extends Controller
         $thread = $category->threads()->create([
             'title' => $data['title'],
             'content' => $data['content'],
-//            'user_id'             => auth()->id(),
-            'user_id' => 1,
+            'user_id'             => auth()->id(),
             'slug' => Str::slug($data['title']) . '-' . uniqid(),
         ]);
 
         $message = $thread->messages()->create([
-//            'user_id' => auth()->id(),
-            'user_id' => 1,
+            'user_id' => auth()->id(),
             'content' => $data['content'],
         ]);
 
@@ -60,8 +59,8 @@ class ThreadController extends Controller
         }
 
         return redirect()->route('forums.threads.show', [
-            'category' => $category->slug,
-            'thread' => $thread->slug,
+            'category' => $category->id,
+            'thread' => $thread->id,
         ]);
     }
 }

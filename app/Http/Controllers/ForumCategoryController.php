@@ -26,9 +26,9 @@ class ForumCategoryController extends Controller
     {
         $threads = $category
             ->threads()
+            ->with('user')
             ->latest()
-            ->paginate(20)
-            ->withQueryString();
+            ->get();
 
         return Inertia::render('forum/Show', [
             'category' => $category,
