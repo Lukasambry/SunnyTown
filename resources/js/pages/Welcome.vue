@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 
-defineProps({appEnv: String})
-
+defineProps({ appEnv: String });
 </script>
 
 <template>
