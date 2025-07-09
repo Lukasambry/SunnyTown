@@ -22,6 +22,7 @@ import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
 import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
+import { ZoneBlockerService } from '../services/ZoneBlockerService';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -50,15 +51,16 @@ export class MainScene extends Scene {
     private easyStar: EasyStar.js;
     private tileWidth: number = 16;
     private tileHeight: number = 16;
-    private baseGrid: number[][] = [];
     private buildingRegistry!: BuildingRegistry;
     private animationRegistry!: AnimationRegistry;
     private resourceEntityManager!: ResourceEntityManager;
     public resourceManager!: ResourceManager;
+    public baseGrid: number[][] = [];
 
     private workerManager!: WorkerManager;
     private cameraService!: CameraService;
     private buildingSelectionService!: BuildingSelectionService;
+    private zoneBlockerService!: ZoneBlockerService;
 
     private isCameraFollowingPlayer: boolean = true;
     private isDraggingCamera: boolean = false;
@@ -221,6 +223,7 @@ export class MainScene extends Scene {
         this.cameraService.setPlayer(this.player);
 
         this.buildingSelectionService = new BuildingSelectionService(this, this.cameraService);
+        this.zoneBlockerService = new ZoneBlockerService(this, this.cameraService);
 
         this.buildingRegistry = BuildingRegistry.getInstance();
 
@@ -256,6 +259,13 @@ export class MainScene extends Scene {
                 hasCollision,
                 isAbovePlayer,
             });
+        });
+
+        this.zoneBlockerService.initialize(this.map);
+
+        window.addEventListener('game:unlockZoneBlocker', (event: CustomEvent) => {
+            const { blockerName } = event.detail;
+            this.zoneBlockerService.unlockBlocker(blockerName);
         });
 
         this.player.setDepth(1);
@@ -527,6 +537,10 @@ export class MainScene extends Scene {
 
     public getPlayer(): Player {
         return this.player;
+    }
+
+    public getZoneBlockerService(): ZoneBlockerService {
+        return this.zoneBlockerService;
     }
 
     private onConfirmBuildingPlacement(event: CustomEvent): void {
@@ -1454,7 +1468,17 @@ export class MainScene extends Scene {
         return source.map((row) => [...row]);
     }
 
-    private rebuildPathfindingGrid() {
+    public getBaseGrid(): number[][] {
+        return this.baseGrid;
+    }
+
+    public setBaseGridCell(x: number, y: number, value: number): void {
+        if (y >= 0 && y < this.baseGrid.length && x >= 0 && x < this.baseGrid[0].length) {
+            this.baseGrid[y][x] = value;
+        }
+    }
+
+    public rebuildPathfindingGrid(): void {
         const fullGrid = this.copyGrid(this.baseGrid);
 
         this.buildingManager.getBuildings().forEach((building) => {
@@ -1475,7 +1499,7 @@ export class MainScene extends Scene {
                         const tile = layer.tilemapLayer.getTileAt(tx, ty);
                         if (!tile) continue;
 
-                        const hasCollidesProp = !!(tile.properties && tile.properties.collides);
+                        const hasCollidesProp = !!tile.properties?.collides;
                         const tileData = tile.tileset.getTileData(tile.index);
                         const hasCollisionShapes =
                             tileData && tileData.objectgroup && tileData.objectgroup.objects && tileData.objectgroup.objects.length > 0;
@@ -1505,6 +1529,8 @@ export class MainScene extends Scene {
         const pathfinder = WorkerPathfinder.getInstance();
         pathfinder.initializeGrid(fullGrid);
         this.easyStar.setGrid(fullGrid);
+
+        console.log('Pathfinding grid rebuilt');
     }
 
     public showResourceError(message: string = 'Insufficient resources!'): void {

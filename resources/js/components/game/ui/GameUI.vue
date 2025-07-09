@@ -18,12 +18,15 @@
         <!-- Building FAB Button -->
         <BuildingFabButton />
 
-    <!-- Building Info Modal -->
-    <BuildingInfoModal />
-	<BuildingSelectionOverlay />
+        <!-- Building Info Modal -->
+        <BuildingInfoModal />
+        <BuildingSelectionOverlay />
 
-    <!-- Notification System -->
-    <NotificationSystem />
+        <!-- Zone Overlay -->
+        <ZoneBlockerOverlay />
+
+        <!-- Notification System -->
+        <NotificationSystem />
 
         <Level
             :avatar="gameStore.playerAvatar"
@@ -54,6 +57,7 @@ import BuildingUI from './BuildingUI.vue'
 import BuildingFabButton from './BuildingFabButton.vue'
 import BuildingInfoModal from './BuildingInfoModal.vue'
 import BuildingSelectionOverlay from './BuildingSelectionOverlay.vue'
+import ZoneBlockerOverlay from './ZoneBlockerOverlay.vue'
 import NotificationSystem from './NotificationSystem.vue'
 import DebugPanel from './DebugPanel.vue'
 import ActionButton from './ActionButton.vue'
