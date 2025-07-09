@@ -382,7 +382,7 @@ export class ZoneBlockerService {
 
             sprite.setOrigin(0.5, 0.5);
             sprite.setDepth(999);
-            sprite.setAlpha(0.5); // Opacité réduite pour le survol
+            sprite.setAlpha(1);
 
             this.createCornerAnimation(sprite, cornerPoint.type);
             this.hoverCornerSprites.push(sprite);
@@ -585,33 +585,26 @@ export class ZoneBlockerService {
             return;
         }
 
-        console.log(`Removing collisions from baseGrid for layer: ${layer.layer.name}`);
-
-        // Parcourir toutes les tuiles du layer
         for (let y = 0; y < layer.layer.height; y++) {
             for (let x = 0; x < layer.layer.width; x++) {
                 const tile = layer.getTileAt(x, y);
                 if (!tile) continue;
 
-                // Vérifier si la tuile a des collisions
                 const hasCollidesProp = !!(tile.properties && tile.properties.collides);
                 const tileData = tile.tileset?.getTileData(tile.index);
                 const hasCollisionShapes = tileData && tileData.objectgroup &&
                     tileData.objectgroup.objects && tileData.objectgroup.objects.length > 0;
 
                 if (hasCollidesProp || hasCollisionShapes) {
-                    // Calculer la position dans la baseGrid
                     const worldX = layer.x + (x * layer.layer.tileWidth);
                     const worldY = layer.y + (y * layer.layer.tileHeight);
 
                     const gridX = Math.floor(worldX / 16);
                     const gridY = Math.floor(worldY / 16);
 
-                    // Supprimer la collision de la baseGrid
                     if (gridY >= 0 && gridY < mainScene.baseGrid.length &&
                         gridX >= 0 && gridX < mainScene.baseGrid[0].length) {
                         mainScene.baseGrid[gridY][gridX] = 0;
-                        console.log(`Removed collision at grid position: (${gridX}, ${gridY})`);
                     }
                 }
             }
@@ -655,12 +648,10 @@ export class ZoneBlockerService {
     }
 
     private cleanupBlocker(blocker: ZoneBlocker): void {
-        // Détruire la zone d'interaction
         if (blocker.interactionZone) {
             blocker.interactionZone.destroy();
         }
 
-        // Si ce blocker était sélectionné, le désélectionner
         if (this.selectedBlocker === blocker) {
             this.deselectCurrentBlocker();
         }
@@ -692,11 +683,9 @@ export class ZoneBlockerService {
             }
         });
 
-        // Gérer les clics en dehors des zones d'interaction pour recentrer sur le joueur
         this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             if (pointer.rightButtonDown()) return;
 
-            // Vérifier si le clic n'a touché aucune zone d'interaction
             const worldPoint = this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
             const clickedZone = this.getInteractionZoneAt(worldPoint.x, worldPoint.y);
 
@@ -706,7 +695,6 @@ export class ZoneBlockerService {
             }
         });
 
-        // Écouter l'événement de désélection depuis l'UI
         window.addEventListener('game:deselectZoneBlocker', () => {
             this.deselectBlocker();
             this.cameraService.returnToPlayer();
