@@ -858,7 +858,7 @@ export class TiledBuilding {
 
             sprite.setOrigin(0.5, 0.5);
             sprite.setDepth(2000);
-            sprite.setAlpha(0.5);
+            sprite.setAlpha(1);
             sprite.setScale(1);
 
             this.createCornerAnimation(sprite, cornerPoint.type);
