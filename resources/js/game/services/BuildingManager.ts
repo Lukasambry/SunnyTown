@@ -58,15 +58,24 @@ export class BuildingManager {
     }
 
     public getBuildingAt(x: number, y: number): TiledBuilding | null {
-        return this.buildings.find(building => {
-            const pos = building.getPosition();
-            const dim = building.getDimensions();
+        for (const building of this.buildings) {
+            const position = building.getPosition();
+            const dimensions = building.getDimensions();
 
-            return x >= pos.x &&
-                   x < pos.x + (dim.tilesWidth * 16) &&
-                   y >= pos.y &&
-                   y < pos.y + (dim.tilesHeight * 16);
-        }) ?? null;
+            const buildingBounds = {
+                left: position.x,
+                right: position.x + (dimensions.tilesWidth * 16),
+                top: position.y,
+                bottom: position.y + (dimensions.tilesHeight * 16)
+            };
+
+            if (x >= buildingBounds.left && x <= buildingBounds.right &&
+                y >= buildingBounds.top && y <= buildingBounds.bottom) {
+                return building;
+            }
+        }
+
+        return null;
     }
 
     public getBuildingsByType(type: string): readonly TiledBuilding[] {

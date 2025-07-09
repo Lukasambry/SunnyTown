@@ -13,7 +13,7 @@ interface BuildingCenterPoint {
 export class BuildingSelectionService {
     private readonly scene: Scene;
     private readonly cameraService: CameraService;
-    
+
     private selectedBuilding: TiledBuilding | null = null;
     private lastCameraMode: CameraMode = CameraMode.FOLLOW_PLAYER;
 
@@ -29,8 +29,9 @@ export class BuildingSelectionService {
         this.deselectCurrentBuilding();
         this.selectedBuilding = building;
 
+        building.setSelected(true);
         this.lastCameraMode = this.cameraService.getCurrentMode();
-        
+
         const centerPosition = this.getBuildingCenterPosition(building);
         this.cameraService.focusOnPosition(centerPosition, () => {
             this.showBuildingUI(building);
@@ -48,6 +49,7 @@ export class BuildingSelectionService {
 
     private deselectCurrentBuilding(): void {
         if (this.selectedBuilding) {
+            this.selectedBuilding.setSelected(false);
             this.hideBuildingUI();
             this.selectedBuilding = null;
         }
@@ -58,7 +60,7 @@ export class BuildingSelectionService {
             case CameraMode.FOLLOW_PLAYER:
                 this.cameraService.returnToPlayer();
                 break;
-            
+
             case CameraMode.FREE_CAMERA:
                 this.cameraService.enableFreeCamera();
                 break;
@@ -81,7 +83,7 @@ export class BuildingSelectionService {
     private findDefinedCenterPoint(building: TiledBuilding): BuildingCenterPoint | null {
         const map = building.getMap();
         const pointsLayer = map.getObjectLayer('Points');
-        
+
         if (!pointsLayer?.objects) return null;
 
         for (const obj of pointsLayer.objects) {
@@ -100,8 +102,8 @@ export class BuildingSelectionService {
     private isCenterPoint(obj: any): boolean {
         if (!obj.properties || !Array.isArray(obj.properties)) return false;
 
-        return obj.properties.some((prop: any) => 
-            prop.name === 'type' && 
+        return obj.properties.some((prop: any) =>
+            prop.name === 'type' &&
             (prop.value === 'center' || prop.value === 'building_center')
         );
     }
@@ -116,7 +118,7 @@ export class BuildingSelectionService {
     private calculateAutomaticCenter(building: TiledBuilding): Position {
         const position = building.getPosition();
         const dimensions = building.getDimensions();
-        
+
         return {
             x: position.x + (dimensions.tilesWidth * 16) / 2,
             y: position.y + (dimensions.tilesHeight * 16) / 2
@@ -143,6 +145,28 @@ export class BuildingSelectionService {
         this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             this.handlePointerDown(pointer);
         });
+
+        this.scene.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+            this.handlePointerMove(pointer);
+        });
+    }
+
+    private handlePointerMove(pointer: Phaser.Input.Pointer): void {
+        const worldPoint = this.scene.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        const hoveredBuilding = this.getBuildingAt(worldPoint.x, worldPoint.y);
+
+        const buildingManager = (this.scene as any).buildingManager;
+        if (buildingManager && buildingManager.getBuildings) {
+            const allBuildings = buildingManager.getBuildings();
+
+            allBuildings.forEach((building: TiledBuilding) => {
+                if (building === hoveredBuilding && !building.getIsSelected()) {
+                    building.setHovered(true);
+                } else if (building !== hoveredBuilding && !building.getIsSelected()) {
+                    building.setHovered(false);
+                }
+            });
+        }
     }
 
     private handlePointerDown(pointer: Phaser.Input.Pointer): void {
