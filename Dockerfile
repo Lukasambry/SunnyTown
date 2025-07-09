@@ -2,8 +2,8 @@ FROM php:8.4-fpm
 
 # Installer les dépendances système
 RUN apt-get update && apt-get install -y \
-    libpng-dev libonig-dev libxml2-dev zip unzip git curl \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    libpng-dev libonig-dev libxml2-dev libicu-dev libzip-dev zip unzip git curl \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd intl zip
 
 # Installer Composer
 COPY --from=composer:2.8.9 /usr/bin/composer /usr/bin/composer
