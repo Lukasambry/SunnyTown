@@ -2,7 +2,6 @@ export * from './ResourceEntityTypes';
 export * from './ResourceSystemTypes';
 
 export {
-    //BuildingCategory,
     type BuildingConfig,
     type BuildingCost,
     type BuildingDimensions,
@@ -20,3 +19,5 @@ export interface Position {
     readonly x: number;
     readonly y: number;
 }
+
+export * from './ZoneBlockerTypes';
