@@ -29,6 +29,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     private healingTimer?: Phaser.Time.TimerEvent;
     private cornerSprites: Phaser.GameObjects.Sprite[] = [];
     private static readonly CORNER_TYPES = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    private isPlayerApproaching: boolean = false;
 
     constructor(scene: Phaser.Scene, x: number, y: number, config: ResourceEntityConfig, spawnData: ResourceEntitySpawnData) {
         super(scene, x, y, config.texture);
@@ -150,7 +151,9 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         });
         this.on('pointerout', () => {
             this.handlePointerOut();
-            this.hideHoverCorners();
+            if (!this.isPlayerApproaching) {
+                this.hideHoverCorners();
+            }
         });
         this.on('pointerdown', this.handlePointerDown.bind(this));
     }
@@ -173,7 +176,8 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         if (!this._state.isDestroyed && !this._state.isBeingHarvested) {
             const player = (this.scene as any).player;
             if (player) {
-                this.startPlayerHarvesting(player);
+                // Ajout d'un paramètre pour permettre à MainScene de gérer la cible
+                this.startPlayerHarvesting(player, false);
             }
         }
     }
@@ -214,8 +218,23 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    public startPlayerHarvesting(player: any): void {
+    public startPlayerHarvesting(player: any, manageTarget: boolean = true): void {
         if (this._state.isBeingHarvested || this._state.isDestroyed) return;
+
+        if (manageTarget) {
+            // Gestion par défaut (clic direct sur l'entité)
+            const mainScene = this.scene as any;
+            if (mainScene && mainScene.currentHarvestTarget && mainScene.currentHarvestTarget !== this) {
+                mainScene.currentHarvestTarget.hideHoverCorners();
+                mainScene.currentHarvestTarget.isPlayerApproaching = false;
+            }
+            if (mainScene) {
+                mainScene.currentHarvestTarget = this;
+            }
+        }
+
+        this.isPlayerApproaching = true;
+        this.showHoverCorners();
 
         const interactionPoint = this.findNearestInteractionPoint(player.x, player.y);
         const mainScene = this.scene as any;
@@ -228,9 +247,14 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
             targetTilePos.x, targetTilePos.y,
             (path: { x: number; y: number }[] | null) => {
                 if (!path) {
+                    return;
                 }
 
                 player.setPath(path);
+                // Afficher les dots du chemin pour la récolte
+                if (mainScene.showPathDots) {
+                    mainScene.showPathDots(path);
+                }
                 this.waitForPlayerArrival(player, interactionPoint);
             }
         );
@@ -258,6 +282,12 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
                     stableCount++;
                     if (stableCount >= 1) {
                         checkInterval.destroy();
+                        this.hideHoverCorners();
+                        this.isPlayerApproaching = false;
+                        // Réinitialiser la cible courante dans MainScene
+                        if (mainScene && mainScene.currentHarvestTarget === this) {
+                            mainScene.currentHarvestTarget = null;
+                        }
                         if (!this._state.isDestroyed) {
                             player.setFlipX(this.x <= player.x);
                             this.startAutoHarvesting().catch(console.error);
@@ -518,16 +548,38 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         const entityTileX = Math.floor(this.x / tileSize);
         const entityTileY = Math.floor(this.y / tileSize);
 
-        const positions = [
-            { x: (entityTileX - 1) * tileSize, y: entityTileY * tileSize },
-            { x: (entityTileX + 1) * tileSize, y: entityTileY * tileSize }
-        ];
+        // Points à gauche et à droite
+        const left = { x: (entityTileX - 1) * tileSize, y: entityTileY * tileSize };
+        const right = { x: (entityTileX + 1) * tileSize, y: entityTileY * tileSize };
 
-        return positions.reduce((closest, current) => {
-            const currentDist = Phaser.Math.Distance.Between(workerX, workerY, current.x, current.y);
-            const closestDist = Phaser.Math.Distance.Between(workerX, workerY, closest.x, closest.y);
-            return currentDist < closestDist ? current : closest;
-        });
+        // Accès à la grille de pathfinding
+        const mainScene = this.scene as any;
+        const baseGrid = mainScene.baseGrid as number[][];
+        const mapWidth = baseGrid[0]?.length || 0;
+        const mapHeight = baseGrid.length;
+
+        function isWalkable(pos: { x: number; y: number }) {
+            const tx = Math.floor(pos.x / tileSize);
+            const ty = Math.floor(pos.y / tileSize);
+            return (
+                tx >= 0 && tx < mapWidth && ty >= 0 && ty < mapHeight && baseGrid[ty][tx] === 0
+            );
+        }
+
+        const leftWalkable = isWalkable(left);
+        const rightWalkable = isWalkable(right);
+
+        // Cas 1 : les deux sont atteignables, on prend le plus proche
+        if (leftWalkable && rightWalkable) {
+            const distLeft = Phaser.Math.Distance.Between(workerX, workerY, left.x, left.y);
+            const distRight = Phaser.Math.Distance.Between(workerX, workerY, right.x, right.y);
+            return distLeft <= distRight ? left : right;
+        }
+        // Cas 2 : un seul est atteignable
+        if (leftWalkable) return left;
+        if (rightWalkable) return right;
+        // Cas 3 : aucun n'est atteignable, fallback sur la position de l'entité
+        return { x: entityTileX * tileSize, y: entityTileY * tileSize };
     }
 
     public async workerHarvest(worker: any): Promise<boolean> {
@@ -698,11 +750,13 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         const tileSize = 16;
         const half = tileSize / 2;
         const offset = 3;
+        const xOffset = 0;
+        const yOffset = 6;
         const positions = {
-            'top-left': { x: this.x - half - offset, y: this.y - half - offset },
-            'top-right': { x: this.x + half + offset, y: this.y - half - offset },
-            'bottom-left': { x: this.x - half - offset, y: this.y + half + offset },
-            'bottom-right': { x: this.x + half + offset, y: this.y + half + offset },
+            'top-left': { x: this.x - half - offset + xOffset, y: this.y - half - offset + yOffset},
+            'top-right': { x: this.x + half + offset + xOffset, y: this.y - half - offset + yOffset},
+            'bottom-left': { x: this.x - half - offset + xOffset, y: this.y + half + offset + yOffset},
+            'bottom-right': { x: this.x + half + offset + xOffset, y: this.y + half + offset + yOffset},
         };
         for (const type of ResourceEntity.CORNER_TYPES) {
             const spriteKey = this.getCornerSpriteKey(type);
