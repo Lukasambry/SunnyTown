@@ -1,7 +1,6 @@
-
 @import 'tailwindcss';
 
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @font-face {
     font-family: '04B_03';
@@ -11,6 +10,7 @@
     font-display: swap;
 }
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -18,9 +18,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-   --font-sans: Instrument Sans, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji';
-
-
+    --font-sans: Instrument Sans, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -73,26 +71,26 @@
     --pixel-border-size: 2px;
 
     /* Color Palette for Pixel Borders */
-    --color-pixel-primary: #63C74D;
-    --color-pixel-secondary: #265C42;
+    --color-pixel-primary: #63c74d;
+    --color-pixel-secondary: #265c42;
     --color-pixel-border: black;
 
     /* Dirt Theme Colors */
-    --color-dirt-primary: #C28569;
-    --color-dirt-secondary: #EAD4AA;
+    --color-dirt-primary: #c28569;
+    --color-dirt-secondary: #ead4aa;
 
     /* Dark Dirt Theme Colors */
     --color-dark-dirt-primary: #945542;
-    --color-dark-dirt-secondary: #E4A672;
-    --color-dark-dirt-tertiary: #B86F50;
+    --color-dark-dirt-secondary: #e4a672;
+    --color-dark-dirt-tertiary: #b86f50;
 
     /* Gold Theme Colors */
-    --color-gold-primary: #FEAE34;
-    --color-gold-secondary: #FBDF6B;
+    --color-gold-primary: #feae34;
+    --color-gold-secondary: #fbdf6b;
 
     /* Stone Theme Colors */
-    --color-stone-primary: #C0CBDC;
-    --color-stone-secondary: #FFFFFF;
+    --color-stone-primary: #c0cbdc;
+    --color-stone-secondary: #ffffff;
 
     /* Progress Bar Colors */
     --color-progress-bg: #515179;
@@ -121,13 +119,10 @@
 @layer utilities {
     body,
     html {
-        --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        --font-sans:
+            'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     }
-  
-  }
-
+}
 
 :root {
     /* Utilisation des couleurs du thème dirt pour le mode clair */
@@ -226,6 +221,18 @@
     body {
         @apply bg-background text-foreground;
     }
+    html {
+        font-family: 'Inter', ui-sans-serif, system-ui;
+    }
+}
+
+@layer utilities {
+    .font-pixel {
+        font-family: '04B03', monospace;
+    }
+    .font-sans {
+        font-family: 'Inter', ui-sans-serif, system-ui;
+    }
 }
 
 @layer components {
@@ -256,15 +263,15 @@
             0 calc(var(--border-size) * var(--show-bottom)) var(--btn-color-secondary),
             0 calc(var(--border-size) * -1 * var(--show-top)) var(--btn-color-secondary),
             calc(var(--border-size) * -1 * var(--show-left)) 0 var(--btn-color-secondary),
-
-                /* Corner shadows */
-            calc(var(--border-size) * var(--show-right) * var(--show-bottom)) calc(var(--border-size) * var(--show-right) * var(--show-bottom)) var(--btn-color-border),
-            calc(var(--border-size) * -1 * var(--show-left) * var(--show-bottom)) calc(var(--border-size) * var(--show-left) * var(--show-bottom)) var(--btn-color-border),
-            calc(var(--border-size) * var(--show-right) * var(--show-top)) calc(var(--border-size) * -1 * var(--show-right) * var(--show-top)) var(--btn-color-border),
-            calc(var(--border-size) * -1 * var(--show-left) * var(--show-top)) calc(var(--border-size) * -1 * var(--show-left) * var(--show-top)) var(--btn-color-border),
-
-                /* Outside borders */
-            calc(var(--border-size) * 2 * var(--show-right)) 0 var(--btn-color-border),
+            /* Corner shadows */ calc(var(--border-size) * var(--show-right) * var(--show-bottom))
+                calc(var(--border-size) * var(--show-right) * var(--show-bottom)) var(--btn-color-border),
+            calc(var(--border-size) * -1 * var(--show-left) * var(--show-bottom)) calc(var(--border-size) * var(--show-left) * var(--show-bottom))
+                var(--btn-color-border),
+            calc(var(--border-size) * var(--show-right) * var(--show-top)) calc(var(--border-size) * -1 * var(--show-right) * var(--show-top))
+                var(--btn-color-border),
+            calc(var(--border-size) * -1 * var(--show-left) * var(--show-top)) calc(var(--border-size) * -1 * var(--show-left) * var(--show-top))
+                var(--btn-color-border),
+            /* Outside borders */ calc(var(--border-size) * 2 * var(--show-right)) 0 var(--btn-color-border),
             0 calc(var(--border-size) * 2 * var(--show-bottom)) var(--btn-color-border),
             0 calc(var(--border-size) * -2 * var(--show-top)) var(--btn-color-border),
             calc(var(--border-size) * -2 * var(--show-left)) 0 var(--btn-color-border);
@@ -298,10 +305,18 @@
     }
 
     /* Border Side Controls */
-    .pixel-no-top { --show-top: 0; }
-    .pixel-no-right { --show-right: 0; }
-    .pixel-no-bottom { --show-bottom: 0; }
-    .pixel-no-left { --show-left: 0; }
+    .pixel-no-top {
+        --show-top: 0;
+    }
+    .pixel-no-right {
+        --show-right: 0;
+    }
+    .pixel-no-bottom {
+        --show-bottom: 0;
+    }
+    .pixel-no-left {
+        --show-left: 0;
+    }
 
     /* Combination Utilities */
     .pixel-no-vertical {

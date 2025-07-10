@@ -22,19 +22,13 @@ const submit = () => {
 <template>
     <Head title="Log in" />
 
-    <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="flex min-h-screen items-center justify-center p-6">
         <div class="w-full max-w-md">
-
             <div class="pixel-border pixel-border-dirt mb-6">
-                <div class="pixel-border pixel-border-dark-dirt dark:!bg-transparent dark:!shadow-none p-8">
-
+                <div class="pixel-border pixel-border-dark-dirt p-8 dark:!bg-transparent dark:!shadow-none">
                     <div class="pixel-border pixel-border-stone mb-6 px-4 py-3 text-center">
-                        <h1 class="font-mono font-bold text-xl text-white dark:text-black">
-                            Connexion
-                        </h1>
-                        <p class="font-mono text-sm text-white dark:text-black mt-2">
-                            Entrez vos identifiants pour vous connecter
-                        </p>
+                        <h1 class="font-mono text-xl font-bold text-white dark:text-black">Connexion</h1>
+                        <p class="mt-2 font-mono text-sm text-white dark:text-black">Entrez vos identifiants pour vous connecter</p>
                     </div>
 
                     <div v-if="status" class="pixel-border pixel-border-stone mb-4 px-3 py-2 text-center">
@@ -42,12 +36,9 @@ const submit = () => {
                     </div>
 
                     <form @submit.prevent="submit" class="space-y-6">
-
                         <div class="space-y-2">
-                            <div class="px-3 py-1 inline-block">
-                                <label for="email" class="font-mono font-bold text-white dark:text-black text-sm">
-                                    Adresse email
-                                </label>
+                            <div class="inline-block px-3 py-1">
+                                <label for="email" class="font-mono text-sm font-bold text-white dark:text-black"> Adresse email </label>
                             </div>
                             <div class="pixel-border pixel-border-stone mt-2">
                                 <input
@@ -59,31 +50,28 @@ const submit = () => {
                                     autocomplete="email"
                                     v-model="form.email"
                                     placeholder="email@exemple.com"
-                                    class="w-full p-3 font-mono text-black bg-white border-none outline-none"
+                                    class="w-full border-none bg-white p-3 font-mono text-black outline-none"
                                     :class="{ 'bg-red-50': form.errors.email }"
                                 />
                             </div>
-                            <div v-if="form.errors.email" class="pixel-border pixel-border-destructive px-3 py-2 bg-red-100">
+                            <div v-if="form.errors.email" class="pixel-border pixel-border-destructive bg-red-100 px-3 py-2">
                                 <span class="font-mono text-sm text-red-800">{{ form.errors.email }}</span>
                             </div>
                         </div>
 
                         <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <div class="px-3 py-1 inline-block">
-                                    <label for="password" class="font-mono font-bold text-white dark:text-black text-sm">
-                                        Mot de passe
-                                    </label>
+                            <div class="flex items-center justify-between">
+                                <div class="inline-block px-3 py-1">
+                                    <label for="password" class="font-mono text-sm font-bold text-white dark:text-black"> Mot de passe </label>
                                 </div>
 
                                 <a
                                     v-if="canResetPassword"
                                     :href="route('password.request')"
                                     :tabindex="5"
-                                    class="px-2 py-1 hover:bg-stone-100
-                                           transition-colors duration-200"
+                                    class="px-2 py-1 transition-colors duration-200 hover:bg-stone-100"
                                 >
-                                    <span class="underline font-mono text-xs text-white dark:text-black">Mot de passe oublié ?</span>
+                                    <span class="font-mono text-xs text-white underline dark:text-black">Mot de passe oublié ?</span>
                                 </a>
                             </div>
 
@@ -96,26 +84,19 @@ const submit = () => {
                                     autocomplete="current-password"
                                     v-model="form.password"
                                     placeholder="Votre mot de passe"
-                                    class="w-full p-3 font-mono text-black bg-white border-none outline-none"
+                                    class="w-full border-none bg-white p-3 font-mono text-black outline-none"
                                     :class="{ 'bg-red-50': form.errors.password }"
                                 />
                             </div>
-                            <div v-if="form.errors.password" class="pixel-border pixel-border-destructive px-3 py-2 bg-red-100">
+                            <div v-if="form.errors.password" class="pixel-border pixel-border-destructive bg-red-100 px-3 py-2">
                                 <span class="font-mono text-sm text-red-800">{{ form.errors.password }}</span>
                             </div>
                         </div>
 
-                        <div class=" px-4 py-3">
-                            <label class="flex items-center space-x-3 font-mono text-sm text-white dark:text-black cursor-pointer">
-                                <div class="pixel-border pixel-border-dirt pixel-checkbox"
-                                     :class="{ 'pixel-checkbox-checked': form.remember }">
-                                    <input
-                                        id="remember"
-                                        type="checkbox"
-                                        v-model="form.remember"
-                                        :tabindex="3"
-                                        class="sr-only"
-                                    />
+                        <div class="px-4 py-3">
+                            <label class="flex cursor-pointer items-center space-x-3 font-mono text-sm text-white dark:text-black">
+                                <div class="pixel-border pixel-border-dirt pixel-checkbox" :class="{ 'pixel-checkbox-checked': form.remember }">
+                                    <input id="remember" type="checkbox" v-model="form.remember" :tabindex="3" class="sr-only" />
                                     <div v-if="form.remember" class="pixel-checkmark">✓</div>
                                 </div>
                                 <span>Se souvenir de moi</span>
@@ -127,14 +108,12 @@ const submit = () => {
                                 type="submit"
                                 :tabindex="4"
                                 :disabled="form.processing"
-                                class="w-full pixel-border hover:bg-yellow-50
-                                       disabled:opacity-70 disabled:cursor-not-allowed
-                                       transition-colors duration-200"
+                                class="pixel-border w-full transition-colors duration-200 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-70"
                                 :class="{ 'animate-pulse': form.processing }"
                             >
-                                <div class="pixel-border px-6 py-3 flex items-center justify-center gap-3">
+                                <div class="pixel-border flex items-center justify-center gap-3 px-6 py-3">
                                     <div v-if="form.processing" class="animate-spin">
-                                        <div class="pixel-border pixel-border-dirt w-4 h-4"></div>
+                                        <div class="pixel-border pixel-border-dirt h-4 w-4"></div>
                                     </div>
                                     <span class="font-mono font-bold text-white dark:text-black">
                                         {{ form.processing ? 'Connexion...' : 'Se connecter' }}
@@ -144,15 +123,9 @@ const submit = () => {
                         </div>
                     </form>
 
-                    <div class="px-4 py-3 text-center mt-6">
-                        <span class="font-mono text-sm text-white dark:text-black">
-                            Pas encore de compte ?
-                        </span>
-                        <a
-                            :href="route('register')"
-                            :tabindex="5"
-                            class="duration-200 inline-block ml-2 pixel-border pixel-border-gold px-2 py-1"
-                        >
+                    <div class="mt-6 px-4 py-3 text-center">
+                        <span class="font-mono text-sm text-white dark:text-black"> Pas encore de compte ? </span>
+                        <a :href="route('register')" :tabindex="5" class="pixel-border pixel-border-gold ml-2 inline-block px-2 py-1 duration-200">
                             <span class="font-mono text-sm font-bold text-white dark:text-black">S'inscrire</span>
                         </a>
                     </div>
@@ -193,8 +166,13 @@ button:focus {
 }
 
 @keyframes pixel-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
 }
 
 .pixel-border:hover {
