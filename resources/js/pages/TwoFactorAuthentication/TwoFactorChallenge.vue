@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Inertia } from '@inertiajs/inertia';
 import { usePage } from '@inertiajs/inertia-vue3';
 
@@ -7,10 +7,8 @@ const page = usePage();
 
 const code = ref('');
 const recoveryCodeMode = ref(false);
-const password = ref('');
 
-const errors = page.props?.errors;
-
+const errors = computed(() => page.props.value.errors);
 const submitChallenge = async () => {
     try {
         await Inertia.post('/two-factor-challenge', {
@@ -22,7 +20,7 @@ const submitChallenge = async () => {
                 code.value = '';
             },
             onError: (errors) => {
-                // Gestion des erreurs
+                console.log(errors);
             }
         });
     } catch (error) {
@@ -35,9 +33,6 @@ const toggleRecoveryMode = () => {
     code.value = '';
 };
 
-const useRecoveryCode = () => {
-    submitChallenge();
-};
 </script>
 
 <template>
