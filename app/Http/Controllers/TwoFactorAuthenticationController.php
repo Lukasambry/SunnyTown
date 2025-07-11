@@ -8,6 +8,9 @@ use Inertia\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 
 class TwoFactorAuthenticationController extends Controller
 {
@@ -38,7 +41,7 @@ class TwoFactorAuthenticationController extends Controller
     /**
      * Active l'authentification à deux facteurs pour l'utilisateur.
      */
-    public function enable(Request $request): RedirectResponse
+    public function enable(Request $request, EnableTwoFactorAuthentication $enable): RedirectResponse
     {
         $user = $request->user();
 
@@ -46,7 +49,7 @@ class TwoFactorAuthenticationController extends Controller
             return redirect()->route('two-factor.setup');
         }
 
-        $user->enableTwoFactorAuthentication();
+        $enable($user);
 
         return redirect()->route('two-factor.setup')
             ->with('success', 'Two-factor authentication enabled. Please confirm using your authenticator app.');
@@ -79,7 +82,7 @@ class TwoFactorAuthenticationController extends Controller
     /**
      * Désactive l'authentification à deux facteurs pour l'utilisateur.
      */
-    public function disable(Request $request): RedirectResponse
+    public function disable(Request $request, DisableTwoFactorAuthentication $disable): RedirectResponse
     {
         $user = $request->user();
 
@@ -87,7 +90,7 @@ class TwoFactorAuthenticationController extends Controller
             return redirect()->route('two-factor.setup');
         }
 
-        $user->disableTwoFactorAuthentication();
+        $disable($user);
 
         return redirect()->route('two-factor.setup')
             ->with('success', 'Two-factor authentication disabled successfully.');
@@ -104,8 +107,11 @@ class TwoFactorAuthenticationController extends Controller
             return redirect()->route('two-factor.setup')
                 ->with('error', 'Two-factor authentication is not enabled or confirmed.');
         }
-
-        $user->replaceRecoveryCodes();
+        $newCodes = (new GenerateNewRecoveryCodes)($user);
+        if (!$newCodes) {
+            return redirect()->route('two-factor.setup')
+                ->with('error', 'Failed to generate new recovery codes.');
+        }
 
         return redirect()->route('two-factor.setup')
             ->with('success', 'New recovery codes generated successfully.');

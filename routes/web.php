@@ -8,15 +8,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BlogPostController;
 use App\Http\Controllers\TwoFactorAuthenticationController;
+use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
 // Ajoutez cette ligne
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
-
-Route::get('/two-factor-challenge', function () {
-    return Inertia::render('TwoFactorChallenge');
-})->middleware('guest')->name('two-factor-challenge');
-
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
@@ -45,30 +41,38 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/blog/create', [BlogPostController::class, 'create'])->name('blog.create');
     Route::post('/blog', [BlogPostController::class, 'store'])->name('blog.store');
 //    });
-
-    // Routes pour la gestion de la 2FA (Setup, Activer, Confirmer, Désactiver, Codes)
-    // Elles doivent être définies avant Fortify::routes() si elles partagent le même URI
-
-    // Route GET pour afficher la page de setup 2FA
-    Route::get('/two-factor/setup', [TwoFactorAuthenticationController::class, 'setup'])
-        ->name('two-factor.setup');
-
-    // Route POST pour activer la 2FA (générer le secret et les codes initiaux)
-    Route::post('/user/two-factor-authentication', [TwoFactorAuthenticationController::class, 'enable'])
-        ->name('two-factor.enable');
-
-    // Route POST pour confirmer la 2FA avec un code de l'application d'authentification
-    Route::post('/user/confirmed-two-factor-authentication', [TwoFactorAuthenticationController::class, 'confirm'])
-        ->name('two-factor.confirm'); // Nom de route non standard pour plus de clarté
-
-    // Route DELETE pour désactiver la 2FA
-    Route::delete('/user/two-factor-authentication', [TwoFactorAuthenticationController::class, 'disable'])
-        ->name('two-factor.disable');
-
-    // Route POST pour générer de nouveaux codes de récupération
-    Route::post('/user/two-factor-recovery-codes', [TwoFactorAuthenticationController::class, 'generateRecoveryCodes'])
-        ->name('two-factor.recovery-codes'); // Nom de route non standard pour plus de clarté
+// TODO: Implement authorization for editing and deleting blog posts
 });
+
+// 2FA Fortify routes
+Route::prefix('/')->group(function () {
+    Route::get('/two-factor-challenge', [TwoFactorAuthenticatedSessionController::class, 'create'])
+        ->middleware(['guest:'.config('fortify.guard')])
+        ->name('two-factor.login');
+
+    Route::post('/two-factor-challenge', [TwoFactorAuthenticatedSessionController::class, 'store'])
+        ->middleware(['guest:'.config('fortify.guard')]);
+});
+
+// 2FA custom routes
+Route::get('/custom-two-factor-challenge', function () {
+    return Inertia::render('TwoFactor/Authentication/TwoFactorChallenge');
+})->middleware('guest')->name('custom-two-factor-challenge');
+
+Route::get('/two-factor/setup', [TwoFactorAuthenticationController::class, 'setup'])
+    ->name('two-factor.setup');
+
+Route::post('/user/two-factor-authentication', [TwoFactorAuthenticationController::class, 'enable'])
+    ->name('two-factor.enable');
+
+Route::post('/user/confirmed-two-factor-authentication', [TwoFactorAuthenticationController::class, 'confirm'])
+    ->name('two-factor.confirm');
+
+Route::delete('/user/two-factor-authentication', [TwoFactorAuthenticationController::class, 'disable'])
+    ->name('two-factor.disable');
+
+Route::post('/user/two-factor-recovery-codes', [TwoFactorAuthenticationController::class, 'generateRecoveryCodes'])
+    ->name('two-factor.recovery-codes');
 
 
 require __DIR__.'/settings.php';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { usePage, useForm } from '@inertiajs/vue3';
+import { usePage, useForm, router } from '@inertiajs/vue3';
 
 const props = defineProps({
     twoFactorEnabled: {
@@ -50,7 +50,7 @@ watch(requiresConfirmation, (newVal) => {
 
 const enableTwoFactorAuthentication = () => {
     enabling.value = true;
-    page.post(route('two-factor.enable'), {}, {
+    router.post(route('two-factor.enable'), {}, {
         preserveScroll: true,
         onFinish: () => {
             enabling.value = false;
@@ -73,7 +73,7 @@ const confirmTwoFactorAuthentication = () => {
 
 const disableTwoFactorAuthentication = () => {
     disabling.value = true;
-    page.delete(route('two-factor.disable'), {
+    router.delete(route('two-factor.disable'), {
         preserveScroll: true,
         onFinish: () => {
             disabling.value = false;
@@ -83,7 +83,7 @@ const disableTwoFactorAuthentication = () => {
 
 const generateRecoveryCodes = () => {
     generating.value = true;
-    page.post(route('two-factor.recovery-codes'), {}, {
+    router.post(route('two-factor.recovery-codes'), {}, {
         preserveScroll: true,
         onFinish: () => {
             generating.value = false;
@@ -241,9 +241,6 @@ const showRecoveryCodes = () => {
 </template>
 
 <style scoped>
-.pixel-border {
-    /* ...pixel-border styles déjà présents dans le projet... */
-}
 .custom-codes-list li {
     letter-spacing: 0.05em;
     font-size: 1rem;
