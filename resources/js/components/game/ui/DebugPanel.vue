@@ -26,7 +26,6 @@ const fpsColor = computed(() => {
 })
 
 const buildingCounts = computed(() => {
-    if (!gameStore.state?.value?.buildings) return {};
     const counts: Record<string, number> = {}
     gameStore.state.value.buildings.forEach(building => {
         const type = building.getType()
@@ -36,7 +35,6 @@ const buildingCounts = computed(() => {
 })
 
 const workerCounts = computed(() => {
-    if (!gameStore.state?.value?.workers) return {};
     const counts: Record<string, number> = {}
     gameStore.state.value.workers.forEach(worker => {
         const type = worker.constructor.name.toLowerCase()
@@ -201,7 +199,7 @@ onMounted(() => {
                     </div>
                     <div class="flex justify-between">
                         <span>Selected Building:</span>
-                        <span class="text-yellow-400">{{ gameStore.state?.value?.selectedBuilding || 'None' }}</span>
+                        <span class="text-yellow-400">{{ gameStore.state.value.selectedBuilding || 'None' }}</span>
                     </div>
                 </div>
             </div>

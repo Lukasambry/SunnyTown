@@ -70,7 +70,7 @@
     --color-main-app: #0a0a0a;
 
     /* Pixel Border Configuration */
-    --pixel-border-size: 2px;
+    --pixel-border-size: 3px;
 
     /* Color Palette for Pixel Borders */
     --color-pixel-primary: #63c74d;
@@ -215,7 +215,8 @@
 }
 
 @layer utilities {
-    .font-pixel {
+    .font-pixel,
+    .pixel-font {
         font-family: '04B03', monospace;
     }
     .font-sans {
@@ -224,6 +225,11 @@
 }
 
 @layer components {
+    .pixelated {
+        image-rendering: pixelated;
+    }
+
+    /* Base Pixel Border Component */
     .pixel-border {
         --border-size: var(--pixel-border-size);
         --btn-color-primary: var(--color-pixel-primary);
@@ -362,7 +368,8 @@
         left: calc(var(--border-size) * -1);
     }
 
-    .pixel-progress::after {
+    .pixel-progress::after,
+    .pixel-progress > .pixel-progress-bar {
         content: '';
         position: absolute;
         top: 0;

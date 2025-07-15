@@ -36,9 +36,6 @@
             :experience="gameStore.playerExperience"
         />
 
-        <!-- Debug Panel (Development only) -->
-        <DebugPanel v-if="isDevelopment" />
-
         <!-- Debug resource info -->
         <!--
         <div v-if="isDevelopment" class="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs">
@@ -59,7 +56,6 @@ import BuildingInfoModal from './BuildingInfoModal.vue'
 import BuildingSelectionOverlay from './BuildingSelectionOverlay.vue'
 import ZoneBlockerOverlay from './ZoneBlockerOverlay.vue'
 import NotificationSystem from './NotificationSystem.vue'
-import DebugPanel from './DebugPanel.vue'
 import ActionButton from './ActionButton.vue'
 import Level from '@/components/game/ui/Level.vue';
 

@@ -40,10 +40,10 @@ const shouldShowNames = computed((): boolean => {
 </script>
 
 <template>
-    <div class="resource-display-container">
+    <div class="resource-display-container z-0">
         <!-- Resource List -->
-        <div v-if="showResourceList" class="fixed top-4 left-4 z-50 space-y-2">
-            <TransitionGroup name="resource-fade" tag="div" class="space-y-2">
+        <div v-if="showResourceList" class="fixed top-8 right-8 space-y-2 z-10">
+            <TransitionGroup name="resource-fade" tag="div" class="space-y-7 flex flex-col items-end pr-2">
                 <ResourceItem v-for="resource in visibleResources" :key="resource.type" :resource="resource"
                     :show-name="shouldShowNames" class="resource-item-enter" />
             </TransitionGroup>
@@ -64,25 +64,5 @@ const shouldShowNames = computed((): boolean => {
 
 .resource-display-container>* {
     pointer-events: auto;
-}
-
-/* Transition animations */
-.resource-fade-enter-active,
-.resource-fade-leave-active {
-    transition: all 0.3s ease;
-}
-
-.resource-fade-enter-from {
-    opacity: 0;
-    transform: translateX(-20px);
-}
-
-.resource-fade-leave-to {
-    opacity: 0;
-    transform: translateX(-20px);
-}
-
-.resource-fade-move {
-    transition: transform 0.3s ease;
 }
 </style>
