@@ -1,13 +1,10 @@
-import { Scene } from 'phaser';
-type Scene = typeof Scene;
-
-import { Worker } from '../objects/workers/Worker.ts';
+import { Worker } from '../objects/workers/Worker';
 import { type WorkerConfig, WorkerType, type WorkerPosition } from '../types/WorkerConfigTypes';
 import { WORKER_CONFIGS } from '../configs/WorkerConfigs';
 
 interface WorkerDefinition {
   readonly config: WorkerConfig;
-  readonly createInstance: (scene: Scene, x: number, y: number, depositPoint?: WorkerPosition) => Worker;
+  readonly createInstance: (scene: any, x: number, y: number, depositPoint?: WorkerPosition) => Worker;
 }
 
 export class WorkerRegistry {
@@ -29,7 +26,7 @@ export class WorkerRegistry {
     Object.values(WORKER_CONFIGS).forEach(config => {
       this.workers.set(config.id, {
         config,
-        createInstance: (scene: Scene, x: number, y: number, depositPoint?: WorkerPosition) =>
+        createInstance: (scene: any, x: number, y: number, depositPoint?: WorkerPosition) =>
             new Worker(scene, x, y, config, depositPoint)
       });
     });
@@ -39,7 +36,7 @@ export class WorkerRegistry {
     return this.workers.get(type)?.config;
   }
 
-  public createWorker(type: WorkerType, scene: Scene, x: number, y: number, depositPoint?: WorkerPosition): Worker | null {
+  public createWorker(type: WorkerType, scene: any, x: number, y: number, depositPoint?: WorkerPosition): Worker | null {
     const definition = this.workers.get(type);
     if (!definition) {
       return null;
@@ -47,7 +44,7 @@ export class WorkerRegistry {
 
     try {
       return definition.createInstance(scene, x, y, depositPoint);
-    } catch (error) {
+    } catch {
       return null;
     }
   }

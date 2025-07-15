@@ -134,7 +134,6 @@
 import { computed, ref, watch } from 'vue';
 import { useGameStore } from '@/game/stores/gameStore'
 import WorkerAssignmentUI from './WorkerAssignmentUI.vue'
-import { WorkerType } from '@/game/types/WorkerConfigTypes'
 import { ResourceType } from '@/game/types/ResourceSystemTypes'
 import BuildingIcon from './BuildingIcon.vue'
 import ActionButton from './ActionButton.vue'
@@ -239,11 +238,6 @@ const availableActions = computed((): BuildingAction[] => {
 })
 
 // Methods
-const getResourceCapacity = (resourceType: ResourceType): number => {
-    if (!buildingData.value) return 0
-    return buildingData.value.getBuildingResourceCapacity(resourceType)
-}
-
 const handleClose = () => {
     gameStore.hideBuildingInfo()
 }

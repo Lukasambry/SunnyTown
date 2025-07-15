@@ -1,13 +1,12 @@
 <script lang="ts" setup>
 import { Head, useForm } from '@inertiajs/vue3';
-import { toast } from "vue-sonner";
-import { ref } from "vue";
+import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 
 const isSubmitting = ref(false);
 
 const today = new Date();
 const formattedDate = today.toISOString().split('T')[0];
-
 
 const form = useForm({
     title: '',
@@ -21,13 +20,13 @@ const onSubmit = () => {
     form.post(route('blog.store'), {
         onSuccess: () => {
             toast({
-                title: "Article publié",
-                description: "Votre article a été publié avec succès"
+                title: 'Article publié',
+                description: 'Votre article a été publié avec succès',
             });
         },
         onFinish: () => {
             isSubmitting.value = false;
-        }
+        },
     });
 };
 </script>
@@ -37,24 +36,17 @@ const onSubmit = () => {
 
     <div>
         <div class="pixel-border pixel-border-gold mb-6 px-4 py-3">
-            <h2 class="font-mono font-bold text-xl text-black leading-tight">
-                Créer un article
-            </h2>
+            <h2 class="font-mono text-xl leading-tight font-bold text-black">Créer un article</h2>
         </div>
 
         <div class="py-8">
-            <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
                 <div class="pixel-border pixel-border-dirt">
-                    <div class="pixel-border pixel-border-dark-dirt dark:!bg-transparent dark:!shadow-none p-8">
-
-
+                    <div class="pixel-border pixel-border-dark-dirt p-8 dark:!bg-transparent dark:!shadow-none">
                         <form @submit.prevent="onSubmit" class="space-y-6">
-
                             <div class="space-y-2">
-                                <div class="pixel-border pixel-border-stone px-3 py-1 inline-block">
-                                    <label for="title" class="font-mono font-bold text-black text-sm">
-                                        Titre *
-                                    </label>
+                                <div class="pixel-border pixel-border-stone inline-block px-3 py-1">
+                                    <label for="title" class="font-mono text-sm font-bold text-black"> Titre * </label>
                                 </div>
                                 <div class="pixel-border pixel-border-dirt mt-2">
                                     <input
@@ -63,7 +55,7 @@ const onSubmit = () => {
                                         type="text"
                                         placeholder="Entrez le titre de l'article (max 140 caractères)"
                                         required
-                                        class="w-full p-3 bg-white font-mono text-black placeholder-gray-500 border-0 outline-none"
+                                        class="w-full border-0 bg-white p-3 font-mono text-black placeholder-gray-500 outline-none"
                                         :class="{ 'bg-red-50': form.errors.title }"
                                     />
                                 </div>
@@ -73,10 +65,8 @@ const onSubmit = () => {
                             </div>
 
                             <div class="space-y-2">
-                                <div class="pixel-border pixel-border-stone px-3 py-1 inline-block">
-                                    <label for="author" class="font-mono font-bold text-black text-sm">
-                                        Auteur *
-                                    </label>
+                                <div class="pixel-border pixel-border-stone inline-block px-3 py-1">
+                                    <label for="author" class="font-mono text-sm font-bold text-black"> Auteur * </label>
                                 </div>
                                 <div class="pixel-border pixel-border-dirt mt-2">
                                     <input
@@ -85,7 +75,7 @@ const onSubmit = () => {
                                         type="text"
                                         placeholder="Nom de l'auteur"
                                         required
-                                        class="w-full p-3 bg-white font-mono text-black placeholder-gray-500 border-0 outline-none"
+                                        class="w-full border-0 bg-white p-3 font-mono text-black placeholder-gray-500 outline-none"
                                         :class="{ 'bg-red-50': form.errors.author }"
                                     />
                                 </div>
@@ -95,17 +85,15 @@ const onSubmit = () => {
                             </div>
 
                             <div class="space-y-2">
-                                <div class="pixel-border pixel-border-stone px-3 py-1 inline-block">
-                                    <label for="published_at" class="font-mono font-bold text-black text-sm">
-                                        Date de publication
-                                    </label>
+                                <div class="pixel-border pixel-border-stone inline-block px-3 py-1">
+                                    <label for="published_at" class="font-mono text-sm font-bold text-black"> Date de publication </label>
                                 </div>
                                 <div class="pixel-border pixel-border-dirt mt-2">
                                     <input
                                         id="published_at"
                                         v-model="form.published_at"
                                         type="date"
-                                        class="w-full p-3 bg-white font-mono text-black border-0 outline-none"
+                                        class="w-full border-0 bg-white p-3 font-mono text-black outline-none"
                                         :class="{ 'bg-red-50': form.errors.published_at }"
                                     />
                                 </div>
@@ -115,10 +103,8 @@ const onSubmit = () => {
                             </div>
 
                             <div class="space-y-2">
-                                <div class="pixel-border pixel-border-stone px-3 py-1 inline-block">
-                                    <label for="content" class="font-mono font-bold text-black text-sm">
-                                        Contenu *
-                                    </label>
+                                <div class="pixel-border pixel-border-stone inline-block px-3 py-1">
+                                    <label for="content" class="font-mono text-sm font-bold text-black"> Contenu * </label>
                                 </div>
                                 <div class="pixel-border pixel-border-dirt mt-2">
                                     <textarea
@@ -127,7 +113,7 @@ const onSubmit = () => {
                                         placeholder="Contenu de l'article"
                                         rows="12"
                                         required
-                                        class="w-full p-3 bg-white font-mono text-black placeholder-gray-500 border-0 outline-none resize-none"
+                                        class="w-full resize-none border-0 bg-white p-3 font-mono text-black placeholder-gray-500 outline-none"
                                         :class="{ 'bg-red-50': form.errors.content }"
                                     ></textarea>
                                 </div>
@@ -143,8 +129,8 @@ const onSubmit = () => {
                                     class="pixel-border px-6 py-3 transition-all"
                                     :class="[
                                         isSubmitting
-                                            ? 'pixel-border-stone brightness-75 cursor-not-allowed'
-                                            : 'pixel-border-gold hover:brightness-110'
+                                            ? 'pixel-border-stone cursor-not-allowed brightness-75'
+                                            : 'pixel-border-gold hover:brightness-110',
                                     ]"
                                 >
                                     <span class="font-mono font-bold text-black">
@@ -153,7 +139,6 @@ const onSubmit = () => {
                                     </span>
                                 </button>
                             </div>
-
                         </form>
                     </div>
                 </div>
@@ -163,12 +148,12 @@ const onSubmit = () => {
 </template>
 
 <style scoped>
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type='date']::-webkit-calendar-picker-indicator {
     filter: invert(1);
     cursor: pointer;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+input[type='date']::-webkit-calendar-picker-indicator:hover {
     filter: invert(0.8);
 }
 
@@ -188,7 +173,6 @@ textarea::-webkit-scrollbar-thumb {
 textarea::-webkit-scrollbar-thumb:hover {
     background: var(--color-dark-dirt-primary);
 }
-
 
 input:focus,
 textarea:focus {

@@ -24,7 +24,7 @@ const gameContainer = ref<HTMLElement>()
 const loadingProgress = ref(0)
 
 // Game state composable
-const { initializeGameIntegration, isInitialized } = useGameState()
+const { initializeGameIntegration } = useGameState()
 
 // State
 let game: Phaser.Game | null = null

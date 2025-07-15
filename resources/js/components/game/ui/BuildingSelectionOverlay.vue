@@ -78,10 +78,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useGameStore } from '@/game/stores/gameStore';
 import type { TiledBuilding } from '@/game/objects/TiledBuilding';
-import type { ResourceType } from '@/game/types/ResourceSystemTypes';
 import BuildingIcon from './BuildingIcon.vue';
 import ActionButton from './ActionButton.vue';
 
@@ -122,7 +121,7 @@ const canCollect = computed(() => {
 });
 
 const handleBuildingSelected = (event: CustomEvent) => {
-  const { building, buildingName: name } = event.detail;
+  const { building } = event.detail;
   
   selectedBuilding.value = building;
   buildingData.value = building;

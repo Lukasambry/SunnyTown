@@ -2,7 +2,6 @@
 import { computed, onMounted, ref } from 'vue';
 import type { ResourceStack } from '@game/types/ResourceSystemTypes.ts';
 import { ResourceManager } from '@game/services/ResourceManager.ts';
-import ResourceIcon from './ResourceIcon.vue';
 
 interface Props {
     resource: ResourceStack;
@@ -41,12 +40,6 @@ const resourceName = computed(() => {
     return resourceData.value.name || 'Unknown';
 });
 
-const resourceColor = computed(() => {
-    if (!resourceData.value) return '#FFFFFF';
-    const color = resourceData.value.color || 0xffffff;
-    return `#${color.toString(16).padStart(6, '0')}`;
-});
-
 const sizeClasses = computed(() => {
     const sizeMap = {
         sm: 'text-xs',
@@ -61,15 +54,6 @@ const iconClasses = computed(() => {
         sm: 'w-6 h-6',
         md: 'w-8 h-8',
         lg: 'w-10 h-10',
-    };
-    return sizeMap[props.size];
-});
-
-const iconSize = computed(() => {
-    const sizeMap = {
-        sm: 16,
-        md: 20,
-        lg: 24,
     };
     return sizeMap[props.size];
 });

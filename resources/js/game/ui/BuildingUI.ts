@@ -109,17 +109,6 @@ export class BuildingUI extends Phaser.Scene {
     }
 
     create(): void {
-        const uiBackground = this.add.rectangle(
-            0,
-            this.game.canvas.height - 80,
-            this.game.canvas.width,
-            80,
-            0x000000,
-            0.7
-        )
-            .setOrigin(0)
-            .setScrollFactor(0);
-
         this.buildings.forEach((building, index) => {
             const x = 20 + (index * 90);
             const y = this.game.canvas.height - 40;

@@ -51,7 +51,6 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { useGameStore } from '@/game/stores/gameStore'
 import { WorkerRegistry } from '@/game/services/WorkerRegistry'
 import { BuildingRegistry } from '@/game/services/BuildingRegistry'
 import { WorkerType } from '@/game/types/WorkerConfigTypes'
@@ -64,7 +63,6 @@ interface Props {
 
 let pollingInterval: number | null = null;
 const props = defineProps<Props>()
-const gameStore = useGameStore()
 
 const assignedWorkerCount = ref(0)
 const maxWorkers = ref(0)

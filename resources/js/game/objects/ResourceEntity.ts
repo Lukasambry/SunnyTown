@@ -1,12 +1,10 @@
-import { Scene } from 'phaser';
-type Scene = typeof Scene;
+import Phaser from 'phaser';
 
 import { AnimationType } from '@/game/types/AnimationTypes';
 import { AnimationUtils } from '@/game/utils/AnimationUtils';
 import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '@/game/types/ResourceEntityTypes';
 import { ResourceType } from '@/game/types/ResourceSystemTypes';
 import { ResourceManager } from '@/game/services/ResourceManager';
-import { useGameStore } from '@/game/stores/gameStore';
 
 interface ResourceEntityState {
     isDestroyed: boolean;
@@ -19,8 +17,8 @@ interface ResourceEntityState {
 export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     private readonly config: ResourceEntityConfig;
     private readonly spawnData: ResourceEntitySpawnData;
-    private readonly state: ResourceEntityState;
-    private readonly animationHandler: ReturnType<typeof AnimationUtils.createAnimationHandler>;
+    private _state: ResourceEntityState;
+    private animationHandler: ReturnType<typeof AnimationUtils.createAnimationHandler> = {} as any;
     private readonly resourceManager: ResourceManager;
 
     private detectionZone?: Phaser.GameObjects.Zone;
@@ -28,8 +26,11 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     private healthBar?: Phaser.GameObjects.Sprite;
 
     private healingTimer?: Phaser.Time.TimerEvent;
+    private cornerSprites: Phaser.GameObjects.Sprite[] = [];
+    private static readonly CORNER_TYPES = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+    private isPlayerApproaching: boolean = false;
 
-    constructor(scene: Scene, x: number, y: number, config: ResourceEntityConfig, spawnData: ResourceEntitySpawnData) {
+    constructor(scene: Phaser.Scene, x: number, y: number, config: ResourceEntityConfig, spawnData: ResourceEntitySpawnData) {
         super(scene, x, y, config.texture);
 
         this.config = config;
@@ -37,7 +38,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
 
         this.resourceManager = ResourceManager.getInstance();
 
-        this.state = {
+        this._state = {
             isDestroyed: false,
             isBeingHarvested: false,
             currentHealth: config.health,
@@ -51,7 +52,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     public static create(
-        scene: Scene,
+        scene: Phaser.Scene,
         x: number,
         y: number,
         config: ResourceEntityConfig,
@@ -143,13 +144,21 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     private setupCursorEvents(): void {
-        this.on('pointerover', this.handlePointerOver.bind(this));
-        this.on('pointerout', this.handlePointerOut.bind(this));
+        this.on('pointerover', () => {
+            this.handlePointerOver();
+            this.showHoverCorners();
+        });
+        this.on('pointerout', () => {
+            this.handlePointerOut();
+            if (!this.isPlayerApproaching) {
+                this.hideHoverCorners();
+            }
+        });
         this.on('pointerdown', this.handlePointerDown.bind(this));
     }
 
     private handlePointerOver(): void {
-        if (!this.state.isDestroyed && (this.scene as any).uiScene) {
+        if (!this._state.isDestroyed && (this.scene as any).uiScene) {
             (this.scene as any).uiScene.defaultCursor.setVisible(false);
             (this.scene as any).uiScene.hoverCursor.setVisible(true);
         }
@@ -163,10 +172,11 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     private handlePointerDown(): void {
-        if (!this.state.isDestroyed && !this.state.isBeingHarvested) {
+        if (!this._state.isDestroyed && !this._state.isBeingHarvested) {
             const player = (this.scene as any).player;
             if (player) {
-                this.startPlayerHarvesting(player);
+                // Ajout d'un paramètre pour permettre à MainScene de gérer la cible
+                this.startPlayerHarvesting(player, false);
             }
         }
     }
@@ -184,7 +194,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     private handlePlayerOverlap(): void {
-        if (!this.state.isDestroyed && !this.state.isBeingHarvested) {
+        if (!this._state.isDestroyed && !this._state.isBeingHarvested) {
             this.updateCursorBasedOnFacing();
         }
     }
@@ -207,8 +217,23 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    public startPlayerHarvesting(player: any): void {
-        if (this.state.isBeingHarvested || this.state.isDestroyed) return;
+    public startPlayerHarvesting(player: any, manageTarget: boolean = true): void {
+        if (this._state.isBeingHarvested || this._state.isDestroyed) return;
+
+        if (manageTarget) {
+            // Gestion par défaut (clic direct sur l'entité)
+            const mainScene = this.scene as any;
+            if (mainScene && mainScene.currentHarvestTarget && mainScene.currentHarvestTarget !== this) {
+                mainScene.currentHarvestTarget.hideHoverCorners();
+                mainScene.currentHarvestTarget.isPlayerApproaching = false;
+            }
+            if (mainScene) {
+                mainScene.currentHarvestTarget = this;
+            }
+        }
+
+        this.isPlayerApproaching = true;
+        this.showHoverCorners();
 
         const interactionPoint = this.findNearestInteractionPoint(player.x, player.y);
         const mainScene = this.scene as any;
@@ -221,9 +246,14 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
             targetTilePos.x, targetTilePos.y,
             (path: { x: number; y: number }[] | null) => {
                 if (!path) {
+                    return;
                 }
 
                 player.setPath(path);
+                // Afficher les dots du chemin pour la récolte
+                if (mainScene.showPathDots) {
+                    mainScene.showPathDots(path);
+                }
                 this.waitForPlayerArrival(player, interactionPoint);
             }
         );
@@ -251,7 +281,13 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
                     stableCount++;
                     if (stableCount >= 1) {
                         checkInterval.destroy();
-                        if (!this.state.isDestroyed) {
+                        this.hideHoverCorners();
+                        this.isPlayerApproaching = false;
+                        // Réinitialiser la cible courante dans MainScene
+                        if (mainScene && mainScene.currentHarvestTarget === this) {
+                            mainScene.currentHarvestTarget = null;
+                        }
+                        if (!this._state.isDestroyed) {
                             player.setFlipX(this.x <= player.x);
                             this.startAutoHarvesting().catch(console.error);
                         }
@@ -265,31 +301,31 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     private async startAutoHarvesting(isWorker: boolean = false): Promise<void> {
-        if (!isWorker && this.state.isBeingHarvested) return;
+        if (!isWorker && this._state.isBeingHarvested) return;
 
-        this.state.isBeingHarvested = true;
+        this._state.isBeingHarvested = true;
         this.setDepth(0);
 
         let isSequenceCancelled = false;
 
-        while (this.state.currentHealth > 0 && !this.state.isDestroyed && !isSequenceCancelled) {
+        while (this._state.currentHealth > 0 && !this._state.isDestroyed && !isSequenceCancelled) {
             if (!isWorker && this.isPlayerMoving()) {
                 this.stopHarvesting();
                 isSequenceCancelled = true;
                 break;
             }
 
-            this.state.currentHealth -= this.config.damagePerHit;
+            this._state.currentHealth -= this.config.damagePerHit;
             await this.performHit(isWorker);
 
-            if (this.state.currentHealth <= 0) break;
+            if (this._state.currentHealth <= 0) break;
         }
 
-        if (!isSequenceCancelled && this.state.currentHealth <= 0) {
+        if (!isSequenceCancelled && this._state.currentHealth <= 0) {
             this.destroyEntity(isWorker);
         }
 
-        this.state.isBeingHarvested = false;
+        this._state.isBeingHarvested = false;
     }
 
     private isPlayerMoving(): boolean {
@@ -314,8 +350,8 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         } else {
             this.updateHealthBar(true);
             this.spawnParticles();
-            if (this.state.currentHarvester) {
-                this.scene.events.emit('worker_harvesting', this.state.currentHarvester);
+            if (this._state.currentHarvester) {
+                this.scene.events.emit('worker_harvesting', this._state.currentHarvester);
             }
         }
 
@@ -338,8 +374,8 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
             this.dropResourcesForPlayer();
         }
 
-        this.state.isDestroyed = true;
-        this.state.isBlocking = false;
+        this._state.isDestroyed = true;
+        this._state.isBlocking = false;
         this.cleanup();
     }
 
@@ -383,7 +419,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     private stopHarvesting(): void {
-        this.state.isBeingHarvested = false;
+        this._state.isBeingHarvested = false;
         const player = (this.scene as any).player;
         if (player) {
             player.stopChopAnimation();
@@ -395,12 +431,12 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     private updateHealthBar(forceShow: boolean = false): void {
         if (!this.healthBar) return;
 
-        const healthPercent = this.state.currentHealth / this.config.health;
+        const healthPercent = this._state.currentHealth / this.config.health;
         const frame = Math.floor(healthPercent * 6);
 
         this.healthBar.setFrame(frame);
         this.healthBar.setPosition(this.x, this.y - 20);
-        this.healthBar.setVisible(forceShow || this.state.currentHealth < this.config.health);
+        this.healthBar.setVisible(forceShow || this._state.currentHealth < this.config.health);
     }
 
     private spawnParticles(): void {
@@ -421,7 +457,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     private startHealingTimer(): void {
         this.healingTimer?.destroy();
         this.healingTimer = this.scene.time.delayedCall(10000, () => {
-            this.state.currentHealth = this.config.health;
+            this._state.currentHealth = this.config.health;
             this.updateHealthBar();
         });
     }
@@ -430,12 +466,12 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         this.setVisible(false);
         this.stump?.setVisible(true);
 
-        if (this.state.currentHarvester) {
+        if (this._state.currentHarvester) {
             this.releaseHarvester();
         }
 
         this.healthBar?.setVisible(false);
-        this.state.isBlocking = false;
+        this._state.isBlocking = false;
 
         const mainScene = this.scene as any;
         if (mainScene.rebuildPathfindingGrid) {
@@ -448,14 +484,14 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     private respawn(): void {
         this.stump?.setVisible(false);
 
-        this.state.isDestroyed = false;
-        this.state.isBeingHarvested = false;
-        this.state.isBlocking = this.config.blockingPath;
+        this._state.isDestroyed = false;
+        this._state.isBeingHarvested = false;
+        this._state.isBlocking = this.config.blockingPath;
         this.setVisible(true);
         this.animationHandler.idle(this.config.animations.idle as AnimationType);
         this.setDepth(10);
 
-        this.state.currentHealth = this.config.health;
+        this._state.currentHealth = this.config.health;
         this.updateHealthBar();
 
         const mainScene = this.scene as any;
@@ -488,22 +524,22 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     public isAvailableForHarvest(harvester: any): boolean {
-        return !this.state.isDestroyed && (
-                this.state.currentHarvester === null
-                || this.state.currentHarvester === harvester
+        return !this._state.isDestroyed && (
+                this._state.currentHarvester === null
+                || this._state.currentHarvester === harvester
             );
     }
 
     public setHarvester(harvester: any): boolean {
         if (this.isAvailableForHarvest(harvester)) {
-            this.state.currentHarvester = harvester;
+            this._state.currentHarvester = harvester;
             return true;
         }
         return false;
     }
 
     public releaseHarvester(): void {
-        this.state.currentHarvester = null;
+        this._state.currentHarvester = null;
     }
 
     public findNearestInteractionPoint(workerX: number, workerY: number): { x: number; y: number } {
@@ -511,25 +547,47 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         const entityTileX = Math.floor(this.x / tileSize);
         const entityTileY = Math.floor(this.y / tileSize);
 
-        const positions = [
-            { x: (entityTileX - 1) * tileSize, y: entityTileY * tileSize },
-            { x: (entityTileX + 1) * tileSize, y: entityTileY * tileSize }
-        ];
+        // Points à gauche et à droite
+        const left = { x: (entityTileX - 1) * tileSize, y: entityTileY * tileSize };
+        const right = { x: (entityTileX + 1) * tileSize, y: entityTileY * tileSize };
 
-        return positions.reduce((closest, current) => {
-            const currentDist = Phaser.Math.Distance.Between(workerX, workerY, current.x, current.y);
-            const closestDist = Phaser.Math.Distance.Between(workerX, workerY, closest.x, closest.y);
-            return currentDist < closestDist ? current : closest;
-        });
+        // Accès à la grille de pathfinding
+        const mainScene = this.scene as any;
+        const baseGrid = mainScene.baseGrid as number[][];
+        const mapWidth = baseGrid[0]?.length || 0;
+        const mapHeight = baseGrid.length;
+
+        function isWalkable(pos: { x: number; y: number }) {
+            const tx = Math.floor(pos.x / tileSize);
+            const ty = Math.floor(pos.y / tileSize);
+            return (
+                tx >= 0 && tx < mapWidth && ty >= 0 && ty < mapHeight && baseGrid[ty][tx] === 0
+            );
+        }
+
+        const leftWalkable = isWalkable(left);
+        const rightWalkable = isWalkable(right);
+
+        // Cas 1 : les deux sont atteignables, on prend le plus proche
+        if (leftWalkable && rightWalkable) {
+            const distLeft = Phaser.Math.Distance.Between(workerX, workerY, left.x, left.y);
+            const distRight = Phaser.Math.Distance.Between(workerX, workerY, right.x, right.y);
+            return distLeft <= distRight ? left : right;
+        }
+        // Cas 2 : un seul est atteignable
+        if (leftWalkable) return left;
+        if (rightWalkable) return right;
+        // Cas 3 : aucun n'est atteignable, fallback sur la position de l'entité
+        return { x: entityTileX * tileSize, y: entityTileY * tileSize };
     }
 
     public async workerHarvest(worker: any): Promise<boolean> {
-        if (this.state.isDestroyed) {
+        if (this._state.isDestroyed) {
             return false;
         }
 
-        this.state.currentHarvester = worker;
-        this.state.currentHealth -= this.config.damagePerHit;
+        this._state.currentHarvester = worker;
+        this._state.currentHealth -= this.config.damagePerHit;
 
         this.updateHealthBar(true);
         this.spawnParticles();
@@ -540,7 +598,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
             console.error(`ResourceEntity: Error playing hit animation:`, error);
         }
 
-        if (this.state.currentHealth <= 0) {
+        if (this._state.currentHealth <= 0) {
             try {
                 this.animationHandler.action(this.config.animations.destroy as AnimationType);
             } catch (error) {
@@ -549,8 +607,8 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
 
             this.giveResourcesToWorker(worker);
 
-            this.state.isDestroyed = true;
-            this.state.isBlocking = false;
+            this._state.isDestroyed = true;
+            this._state.isBlocking = false;
 
             this.cleanup();
             return true;
@@ -645,11 +703,11 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     }
 
     public isBlockingPath(): boolean {
-        return this.state.isBlocking;
+        return this._state.isBlocking;
     }
 
     public isDestroyed(): boolean {
-        return this.state.isDestroyed;
+        return this._state.isDestroyed;
     }
 
     public getResourceDrops(): readonly { type: string; amount: number; chance: number }[] {
@@ -661,16 +719,16 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
     // #region Cleanup
 
     destroy(fromScene?: boolean): void {
+        this.hideHoverCorners();
         this.healthBar?.destroy();
         this.detectionZone?.destroy();
         this.stump?.destroy();
         this.healingTimer?.destroy();
-
         super.destroy(fromScene);
     }
 
     update(): void {
-        if (this.state.isDestroyed || !this.detectionZone) return;
+        if (this._state.isDestroyed || !this.detectionZone) return;
 
         const player = (this.scene as any).player;
         if (!player) return;
@@ -679,10 +737,86 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
 
         if (isOverlapping) {
             this.updateCursorBasedOnFacing();
-        } else if (this.state.isBeingHarvested) {
+        } else if (this._state.isBeingHarvested) {
             this.stopHarvesting();
         }
     }
 
     // #endregion
+
+    private showHoverCorners(): void {
+        this.hideHoverCorners();
+        const tileSize = 16;
+        const half = tileSize / 2;
+        const offset = 3;
+        const xOffset = 0;
+        const yOffset = 6;
+        const positions = {
+            'top-left': { x: this.x - half - offset + xOffset, y: this.y - half - offset + yOffset},
+            'top-right': { x: this.x + half + offset + xOffset, y: this.y - half - offset + yOffset},
+            'bottom-left': { x: this.x - half - offset + xOffset, y: this.y + half + offset + yOffset},
+            'bottom-right': { x: this.x + half + offset + xOffset, y: this.y + half + offset + yOffset},
+        };
+        for (const type of ResourceEntity.CORNER_TYPES) {
+            const spriteKey = this.getCornerSpriteKey(type);
+            const pos = positions[type as keyof typeof positions];
+            const sprite = this.scene.add.sprite(pos.x, pos.y, spriteKey);
+            sprite.setOrigin(0.5, 0.5);
+            sprite.setAlpha(1);
+            if (type === 'top-left' || type === 'top-right') {
+                sprite.setDepth(this.depth - 1); // derrière l'entité
+            } else {
+                sprite.setDepth(this.depth + 1000); // devant l'entité
+            }
+            this.createCornerAnimation(sprite, type);
+            this.cornerSprites.push(sprite);
+        }
+    }
+
+    private hideHoverCorners(): void {
+        this.cornerSprites.forEach(sprite => {
+            this.scene.tweens && this.scene.tweens.killTweensOf(sprite);
+            sprite.destroy();
+        });
+        this.cornerSprites = [];
+    }
+
+    private getCornerSpriteKey(cornerType: string): string {
+        switch (cornerType) {
+            case 'top-left':
+                return 'corner-top-left';
+            case 'top-right':
+                return 'corner-top-right';
+            case 'bottom-left':
+                return 'corner-bottom-left';
+            case 'bottom-right':
+                return 'corner-bottom-right';
+            default:
+                return 'corner-top-left';
+        }
+    }
+
+    private createCornerAnimation(sprite: Phaser.GameObjects.Sprite, type: string): void {
+        let xMove = 0;
+        let yMove = 0;
+        switch (type) {
+            case 'top-left':
+                xMove = 3; yMove = 3; break;
+            case 'top-right':
+                xMove = -3; yMove = 3; break;
+            case 'bottom-left':
+                xMove = 3; yMove = -3; break;
+            case 'bottom-right':
+                xMove = -3; yMove = -3; break;
+        }
+        this.scene.tweens && this.scene.tweens.add({
+            targets: sprite,
+            x: sprite.x + xMove,
+            y: sprite.y + yMove,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
 }

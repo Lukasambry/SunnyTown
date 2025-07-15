@@ -1,8 +1,5 @@
-import { Scene } from 'phaser';
-type Scene = typeof Scene;
-
 import { TiledBuilding } from '../objects/TiledBuilding';
-import type { BuildingPosition, BuildingConfig } from '../types';
+import type { BuildingPosition } from '../types';
 
 interface StoredBuilding {
     readonly type: string;
@@ -17,12 +14,12 @@ interface BuildingManagerEvents {
 }
 
 export class BuildingManager {
-    private readonly scene: Scene;
+    private readonly scene: any;
     private readonly buildings: TiledBuilding[] = [];
-    private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<Function>>();
+    private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<(...args: any[]) => void>>();
     private readonly STORAGE_KEY = 'BUILDINGS_STORAGE';
 
-    constructor(scene: Scene) {
+    constructor(scene: any) {
         this.scene = scene;
     }
 
@@ -58,15 +55,24 @@ export class BuildingManager {
     }
 
     public getBuildingAt(x: number, y: number): TiledBuilding | null {
-        return this.buildings.find(building => {
-            const pos = building.getPosition();
-            const dim = building.getDimensions();
+        for (const building of this.buildings) {
+            const position = building.getPosition();
+            const dimensions = building.getDimensions();
 
-            return x >= pos.x &&
-                   x < pos.x + (dim.tilesWidth * 16) &&
-                   y >= pos.y &&
-                   y < pos.y + (dim.tilesHeight * 16);
-        }) ?? null;
+            const buildingBounds = {
+                left: position.x,
+                right: position.x + (dimensions.tilesWidth * 16),
+                top: position.y,
+                bottom: position.y + (dimensions.tilesHeight * 16)
+            };
+
+            if (x >= buildingBounds.left && x <= buildingBounds.right &&
+                y >= buildingBounds.top && y <= buildingBounds.bottom) {
+                return building;
+            }
+        }
+
+        return null;
     }
 
     public getBuildingsByType(type: string): readonly TiledBuilding[] {
@@ -220,7 +226,7 @@ export class BuildingManager {
         if (callbacks) {
             callbacks.forEach(callback => {
                 try {
-                    (callback as Function)(...args);
+                    (callback as (...args: any[]) => void)(...args);
                 } catch (error) {
                     console.error(`Erreur dans le callback ${event}:`, error);
                 }

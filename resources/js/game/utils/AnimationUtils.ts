@@ -198,7 +198,7 @@ export class AnimationUtils {
    * Debug helper to log animation stats
    */
   public static logAnimationStats(): void {
-    const stats = this.registry.getAnimationStats()
+    this.registry.getAnimationStats()
   }
 
   /**

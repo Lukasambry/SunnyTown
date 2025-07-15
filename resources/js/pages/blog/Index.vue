@@ -16,9 +16,7 @@ const props = defineProps<{
 
 const sortedBlogPosts = computed(() => {
     if (!props.blogPosts) return [];
-    return [...props.blogPosts].sort((a, b) =>
-        new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
-    );
+    return [...props.blogPosts].sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 });
 </script>
 
@@ -27,41 +25,34 @@ const sortedBlogPosts = computed(() => {
 
     <template>
         <div class="pixel-border pixel-border-stone mb-6 px-4 py-2">
-            <h2 class="font-semibold text-xl leading-tight font-mono">
-                Blog
-            </h2>
+            <h2 class="font-mono text-xl leading-tight font-semibold">Blog</h2>
         </div>
     </template>
 
     <div v-if="!blogPosts || blogPosts.length <= 0" class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="pixel-border pixel-border-dirt">
                 <div class="pixel-border pixel-border-dark-dirt p-6">
-                    <p class="text-white font-mono">Aucun article trouvé.</p>
+                    <p class="font-mono text-white">Aucun article trouvé.</p>
                 </div>
             </div>
         </div>
     </div>
 
     <div v-else class="py-12 pb-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
-            <article
-                v-for="post in sortedBlogPosts"
-                :key="post.id"
-                class="pixel-border pixel-border-dirt dark:pixel-border-dark-dirt"
-            >
-                <div class="pixel-border pixel-border-dark-dirt dark:!bg-transparent dark:!shadow-none p-6">
+        <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
+            <article v-for="post in sortedBlogPosts" :key="post.id" class="pixel-border pixel-border-dirt dark:pixel-border-dark-dirt">
+                <div class="pixel-border pixel-border-dark-dirt p-6 dark:!bg-transparent dark:!shadow-none">
                     <header class="mb-4">
-                        <div class="flex flex-col md:flex-row md:items-center gap-2">
-                            <div class="pixel-border pixel-border-gold px-4 py-2 inline-block w-full md:max-w-[70%]">
-                                <h2 class="text-xl font-bold font-mono text-black overflow-hidden" :title="post.title">
+                        <div class="flex flex-col gap-2 md:flex-row md:items-center">
+                            <div class="pixel-border pixel-border-gold inline-block w-full px-4 py-2 md:max-w-[70%]">
+                                <h2 class="overflow-hidden font-mono text-xl font-bold text-black" :title="post.title">
                                     {{ post.title }}
                                 </h2>
                             </div>
 
-                            <div class="pixel-border pixel-border-stone px-3 py-1 max-sm:mt-2 md:ml-4 inline-block">
-                                <p class="text-sm font-mono text-black">
+                            <div class="pixel-border pixel-border-stone inline-block px-3 py-1 max-sm:mt-2 md:ml-4">
+                                <p class="font-mono text-sm text-black">
                                     Par {{ post.author }} - {{ new Date(post.published_at).toLocaleDateString('fr-FR') }}
                                 </p>
                             </div>
@@ -69,9 +60,9 @@ const sortedBlogPosts = computed(() => {
                     </header>
 
                     <div class="pixel-border pixel-border-dirt">
-                        <div class="p-4 bg-white/90 text-black">
+                        <div class="bg-white/90 p-4 text-black">
                             <div
-                                class="prose prose-sm max-w-none font-mono text-black prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black"
+                                class="prose prose-sm prose-headings:text-black prose-p:text-black prose-strong:text-black prose-em:text-black max-w-none font-mono text-black"
                                 v-html="post.content"
                             ></div>
                         </div>
@@ -79,33 +70,31 @@ const sortedBlogPosts = computed(() => {
 
                     <footer class="mt-4 flex justify-end">
                         <div class="pixel-border pixel-border-stone px-3 py-1">
-                            <span class="text-xs font-mono text-black">Article #{{ post.id }}</span>
+                            <span class="font-mono text-xs text-black">Article #{{ post.id }}</span>
                         </div>
                     </footer>
-
                 </div>
             </article>
-
         </div>
     </div>
 </template>
 
 <style scoped>
-.prose :where(h1, h2, h3, h4, h5, h6):not(:where([class~="not-prose"] *)) {
+.prose :where(h1, h2, h3, h4, h5, h6):not(:where([class~='not-prose'] *)) {
     font-family: '04b03', monospace;
     font-weight: bold;
 }
 
-.prose :where(p):not(:where([class~="not-prose"] *)) {
+.prose :where(p):not(:where([class~='not-prose'] *)) {
     font-family: '04b03', monospace;
     line-height: 1.6;
 }
 
-.prose :where(strong):not(:where([class~="not-prose"] *)) {
+.prose :where(strong):not(:where([class~='not-prose'] *)) {
     font-weight: bold;
 }
 
-.prose :where(em):not(:where([class~="not-prose"] *)) {
+.prose :where(em):not(:where([class~='not-prose'] *)) {
     font-style: italic;
 }
 
@@ -115,8 +104,13 @@ const sortedBlogPosts = computed(() => {
 }
 
 @keyframes pixel-glow {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(1.1); }
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+    50% {
+        filter: brightness(1.1);
+    }
 }
 
 .pixel-border-gold:hover {

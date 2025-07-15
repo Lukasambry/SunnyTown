@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Message;
 use App\Models\MessageImage;
+use App\Models\Thread;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MessageController extends Controller
 {
@@ -21,29 +23,44 @@ class MessageController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'thread_id' => 'required|exists:threads,id',
-            'content'   => 'required|string',
-        ]);
+        try {
+            $validated = $request->validate([
+                'thread_id' => 'required|exists:threads,id',
+                'content' => 'required|string|min:3',
+                'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
 
-        $message = Message::create([
-            'thread_id' => $data['thread_id'],
-            'user_id'   => auth()->id(),
-            'content'   => $data['content'],
-        ]);
+            $thread = Thread::findOrFail($validated['thread_id']);
 
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('message_images', 'public');
+            $message = new Message();
+            $message->thread_id = $thread->id;
+            $message->user_id = auth()->id();
+            $message->content = $validated['content'];
+            $message->save();
 
-                MessageImage::create([
-                    'message_id' => $message->id,
-                    'path'       => $path,
-                ]);
+            if (!$message->thread_id) {
+                throw new \Exception('Thread ID not saved');
             }
-        }
 
-        return redirect()->route('threads.show', $data['thread_id']);
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('message_images', 'public');
+                    MessageImage::create([
+                        'message_id' => $message->id,
+                        'path' => $path,
+                    ]);
+                }
+            }
+
+            return redirect()->route('forums.threads.show', [
+                'category' => $thread->forumCategory->id,
+                'thread' => $thread->id
+            ])->with('success', 'Message posté avec succès');
+
+        } catch (\Exception $e) {
+            dd('Message creation failed: ' . $e->getMessage());
+            return back()->with('error', 'Erreur lors de la création du message');
+        }
     }
 
     /**

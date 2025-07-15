@@ -66,7 +66,7 @@
     progress: number
   }
   
-  const props = defineProps<Props>()
+  defineProps<Props>()
   
   // Loading messages
   const loadingMessages = [

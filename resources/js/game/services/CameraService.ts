@@ -1,5 +1,5 @@
 import { Scene } from 'phaser';
-import { CameraMode, type CameraConfig, type CameraTransition } from '../types/CameraTypes';
+import { CameraMode, type CameraConfig } from '../types/CameraTypes';
 import type { Position } from '../types';
 
 export class CameraService {

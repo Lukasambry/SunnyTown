@@ -1,28 +1,23 @@
-import { Scene } from 'phaser';
-type Scene = typeof Scene;
-
 import { ResourceEntity } from '../objects/ResourceEntity';
 import { ResourceEntityRegistry } from './ResourceEntityRegistry';
 import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '../types/ResourceEntityTypes';
 
 export class ResourceEntityManager {
-    private readonly scene: Scene;
+    private readonly scene: any;
     private readonly registry: ResourceEntityRegistry;
     private readonly entities = new Map<string, ResourceEntity[]>();
     private readonly entitiesByLayer = new Map<string, ResourceEntity[]>();
 
-    constructor(scene: Scene) {
+    constructor(scene: any) {
         this.scene = scene;
         this.registry = ResourceEntityRegistry.getInstance();
     }
 
     public spawnFromMap(map: Phaser.Tilemaps.Tilemap): void {
         const configs = this.registry.getAllConfigs();
-        let totalSpawned = 0;
 
         configs.forEach(config => {
-            const spawned = this.spawnEntitiesFromLayer(map, config);
-            totalSpawned += spawned;
+            this.spawnEntitiesFromLayer(map, config);
         });
     }
 

@@ -22,6 +22,7 @@ import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
 import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
+import { ZoneBlockerService } from '../services/ZoneBlockerService';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -50,15 +51,17 @@ export class MainScene extends Scene {
     private easyStar: EasyStar.js;
     private tileWidth: number = 16;
     private tileHeight: number = 16;
-    private baseGrid: number[][] = [];
     private buildingRegistry!: BuildingRegistry;
     private animationRegistry!: AnimationRegistry;
     private resourceEntityManager!: ResourceEntityManager;
     public resourceManager!: ResourceManager;
+    public baseGrid: number[][] = [];
+    public currentHarvestTarget: any = null;
 
     private workerManager!: WorkerManager;
     private cameraService!: CameraService;
     private buildingSelectionService!: BuildingSelectionService;
+    private zoneBlockerService!: ZoneBlockerService;
 
     private isCameraFollowingPlayer: boolean = true;
     private isDraggingCamera: boolean = false;
@@ -66,6 +69,7 @@ export class MainScene extends Scene {
     private targetIndicator: Phaser.GameObjects.Image | null = null;
     private targetIndicatorTween: Phaser.Tweens.Tween | null = null;
     private playerLevelSystem!: PlayerLevelSystem;
+    private pathDotsGroup: Phaser.GameObjects.Group | null = null;
 
     constructor() {
         super({ key: 'MainScene' });
@@ -139,6 +143,10 @@ export class MainScene extends Scene {
         this.load.tilemapTiledJSON('house-template', 'buildings/templates/house-template.json');
         this.load.tilemapTiledJSON('sawmill-template', 'buildings/templates/sawmill-template.json');
 
+        // Utilities
+        this.load.image('select_dots', 'ui/select_dots.png');
+        this.load.image('select_dots_large', 'ui/select_dots_large.png');
+
         // Load icons for UI
         this.load.image('house-icon', 'ui/icons/house.png');
         this.load.image('sawmill-icon', 'ui/icons/sawmill.png');
@@ -146,6 +154,8 @@ export class MainScene extends Scene {
     }
 
     create() {
+        console.log('MainScene create called');
+        this.pathDotsGroup = this.add.group();
         // Initialize animation registry for this scene
         this.setupAnimations();
         this.setupVueResourceSync();
@@ -221,6 +231,7 @@ export class MainScene extends Scene {
         this.cameraService.setPlayer(this.player);
 
         this.buildingSelectionService = new BuildingSelectionService(this, this.cameraService);
+        this.zoneBlockerService = new ZoneBlockerService(this, this.cameraService);
 
         this.buildingRegistry = BuildingRegistry.getInstance();
 
@@ -256,6 +267,13 @@ export class MainScene extends Scene {
                 hasCollision,
                 isAbovePlayer,
             });
+        });
+
+        this.zoneBlockerService.initialize(this.map);
+
+        window.addEventListener('game:unlockZoneBlocker', (event: CustomEvent) => {
+            const { blockerName } = event.detail;
+            this.zoneBlockerService.unlockBlocker(blockerName);
         });
 
         this.player.setDepth(1);
@@ -382,8 +400,17 @@ export class MainScene extends Scene {
 
         // Player movement: only on left click, not when right is used for camera drag
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+            console.log('pointerdown event triggered');
             if ((this.buildingPreview && this.buildingPreview.isDraggingActive()) || pointer.event.defaultPrevented) {
                 return;
+            }
+            // Si on clique ailleurs que sur une ResourceEntity, désactive les coins
+            const objects = this.input.hitTestPointer(pointer);
+            const isResourceEntity = objects.some(obj => obj.constructor && obj.constructor.name === 'ResourceEntity');
+            if (!isResourceEntity && this.currentHarvestTarget) {
+                this.currentHarvestTarget.hideHoverCorners();
+                this.currentHarvestTarget.isPlayerApproaching = false;
+                this.currentHarvestTarget = null;
             }
             // Only move player if left button is pressed and not right
             if (pointer.leftButtonDown() && !pointer.rightButtonDown()) {
@@ -406,11 +433,13 @@ export class MainScene extends Scene {
                 }
 
                 this.easyStar.findPath(playerTileX, playerTileY, targetTileX, targetTileY, (path) => {
+                    console.log('findPath callback called, path:', path);
                     if (path === null) {
                         console.log('No path found!');
                     } else {
                         this.player.setPath(path);
                         this.createTargetIndicator(path);
+                        this.showPathDots(path); // Afficher les points du chemin
                     }
                 });
 
@@ -429,6 +458,23 @@ export class MainScene extends Scene {
             this.testWorkerSystem();
         });
         /* ----------------------- */
+
+        // Ajout d'un listener global pour pointerdown sur les ResourceEntity
+        this.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: any) => {
+            if (gameObject instanceof Phaser.GameObjects.Sprite && gameObject.constructor.name === 'ResourceEntity') {
+                // Si une autre entité était ciblée, désactive ses coins
+                if (this.currentHarvestTarget && this.currentHarvestTarget !== gameObject) {
+                    this.currentHarvestTarget.hideHoverCorners();
+                    this.currentHarvestTarget.isPlayerApproaching = false;
+                }
+                this.currentHarvestTarget = gameObject;
+                // Lance la récolte en mode "gestion MainScene"
+                const player = this.player;
+                if (player) {
+                    gameObject.startPlayerHarvesting(player, false);
+                }
+            }
+        });
 
         // Helper to show/hide custom cursors
         const setCustomCursor = (type: 'default' | 'grabbing' | 'none') => {
@@ -508,7 +554,10 @@ export class MainScene extends Scene {
                 this.targetIndicatorTween.stop();
                 this.targetIndicatorTween = null;
             }
+            this.clearPathDots(); // Nettoyer les points à l'arrivée
         });
+
+        // Supprimer le dot de test manuel (ligne avec this.add.image(500, 500, 'select_dots'))
     }
 
     private setupVueResourceSync(): void {
@@ -527,6 +576,10 @@ export class MainScene extends Scene {
 
     public getPlayer(): Player {
         return this.player;
+    }
+
+    public getZoneBlockerService(): ZoneBlockerService {
+        return this.zoneBlockerService;
     }
 
     private onConfirmBuildingPlacement(event: CustomEvent): void {
@@ -703,10 +756,6 @@ export class MainScene extends Scene {
         const handleBuildingSelection = (event: CustomEvent) => {
             const buildingType = event.detail;
             this.onBuildingSelectedFromVue(buildingType);
-        };
-
-        const handleBuildingDeselection = () => {
-            this.onBuildingDeselectedFromVue();
         };
 
         const handleWorkerCreation = (event: CustomEvent) => {
@@ -1454,7 +1503,17 @@ export class MainScene extends Scene {
         return source.map((row) => [...row]);
     }
 
-    private rebuildPathfindingGrid() {
+    public getBaseGrid(): number[][] {
+        return this.baseGrid;
+    }
+
+    public setBaseGridCell(x: number, y: number, value: number): void {
+        if (y >= 0 && y < this.baseGrid.length && x >= 0 && x < this.baseGrid[0].length) {
+            this.baseGrid[y][x] = value;
+        }
+    }
+
+    public rebuildPathfindingGrid(): void {
         const fullGrid = this.copyGrid(this.baseGrid);
 
         this.buildingManager.getBuildings().forEach((building) => {
@@ -1475,7 +1534,7 @@ export class MainScene extends Scene {
                         const tile = layer.tilemapLayer.getTileAt(tx, ty);
                         if (!tile) continue;
 
-                        const hasCollidesProp = !!(tile.properties && tile.properties.collides);
+                        const hasCollidesProp = !!tile.properties?.collides;
                         const tileData = tile.tileset.getTileData(tile.index);
                         const hasCollisionShapes =
                             tileData && tileData.objectgroup && tileData.objectgroup.objects && tileData.objectgroup.objects.length > 0;
@@ -1505,6 +1564,8 @@ export class MainScene extends Scene {
         const pathfinder = WorkerPathfinder.getInstance();
         pathfinder.initializeGrid(fullGrid);
         this.easyStar.setGrid(fullGrid);
+
+        console.log('Pathfinding grid rebuilt');
     }
 
     public showResourceError(message: string = 'Insufficient resources!'): void {
@@ -1885,6 +1946,17 @@ export class MainScene extends Scene {
         this.buildingManager.updateBuildings(this.player);
         this.workerManager.update();
 
+        // Supprimer les dots déjà franchis par le joueur
+        if (this.pathDotsGroup && this.pathDotsGroup.getLength() > 0) {
+            const playerTileX = Math.floor(this.player.x / this.tileWidth);
+            const playerTileY = Math.floor(this.player.y / this.tileHeight);
+            this.pathDotsGroup.getChildren().forEach((dot: any) => {
+                if (dot.getData('tileX') === playerTileX && dot.getData('tileY') === playerTileY) {
+                    dot.destroy();
+                }
+            });
+        }
+
         if (process.env.NODE_ENV === 'development') {
             this.debugResourceSync();
         }
@@ -1936,7 +2008,7 @@ export class MainScene extends Scene {
         const targetY = lastTile.y * this.tileHeight; // top of the tile
 
         this.targetIndicator = this.add.image(targetX, targetY, 'target-indicator');
-        this.targetIndicator.setDepth(1);
+        this.targetIndicator.setDepth(9999);
 
         this.targetIndicatorTween = this.tweens.add({
             targets: this.targetIndicator,
@@ -1946,5 +2018,70 @@ export class MainScene extends Scene {
             yoyo: true,
             repeat: -1,
         });
+    }
+
+    /**
+     * Affiche des points "select_dots" espacés le long du chemin du pathfinder
+     */
+    private showPathDots(path: { x: number; y: number }[]): void {
+        this.clearPathDots();
+        if (!path || path.length === 0 || !this.pathDotsGroup) return;
+        console.log('showPathDots called, path:', path);
+
+        // Afficher les dots normaux sur les tuiles intermédiaires
+        for (let i = 1; i < path.length - 1; i++) {
+            const tile = path[i];
+            const dotX = tile.x * this.tileWidth + this.tileWidth / 2;
+            const dotY = tile.y * this.tileHeight + this.tileHeight / 2;
+            const dot = this.add.image(dotX, dotY, 'select_dots');
+            dot.setDepth(0); // Sous le joueur
+            dot.setAlpha(1);
+            dot.setScale(1);
+            dot.setData('tileX', tile.x);
+            dot.setData('tileY', tile.y);
+            this.pathDotsGroup.add(dot);
+            // Animation de pulsation
+            this.tweens.add({
+                targets: dot,
+                scale: { from: 1, to: 1.4 },
+                yoyo: true,
+                repeat: -1,
+                duration: 500,
+                ease: 'Sine.easeInOut'
+            });
+        }
+
+        // Afficher un dot large sur la destination (dernière tuile)
+        if (path.length > 1) {
+            const destinationTile = path[path.length - 1];
+            const destX = destinationTile.x * this.tileWidth + this.tileWidth / 2;
+            const destY = destinationTile.y * this.tileHeight + this.tileHeight / 2;
+            const destDot = this.add.image(destX, destY, 'select_dots_large');
+            destDot.setDepth(0); // Sous le joueur
+            destDot.setAlpha(1);
+            destDot.setScale(1);
+            destDot.setData('tileX', destinationTile.x);
+            destDot.setData('tileY', destinationTile.y);
+            destDot.setData('isDestination', true);
+            this.pathDotsGroup.add(destDot);
+            // Animation de pulsation pour la destination
+            this.tweens.add({
+                targets: destDot,
+                scale: { from: 1, to: 1.6 },
+                yoyo: true,
+                repeat: -1,
+                duration: 600,
+                ease: 'Sine.easeInOut'
+            });
+        }
+    }
+
+    /**
+     * Supprime tous les points du chemin
+     */
+    private clearPathDots(): void {
+        if (this.pathDotsGroup) {
+            this.pathDotsGroup.clear(true, true);
+        }
     }
 }

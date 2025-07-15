@@ -46,6 +46,13 @@ export class TiledBuilding {
     private readonly interactiveZones: BuildingZone[] = [];
     private readonly layerStates = new Map<string, LayerState>();
 
+    private cornerPoints: { position: Position, type: string }[] = [];
+    private cornerSprites: Phaser.GameObjects.Sprite[] = [];
+    private hoverCornerSprites: Phaser.GameObjects.Sprite[] = [];
+    private isSelected: boolean = false;
+    private isHovered: boolean = false;
+    private static readonly CORNER_TYPES = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+
     private maxWorkers: number = 0;
     private buildingId: string = '';
 
@@ -88,6 +95,9 @@ export class TiledBuilding {
             console.error('Erreur lors de la création du bâtiment:', error);
             throw error;
         }
+
+        this.loadCornerPoints();
+        this.setupInteractionEvents();
     }
 
     private generateBuildingId(): string {
@@ -745,8 +755,181 @@ export class TiledBuilding {
 
     public setupCollisions(player: Phaser.Physics.Arcade.Sprite): void {
         this.collisionBodies.forEach(body => {
-            // Les collisions sont désactivées pour permettre le passage
             // this.scene.physics.add.collider(player, body);
+        });
+    }
+
+    private loadCornerPoints(): void {
+        const cornersLayer = this.map.getObjectLayer('Corners');
+
+        if (cornersLayer && cornersLayer.objects) {
+            cornersLayer.objects.forEach(obj => {
+                let cornerType = 'top-left';
+
+                if (obj.properties && Array.isArray(obj.properties)) {
+                    const typeProperty = obj.properties.find(p => p.name === 'type');
+                    if (typeProperty && TiledBuilding.CORNER_TYPES.includes(typeProperty.value)) {
+                        cornerType = typeProperty.value;
+                    }
+                }
+
+                this.cornerPoints.push({
+                    position: { x: obj.x || 0, y: obj.y || 0 },
+                    type: cornerType
+                });
+            });
+        }
+    }
+
+    private setupInteractionEvents(): void {
+        this.layers.forEach(layer => {
+            layer.setInteractive();
+
+            layer.on('pointerover', () => {
+                if (!this.isSelected) {
+                    this.setHovered(true);
+                }
+            });
+
+            layer.on('pointerout', () => {
+                if (!this.isSelected) {
+                    this.setHovered(false);
+                }
+            });
+        });
+    }
+
+    public setSelected(selected: boolean): void {
+        if (this.isSelected === selected) return;
+
+        this.isSelected = selected;
+
+        if (selected) {
+            this.setHovered(false);
+            this.showSelectionCorners();
+        } else {
+            this.hideSelectionCorners();
+        }
+    }
+
+    public setHovered(hovered: boolean): void {
+        if (this.isHovered === hovered || this.isSelected) return;
+
+        this.isHovered = hovered;
+
+        if (hovered) {
+            this.showHoverCorners();
+        } else {
+            this.hideHoverCorners();
+        }
+    }
+
+    private showSelectionCorners(): void {
+        this.hideHoverCorners();
+        this.hideSelectionCorners();
+
+        this.cornerPoints.forEach(cornerPoint => {
+            const spriteKey = this.getCornerSpriteKey(cornerPoint.type);
+            const sprite = this.scene.add.sprite(
+                this.position.x + cornerPoint.position.x,
+                this.position.y + cornerPoint.position.y,
+                spriteKey
+            );
+
+            sprite.setOrigin(0.5, 0.5);
+            sprite.setDepth(1000);
+            sprite.setAlpha(1.0);
+
+            this.createCornerAnimation(sprite, cornerPoint.type);
+            this.cornerSprites.push(sprite);
+        });
+    }
+
+    private showHoverCorners(): void {
+        this.hideHoverCorners();
+
+        this.cornerPoints.forEach(cornerPoint => {
+            const spriteKey = this.getCornerSpriteKey(cornerPoint.type);
+            const sprite = this.scene.add.sprite(
+                this.position.x + cornerPoint.position.x,
+                this.position.y + cornerPoint.position.y,
+                spriteKey
+            );
+
+            sprite.setOrigin(0.5, 0.5);
+            sprite.setDepth(2000);
+            sprite.setAlpha(1);
+            sprite.setScale(1);
+
+            this.createCornerAnimation(sprite, cornerPoint.type);
+            this.hoverCornerSprites.push(sprite);
+        });
+    }
+
+    private hideSelectionCorners(): void {
+        this.cornerSprites.forEach(sprite => {
+            this.scene.tweens.killTweensOf(sprite);
+            sprite.destroy();
+        });
+        this.cornerSprites = [];
+    }
+
+
+    private hideHoverCorners(): void {
+        this.hoverCornerSprites.forEach(sprite => {
+            this.scene.tweens.killTweensOf(sprite);
+            sprite.destroy();
+        });
+        this.hoverCornerSprites = [];
+    }
+
+
+    private getCornerSpriteKey(cornerType: string): string {
+        switch (cornerType) {
+            case 'top-left':
+                return 'corner-top-left';
+            case 'top-right':
+                return 'corner-top-right';
+            case 'bottom-left':
+                return 'corner-bottom-left';
+            case 'bottom-right':
+                return 'corner-bottom-right';
+            default:
+                return 'corner-top-left';
+        }
+    }
+
+    private createCornerAnimation(sprite: Phaser.GameObjects.Sprite, type: string): void {
+        let xMove = 0;
+        let yMove = 0;
+
+        switch (type) {
+            case 'top-left':
+                xMove = 3;
+                yMove = 3;
+                break;
+            case 'top-right':
+                xMove = -3;
+                yMove = 3;
+                break;
+            case 'bottom-left':
+                xMove = 3;
+                yMove = -3;
+                break;
+            case 'bottom-right':
+                xMove = -3;
+                yMove = -3;
+                break;
+        }
+
+        this.scene.tweens.add({
+            targets: sprite,
+            x: sprite.x + xMove,
+            y: sprite.y + yMove,
+            duration: 800,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
         });
     }
 
@@ -809,6 +992,14 @@ export class TiledBuilding {
         };
     }
 
+    public getIsSelected(): boolean {
+        return this.isSelected;
+    }
+
+    public getIsHovered(): boolean {
+        return this.isHovered;
+    }
+
     public getBuildingName(): string {
         const names: Record<string, string> = {
             'house': 'Maison',
@@ -820,6 +1011,9 @@ export class TiledBuilding {
     }
 
     public destroy(): void {
+        this.hideSelectionCorners();
+        this.hideHoverCorners();
+
         this.layers.forEach(layer => layer.destroy());
         this.interactiveZones.forEach(zone => zone.zone.destroy());
 
