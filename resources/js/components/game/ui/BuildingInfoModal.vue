@@ -1,125 +1,195 @@
-<!-- src/components/ui/BuildingInfoModal.vue -->
 <template>
-    <!-- Modal Overlay -->
     <Teleport to="body">
         <Transition name="modal-fade">
-            <div v-if="isVisible" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-                @click="handleOverlayClick">
-                <!-- Modal Content -->
-                <div class="modal-content relative w-full max-w-md mx-auto" @click.stop>
-                    <div class="bg-gray-900/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl">
-                        <!-- Header -->
-                        <div class="flex items-center justify-between p-6 border-b border-gray-700/50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                    <BuildingIcon :building-type="buildingData?.type || 'unknown'" :size="20" />
+            <div v-if="isVisible" class="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50"
+                 @click="handleOverlayClick">
+                <div class="modal-content relative w-full max-w-[1220px] mx-auto" @click.stop>
+                    <div class="m-auto h-158 w-full flex gap-6">
+
+                        <div class="flex flex-col gap-6 w-[30%]">
+                            <div class="pixel-border pixel-border-dirt w-full flex items-center gap-6 p-1 h-fit">
+                                <div class="pixel-border pixel-border-stone relative h-full w-16">
+                                    <p class="absolute left-1/2 -bottom-0.5 -translate-x-1/2">
+                                        <img :src="`/assets/game/buildings/icons/${buildingType}.png`" class="h-15 max-w-14 pixelated" :alt="buildingType">
+                                    </p>
                                 </div>
-                                <h2 class="text-xl font-bold text-white">
-                                    {{ buildingDisplayName }}
-                                </h2>
+                                <h2 class="!text-slate-800 !text-3xl" v-text="buildingDisplayName"/>
                             </div>
 
-                            <button
-                                class="w-8 h-8 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                                @click="handleClose">
-                                x
-                            </button>
+                            <div class="pixel-border pixel-border-stone w-full p-2 h-full flex flex-col gap-6">
+                                <div class="flex justify-between">
+                                    <img v-for="index in 8" :key="`${index}_dots`"
+                                         src="/assets/game/ui/select_dots.png"
+                                         class="h-5 w-auto opacity-50 pixelated"
+                                         alt="dots">
+                                </div>
+                                <div class="p-2 flex flex-col gap-6">
+                                    <div class="flex justify-between items-center h-20">
+                                        <div class="flex justify-center items-center gap-4 w-full">
+                                            <i class="!text-slate-900">📍</i>
+                                            <span class="!text-slate-900">{{ positionText }}</span>
+                                        </div>
+                                        <div class="h-full px-0.5 bg-slate-200"></div>
+                                        <div class="flex justify-center items-center gap-4 w-full">
+                                            <i class="!text-slate-900">⚙️</i>
+                                            <span class="!text-slate-900">{{ buildingLevel || 1 }}</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="!text-slate-900 text-sm">
+                                        {{ buildingDescription }}
+                                    </div>
+
+                                    <button
+                                        class="pixel-border pixel-border-stone w-full p-2 !text-slate-900 hover:bg-slate-100 transition-colors"
+                                        @click="handleClose">
+                                        Fermer
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Body -->
-                        <div class="p-6 space-y-6">
-                            <!-- Building Info -->
-                            <div class="space-y-3">
-                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Informations
-                                </h3>
-                                <div class="bg-gray-800/50 rounded-lg p-4 space-y-2">
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-400">Type:</span>
-                                        <span class="text-white">{{ buildingDisplayName }}</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-400">Position:</span>
-                                        <span class="text-white">{{ positionText }}</span>
-                                    </div>
-                                </div>
+                        <div class="pixel-border pixel-border-dark-dirt w-[70%] flex flex-col-reverse">
+                            <div class="pixel-border pixel-border-dirt h-16 w-full h-full">
+                                <div class="px-8 py-10 flex flex-col gap-10 scroll overflow-auto max-h-full">
 
-                                <!-- Description -->
-                                <p class="text-gray-300 text-sm leading-relaxed">
-                                    {{ buildingDescription }}
-                                </p>
-                            </div>
+                                    <div v-if="activeTab === 'resources'">
+                                        <div v-if="hasResources" class="space-y-9">
+                                            <div v-for="resource in storedResources" :key="resource.resourceType" class="flex gap-5 w-full">
+                                                <div class="relative h-20">
+                                                    <div class="pixel-border pixel-border-dark-dirt h-full aspect-square flex items-center justify-center pb-2">
+                                                        <div class="h-12 w-auto pixelated text-3xl">
+                                                            <img :src="`/assets/game/ui/resources/${resource.resourceType}.png`" class="h-12 w-auto pixelated" :alt="resource.resourceType">
+                                                        </div>
+                                                    </div>
+                                                    <div v-if="resource.productionRate" class="position-absolute bottom-1.5 px-0.5 pixel-border pixel-border-stone max-h-4.5 text-xs w-fit left-1/2 -translate-x-1/2 !text-slate-900">
+                                                        {{ resource.productionRate }}/min
+                                                    </div>
+                                                </div>
 
-                            <!-- Resources -->
-                            <div v-if="hasResources" class="space-y-3">
-                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Stockage des ressources
-                                </h3>
-                                <div class="space-y-3">
-                                    <div v-for="resource in storedResources" :key="resource.resourceType"
-                                         class="bg-gray-800/50 rounded-lg p-3">
-                                        <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-white">
-                        {{ getResourceName(resource.resourceType) }}
-                    </span>
-                                            <div class="flex items-center gap-2">
-                        <span class="text-xs text-gray-400">
-                            {{ resource.current }}/{{ resource.capacity }}
-                        </span>
-                                                <!-- Bouton de récolte individuel -->
-                                                <button
-                                                    v-if="resource.current > 0"
-                                                    @click="collectSingleResource(resource.resourceType, resource.current)"
-                                                    class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                                                    :disabled="!canCollectResource(resource.resourceType, resource.current)"
-                                                    :class="{ 'opacity-50 cursor-not-allowed': !canCollectResource(resource.resourceType, resource.current) }"
-                                                >
-                                                    Récolter
-                                                </button>
+                                                <div class="flex gap-4 items-center w-full py-1">
+                                                    <div class="flex flex-col gap-3 w-full">
+                                                        <div class="flex justify-between w-full">
+                                                            <div class="flex gap-4 items-center">
+                                                                <div class="pixel-border pixel-border-stone w-fit text-xs px-1 max-h-4.5 flex justify-center items-center !text-slate-900 !text-base line-height-0">
+                                                                    {{ getResourceName(resource.resourceType) }}
+                                                                </div>
+                                                                <p v-if="resource.productionRate" class="!text-slate-700">{{ resource.productionRate }}/min</p>
+                                                            </div>
+                                                            <p class="!text-base">{{ resource.current }}/{{ resource.capacity }}</p>
+                                                        </div>
+                                                        <div class="pixel-progress">
+                                                            <span class="pixel-progress-bar bg-emerald-400" :style="{ width: `${Math.round(((resource.current * 100) / resource.capacity))}%` }"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex flex-col justify-end items-center">
+                                                        <button
+                                                            class="pixel-border flex gap-1.5 items-center justify-center pixel-border-gold h-full !text-xl px-3 py-1"
+                                                            :class="{
+                                                                'opacity-50 cursor-not-allowed': !canCollectResource(resource.resourceType, resource.current),
+                                                                'pixel-border-gold': resource.current > 0,
+                                                                'pixel-border-stone': resource.current == 0
+                                                            }"
+                                                            :disabled="!canCollectResource(resource.resourceType, resource.current)"
+                                                            @click="collectSingleResource(resource.resourceType, resource.current)">
+                                                            Collecter
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <ResourceBar
-                                            :resource-type="resource.resourceType"
-                                            :current="resource.current"
-                                            :max="resource.capacity"
-                                            :width="280"
-                                            :show-text="false"
-                                        />
-                                        <div class="flex justify-between items-center mt-1">
-                                            <div class="text-xs text-gray-500">
-                                                {{ Math.round(resource.percentage) }}% utilisé
+
+                                        <div v-else class="text-center py-20 !text-slate-600">
+                                            <div class="text-4xl mb-4">📦</div>
+                                            <p>Aucune ressource stockée</p>
+                                        </div>
+
+                                        <!--
+                                        <div v-if="hasResources && storedResources.some(r => r.current > 0)" class="mt-8 flex justify-center">
+                                            <button
+                                                class="pixel-border pixel-border-gold px-8 py-3 !text-xl flex items-center gap-3"
+                                                @click="collectAllResources">
+                                                <span>📦</span>
+                                                Tout Collecter
+                                            </button>
+                                        </div>
+                                        -->
+                                    </div>
+
+                                    <div v-if="activeTab === 'workers'">
+                                        <div class="space-y-5">
+                                            <div class="flex gap-5 w-full">
+                                                <div class="relative h-20">
+                                                    <div class="pixel-border pixel-border-dark-dirt h-full aspect-square flex items-center justify-center pb-2">
+                                                        <div class="h-12 w-auto pixelated text-2xl">👷</div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="flex gap-4 items-center w-full py-1">
+                                                    <div class="flex flex-col gap-3 w-full">
+                                                        <div class="flex justify-between w-full">
+                                                            <div class="pixel-border pixel-border-stone w-fit text-xs px-1 max-h-4.5 flex justify-center items-center !text-slate-900 !text-base line-height-0">
+                                                                {{ workerTypeName }}
+                                                            </div>
+                                                            <p class="!text-base">{{ assignedWorkerCount }}/{{ maxWorkers }}</p>
+                                                        </div>
+                                                        <div class="pixel-progress" :class="`after:w-[${Math.round(workerProgressPercentage)}%] after:!bg-blue-500`"></div>
+                                                    </div>
+                                                    <div class="flex gap-2 items-center">
+                                                        <button
+                                                            class="pixel-border pixel-border-stone w-8 h-8 flex items-center justify-center !text-slate-900 hover:bg-slate-100"
+                                                            :class="{ 'opacity-50 cursor-not-allowed': !canDecrement }"
+                                                            :disabled="!canDecrement"
+                                                            @click="decrementWorker">
+                                                            -
+                                                        </button>
+                                                        <button
+                                                            class="pixel-border pixel-border-stone w-8 h-8 flex items-center justify-center !text-slate-900 hover:bg-slate-100"
+                                                            :class="{ 'opacity-50 cursor-not-allowed': !canIncrement }"
+                                                            :disabled="!canIncrement"
+                                                            @click="incrementWorker">
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <!-- Message de capacité si applicable -->
-                                            <div v-if="resource.current > 0 && !canCollectResource(resource.resourceType, resource.current)"
-                                                 class="text-xs text-yellow-400">
-                                                Inventaire plein
+
+                                            <div class="pixel-border pixel-border-stone p-4 !text-slate-900">
+                                                <div class="flex justify-between items-center mb-2">
+                                                    <span class="text-sm">Ouvriers disponibles:</span>
+                                                    <span class="font-bold">{{ availableWorkers }}</span>
+                                                </div>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-sm">Efficacité du bâtiment:</span>
+                                                    <span class="font-bold">{{ Math.round(workerEfficiency * 100) }}%</span>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        <div v-if="maxWorkers === 0" class="text-center py-20 !text-slate-600">
+                                            <div class="text-4xl mb-4">🏭</div>
+                                            <p>Ce bâtiment ne nécessite pas d'ouvriers</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Empty Storage Message -->
-                            <div v-else class="space-y-3">
-                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Stockage des ressources
-                                </h3>
-                                <div class="bg-gray-800/50 rounded-lg p-4 text-center">
-                                    <p class="text-gray-400 text-sm">Aucun stockage configuré pour ce bâtiment</p>
+                            <!-- Tab Navigation -->
+                            <div class="flex gap-5">
+                                <div
+                                    class="w-fit no-bottom py-1 pb-2 px-3 flex gap-3 items-center !text-slate-900 cursor-pointer pixel-no-bottom"
+                                    :class="{ 'pixel-border pixel-border-dirt': activeTab === 'resources' }"
+                                    @click="activeTab = 'resources'">
+                                    <img src="/assets/game/ui/basket.png" class="h-10 pixelated" alt="Resources">
+                                    <h3 class="!text-slate-800 text-3xl">Ressources</h3>
                                 </div>
-                            </div>
 
-                            <WorkerAssignmentUI :building="buildingData" />
-
-                            <!-- Actions -->
-                            <div v-if="availableActions.length > 0" class="space-y-3">
-                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Actions
-                                </h3>
-                                <div class="flex gap-2">
-                                    <ActionButton v-for="action in availableActions" :key="action.key"
-                                        :icon="action.icon" :label="action.label" :variant="action.variant"
-                                        :disabled="action.disabled" @click="handleAction(action.key)" />
+                                <div
+                                    class="w-fit no-bottom py-1 pb-2 px-3 flex gap-3 items-center !text-slate-900 cursor-pointer pixel-no-bottom"
+                                    :class="{ 'pixel-border pixel-border-dirt': activeTab === 'workers' }"
+                                    @click="activeTab = 'workers'">
+                                    <img src="/assets/game/ui/playercount.png" class="h-10 pixelated" alt="Workers">
+                                    <h3 class="!text-slate-800 text-3xl">Ouvriers</h3>
                                 </div>
                             </div>
                         </div>
@@ -131,26 +201,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useGameStore } from '@/game/stores/gameStore'
-import WorkerAssignmentUI from './WorkerAssignmentUI.vue'
 import { ResourceType } from '@/game/types/ResourceSystemTypes'
 import BuildingIcon from './BuildingIcon.vue'
-import ActionButton from './ActionButton.vue'
-import ResourceBar from './ResourceBar.vue'
 
-interface BuildingAction {
-    key: string
-    label: string
-    icon: string
-    variant: 'primary' | 'secondary' | 'danger' | 'success'
-    disabled?: boolean
+interface StoredResource {
+    resourceType: ResourceType
+    current: number
+    capacity: number
+    percentage: number
+    productionRate?: number
 }
 
+// Reactive data
 const gameStore = useGameStore()
+const activeTab = ref<'resources' | 'workers'>('resources')
+const resourceUpdateTrigger = ref(0)
+const availableWorkers = ref(0)
+
+// Computed properties
 const isVisible = computed(() => gameStore.state?.showBuildingInfo || false)
 const buildingData = computed(() => gameStore.state?.currentBuildingInfo || null)
-const resourceUpdateTrigger = ref(0)
 
 const buildingDisplayName = computed(() => {
     const type = buildingData.value?.getType()
@@ -163,13 +235,16 @@ const buildingDisplayName = computed(() => {
     return type ? (names[type] || type) : 'Bâtiment'
 })
 
+const buildingType = computed(() => {
+    return buildingData.value?.getType() ?? "default"
+})
+
 const positionText = computed(() => {
     if (!buildingData.value) return 'Inconnue'
-
     const pos = buildingData.value.getPosition()
     const tileX = Math.floor(pos.x / 16)
     const tileY = Math.floor(pos.y / 16)
-    return `(${tileX}, ${tileY})`
+    return `${tileX}, ${tileY}`
 })
 
 const buildingDescription = computed(() => {
@@ -183,9 +258,13 @@ const buildingDescription = computed(() => {
     return type ? (descriptions[type] || 'Bâtiment fonctionnel pour votre colonie.') : ''
 })
 
-const storedResources = computed(() => {
-    resourceUpdateTrigger.value // Force la re-évaluation
+const buildingLevel = computed(() => {
+    // Placeholder - you can implement building levels later
+    return 1
+})
 
+const storedResources = computed(() => {
+    resourceUpdateTrigger.value // Force re-evaluation
     if (!buildingData.value) return []
 
     const capacities = buildingData.value.getAllBuildingResourceCapacities()
@@ -197,51 +276,108 @@ const storedResources = computed(() => {
             resourceType,
             current: stored.get(resourceType) || 0,
             capacity,
-            percentage: capacity > 0 ? ((stored.get(resourceType) || 0) / capacity) * 100 : 0
+            percentage: capacity > 0 ? ((stored.get(resourceType) || 0) / capacity) * 100 : 0,
+            productionRate: getProductionRate(resourceType)
         }))
-        .sort((a, b) => a.resourceType.localeCompare(b.resourceType))
 })
 
 const hasResources = computed(() => storedResources.value.length > 0)
 
-const availableActions = computed((): BuildingAction[] => {
-    if (!buildingData.value) return []
+// Worker-related computed properties
+const maxWorkers = computed(() => {
+    const building = buildingData.value
+    if (!building) return 0
+    return building.getMaxWorkers() || 0
+})
 
-    const actions: BuildingAction[] = []
-    const type = buildingData.value.getType()
+const assignedWorkerCount = computed(() => {
+    resourceUpdateTrigger.value // Force re-evaluation when resources change
+    const building = buildingData.value
+    if (!building) return 0
+    return building.getAssignedWorkerCount() || 0
+})
 
-    // Collect resources action for any building with stored resources
-    const hasAnyStoredResources = storedResources.value.some(resource => resource.current > 0)
-
-    if (hasAnyStoredResources) {
-        actions.push({
-            key: 'collect',
-            label: 'Collecter tout',
-            icon: 'plus',
-            variant: 'success',
-            disabled: false
-        })
+const workerTypeName = computed(() => {
+    const type = buildingData.value?.getWorkerType()
+    const names: Record<string, string> = {
+        'NEUTRAL': 'Ouvrier généraliste',
+        'LUMBERJACK': 'Bûcheron',
+        'MINER': 'Mineur',
+        'FARMER': 'Fermier'
     }
+    return type ? (names[type] || type) : 'Ouvrier'
+})
 
-    // Add building-specific actions
-    if (type === 'sawmill') {
-        actions.push({
-            key: 'process',
-            label: 'Traiter le bois',
-            icon: 'cog',
-            variant: 'primary',
-            disabled: storedResources.value.find(r => r.resourceType === ResourceType.WOOD)?.current === 0
-        })
-    }
+const workerProgressPercentage = computed(() => {
+    return maxWorkers.value > 0 ? (assignedWorkerCount.value / maxWorkers.value) * 100 : 0
+})
 
-    return actions
+const canIncrement = computed(() => {
+    const result = assignedWorkerCount.value < maxWorkers.value && availableWorkers.value > 0
+    console.log('canIncrement:', result, {
+        assigned: assignedWorkerCount.value,
+        max: maxWorkers.value,
+        available: availableWorkers.value
+    })
+    return result
+})
+
+const canDecrement = computed(() => {
+    const result = assignedWorkerCount.value > 0
+    console.log('canDecrement:', result, { assigned: assignedWorkerCount.value })
+    return result
+})
+
+const workerEfficiency = computed(() => {
+    if (maxWorkers.value === 0) return 1
+    return assignedWorkerCount.value / maxWorkers.value
 })
 
 // Methods
-const handleClose = () => {
-    gameStore.hideBuildingInfo()
+const getResourceIcon = (resourceType: ResourceType): string => {
+    const icons: Record<ResourceType, string> = {
+        [ResourceType.WOOD]: '🪵',
+        [ResourceType.PLANKS]: '🪵',
+        [ResourceType.stone]: '🪨',
+        [ResourceType.METAL_ORE]: '⛏️',
+        [ResourceType.COAL_ORE]: '⚫',
+        [ResourceType.METAL]: '🔩',
+        [ResourceType.FOOD]: '🍞',
+        [ResourceType.TOOLS]: '🔨',
+        [ResourceType.ENERGY]: '⚡',
+        [ResourceType.POPULATION]: '👥'
+    }
+    return icons[resourceType] || '📦'
 }
 
+const getResourceName = (resourceType: ResourceType): string => {
+    const names: Record<ResourceType, string> = {
+        [ResourceType.WOOD]: 'Bois',
+        [ResourceType.PLANKS]: 'Planches',
+        [ResourceType.stone]: 'Pierre',
+        [ResourceType.METAL_ORE]: 'Minerai de métal',
+        [ResourceType.COAL_ORE]: 'Minerai de charbon',
+        [ResourceType.METAL]: 'Métal',
+        [ResourceType.FOOD]: 'Nourriture',
+        [ResourceType.TOOLS]: 'Outils',
+        [ResourceType.ENERGY]: 'Énergie',
+        [ResourceType.POPULATION]: 'Population'
+    }
+    return names[resourceType] || resourceType
+}
+
+const getProductionRate = (resourceType: ResourceType): number | undefined => {
+    // This would be implemented based on your building production logic
+    // For now, returning placeholder values for different building types
+    const type = buildingData.value?.getType()
+
+    if (type === 'sawmill' && resourceType === ResourceType.WOOD) return 8
+    if (type === 'sawmill' && resourceType === ResourceType.PLANKS) return 12
+    if (type === 'mine' && resourceType === ResourceType.stone) return 6
+    if (type === 'farm' && resourceType === ResourceType.FOOD) return 10
+
+    return undefined
+}
 
 const getPlayerInventorySpace = (resourceType: ResourceType): number => {
     const resourceManager = gameStore.getResourceManager()
@@ -256,6 +392,11 @@ const getPlayerInventorySpace = (resourceType: ResourceType): number => {
         console.error('Error getting player inventory space:', error)
         return 0
     }
+}
+
+const canCollectResource = (resourceType: ResourceType, amount: number): boolean => {
+    const availableSpace = getPlayerInventorySpace(resourceType)
+    return availableSpace > 0
 }
 
 const collectSingleResource = (resourceType: ResourceType, amount: number) => {
@@ -278,22 +419,17 @@ const collectSingleResource = (resourceType: ResourceType, amount: number) => {
     const amountToCollect = Math.min(amount, availableSpace)
 
     try {
-        // Retirer du bâtiment
         const removed = building.removeResourceFromBuilding(resourceType, amountToCollect)
 
         if (removed > 0) {
-            // Ajouter à l'inventaire du joueur
             const added = gameStore.addResource(resourceType, removed)
 
-            // Si on n'a pas pu tout ajouter, remettre la différence dans le bâtiment
             if (added < removed) {
                 building.addResourceToBuilding(resourceType, removed - added)
             }
 
-            // Forcer la mise à jour de l'affichage
             resourceUpdateTrigger.value++
 
-            // Notification de succès
             window.dispatchEvent(new CustomEvent('game:notification', {
                 detail: {
                     type: 'success',
@@ -302,14 +438,8 @@ const collectSingleResource = (resourceType: ResourceType, amount: number) => {
                 }
             }))
 
-            // Émettre un événement pour mettre à jour d'autres parties du jeu
             window.dispatchEvent(new CustomEvent('game:resourceCollected', {
-                detail: {
-                    building,
-                    resourceType,
-                    amount: added,
-                    source: 'individual_collect'
-                }
+                detail: { building, resourceType, amount: added, source: 'individual_collect' }
             }))
         }
     } catch (error) {
@@ -342,7 +472,6 @@ const collectAllResources = () => {
                     const added = gameStore.addResource(resourceType, removed)
                     totalCollected += added
 
-                    // Si on n'a pas pu tout ajouter, remettre la différence
                     if (added < removed) {
                         building.addResourceToBuilding(resourceType, removed - added)
                     }
@@ -376,71 +505,101 @@ const collectAllResources = () => {
     }
 }
 
-const canCollectResource = (resourceType: ResourceType, amount: number): boolean => {
-    const availableSpace = getPlayerInventorySpace(resourceType)
-    return availableSpace > 0
+const incrementWorker = () => {
+    if (!buildingData.value || !canIncrement.value) return
+
+    console.log('Incrementing worker - current count:', assignedWorkerCount.value)
+
+    window.dispatchEvent(new CustomEvent('game:assignWorkerToBuilding', {
+        detail: { building: buildingData.value }
+    }))
+}
+
+const decrementWorker = () => {
+    if (!buildingData.value || !canDecrement.value) return
+
+    console.log('Decrementing worker - current count:', assignedWorkerCount.value)
+
+    window.dispatchEvent(new CustomEvent('game:unassignWorkerFromBuilding', {
+        detail: { building: buildingData.value }
+    }))
+}
+
+const handleClose = () => {
+    gameStore.hideBuildingInfo()
 }
 
 const handleOverlayClick = () => {
     handleClose()
 }
 
-const handleAction = (actionKey: string) => {
-    if (!buildingData.value) return
-
-    switch (actionKey) {
-        case 'collect':
-            collectAllResources()
-            break
+// Event listeners and watchers
+onMounted(() => {
+    const handleAvailableWorkersUpdate = (event: CustomEvent) => {
+        console.log('Available workers update:', event.detail)
+        availableWorkers.value = event.detail.count || 0
     }
-}
 
-// Methods
-const getResourceName = (resourceType: ResourceType): string => {
-    const names: Record<ResourceType, string> = {
-        [ResourceType.WOOD]: '🪵 Bois',
-        [ResourceType.PLANKS]: '🪵 Planches',
-        [ResourceType.STONE]: '🪨 Pierre',
-        [ResourceType.METAL_ORE]: '⛏️ Minerai de métal',
-        [ResourceType.COAL_ORE]: '⚫ Minerai de charbon',
-        [ResourceType.METAL]: '🔩 Métal',
-        [ResourceType.FOOD]: '🍞 Nourriture',
-        [ResourceType.TOOLS]: '🔨 Outils',
-        [ResourceType.ENERGY]: '⚡ Énergie',
-        [ResourceType.POPULATION]: '👥 Population'
-    }
-    return names[resourceType] || resourceType
-}
+    const handleWorkerAssignment = (event: CustomEvent) => {
+        console.log('Worker assignment event:', event.detail)
+        if (buildingData.value && event.detail.buildingId === buildingData.value.getBuildingId()) {
+            // Force update of all reactive data including worker counts
+            resourceUpdateTrigger.value++
 
+            // Also trigger a nextTick to ensure DOM updates
+            nextTick(() => {
+                console.log('Resource and worker data updated after assignment')
+                console.log('New assigned count:', buildingData.value?.getAssignedWorkerCount())
+            })
 
-// Keyboard handling
-watch(isVisible, (visible) => {
-    if (visible) {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                handleClose()
-            }
-        }
-
-        document.addEventListener('keydown', handleEscape)
-
-        return () => {
-            document.removeEventListener('keydown', handleEscape)
+            // Request updated worker count
+            window.dispatchEvent(new CustomEvent('game:requestAvailableWorkers'))
         }
     }
+
+    const handleWorkerUnassignment = (event: CustomEvent) => {
+        console.log('Worker unassignment event:', event.detail)
+        if (buildingData.value && event.detail.buildingId === buildingData.value.getBuildingId()) {
+            // Force update of all reactive data including worker counts
+            resourceUpdateTrigger.value++
+
+            // Also trigger a nextTick to ensure DOM updates
+            nextTick(() => {
+                console.log('Resource and worker data updated after unassignment')
+                console.log('New assigned count:', buildingData.value?.getAssignedWorkerCount())
+            })
+
+            // Request updated worker count
+            window.dispatchEvent(new CustomEvent('game:requestAvailableWorkers'))
+        }
+    }
+
+    window.addEventListener('game:availableWorkersUpdate', handleAvailableWorkersUpdate as EventListener)
+    window.addEventListener('game:workerAssignedToBuilding', handleWorkerAssignment as EventListener)
+    window.addEventListener('game:workerUnassignedFromBuilding', handleWorkerUnassignment as EventListener)
+
+    // Request initial worker count
+    console.log('Requesting initial available workers count')
+    window.dispatchEvent(new CustomEvent('game:requestAvailableWorkers'))
+
+    onUnmounted(() => {
+        window.removeEventListener('game:availableWorkersUpdate', handleAvailableWorkersUpdate as EventListener)
+        window.removeEventListener('game:workerAssignedToBuilding', handleWorkerAssignment as EventListener)
+        window.removeEventListener('game:workerUnassignedFromBuilding', handleWorkerUnassignment as EventListener)
+    })
 })
+
+// Watch for building data changes
 watch(() => buildingData.value, (newBuilding) => {
     if (newBuilding) {
         const handleResourceChange = (event: CustomEvent) => {
             if (event.detail.buildingId === newBuilding.getBuildingId()) {
-                console.log('Building resource changed, forcing update')
                 resourceUpdateTrigger.value++
             }
         }
 
         const handleResourceCollected = (event: CustomEvent) => {
             if (event.detail.building === newBuilding) {
-                console.log('Resource collected, forcing update')
                 resourceUpdateTrigger.value++
             }
         }
@@ -455,32 +614,50 @@ watch(() => buildingData.value, (newBuilding) => {
     }
 }, { immediate: true })
 
+// Watch for direct building resource changes
 watch(() => {
     if (!buildingData.value) return null
     return buildingData.value.getAllBuildingResources()
 }, (newResources) => {
     if (newResources) {
-        console.log('Building resources changed directly:', newResources)
+        console.log('Building resources changed directly, updating display')
         resourceUpdateTrigger.value++
     }
 }, { deep: true })
+
+// Watch for worker count changes to force resource updates
+watch(assignedWorkerCount, (newCount, oldCount) => {
+    if (newCount !== oldCount) {
+        console.log(`Worker count changed from ${oldCount} to ${newCount}, updating resources`)
+        resourceUpdateTrigger.value++
+    }
+})
+
+// Watch for modal visibility to refresh data
+watch(isVisible, (visible) => {
+    if (visible) {
+        console.log('Modal opened, requesting fresh data')
+        // Request fresh worker data when modal opens
+        window.dispatchEvent(new CustomEvent('game:requestAvailableWorkers'))
+
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                handleClose()
+            }
+        }
+
+        document.addEventListener('keydown', handleEscape)
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape)
+        }
+    }
+})
 </script>
 
 <style scoped>
 .modal-overlay {
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
-}
-
-/* Modal transitions */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-    transition: all 0.3s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-    opacity: 0;
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .modal-fade-enter-from .modal-content,

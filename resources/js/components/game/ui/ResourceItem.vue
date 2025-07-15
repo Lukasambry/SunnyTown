@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import type { ResourceStack } from '@game/types/ResourceSystemTypes.ts';
 import { ResourceManager } from '@game/services/ResourceManager.ts';
+import type { ResourceStack } from '@game/types/ResourceSystemTypes.ts';
+import { computed, onMounted, ref } from 'vue';
 
 interface Props {
     resource: ResourceStack;
@@ -80,70 +80,37 @@ const formatAmount = (amount: number): string => {
 
 <template>
     <div
-        class="resource-item"
+        class="min-w-fit w-fit"
         :class="[
-            'flex items-center gap-2 rounded-lg px-3 py-2 backdrop-blur-sm',
-            'border border-gray-600/30 bg-black/70 text-white',
-            'transition-all duration-200 hover:bg-black/80',
+            'flex items-center justify-end gap-2 px-2 pr-9 pixel-border pixel-border-stone',
+            'transition-all duration-200',
             sizeClasses,
         ]"
     >
-        <!-- Resource Icon -->
-        <div class="flex flex-shrink-0 items-center justify-center rounded-full" :class="iconClasses">
-            <img
-                :src="`/assets/game/ui/resources/${resource.type}.png`"
-                :style="{ imageRendering: 'pixelated' }"
-                :alt="`SunnyTown ${resource.type} icon`"
-                class="w-12"
-            />
-        </div>
+<!--        <div class="flex flex-shrink-0 items-center justify-center rounded-full" :class="iconClasses">-->
+<!--            <img-->
+<!--                :src="`/assets/game/ui/resources/${resource.type}.png`"-->
+<!--                :style="{ imageRendering: 'pixelated' }"-->
+<!--                :alt="`SunnyTown ${resource.type} icon`"-->
+<!--                class="w-12"-->
+<!--            />-->
+<!--        </div>-->
 
-        <!--
-          <div class="relative flex-shrink-0 rounded-full flex items-center justify-center">
-              <img src="/assets/game/ui/buttons/empty.png"
-                   :style="{ imageRendering: 'pixelated'}"
-                   :alt="`SunnyTown empty button`"
-                   class="w-12">
-
-              <img :src="`/assets/game/ui/resources/${resource.type}.png`"
-                   :style="{ imageRendering: 'pixelated'}"
-                   :alt="`SunnyTown ${resource.type} icon`"
-                   class="w-[60%] absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-60%]">
-          </div>
-          -->
-
-        <!-- Resource Amount -->
-        <span class="resource-amount font-bold tabular-nums" :class="amountClasses">
+        <span class="resource-amount text-xl font-bold text-slate-700" :class="amountClasses">
             {{ formatAmount(resource.amount) }}
         </span>
 
-        <!-- Resource Name (optional) -->
-        <span v-if="showName" class="resource-name text-sm font-medium text-gray-200">
-            {{ resourceName }}
-        </span>
+<!--        <span v-if="showName" class="resource-name text-lg font-medium leading-0 text-slate-500">-->
+<!--            {{ resourceName }}-->
+<!--        </span>-->
+
+        <div class="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 flex flex-shrink-0 items-center justify-center rounded-full">
+            <img src="/assets/game/ui/itemdisc.png" :alt="`SunnyTown empty button`" class="pixelated w-14" />
+            <img
+                :src="`/assets/game/ui/resources/${resource.type}.png`"
+                :alt="`SunnyTown ${resource.type} icon`"
+                class="pixelated absolute top-[50%] left-[50%] w-[60%] translate-x-[-50%] translate-y-[-60%]"
+            />
+        </div>
     </div>
 </template>
-
-<style scoped>
-.resource-item {
-    min-width: fit-content;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.resource-icon {
-    position: relative;
-    overflow: hidden;
-}
-
-.resource-icon::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-    pointer-events: none;
-}
-
-.tabular-nums {
-    font-variant-numeric: tabular-nums;
-}
-</style>
