@@ -83,6 +83,10 @@ export class ResourceManager {
             console.error('ResourceManager not initialized');
             return 0;
         }
+        window.dispatchEvent(new CustomEvent('game:resourceChanged', {
+            detail: { type, amount: amount, action: 'add' }
+        }));
+
         return this.globalInventory.addResource(type, amount, source);
     }
 

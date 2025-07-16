@@ -17,12 +17,12 @@ export class WorkerManager {
         this.scene = scene;
         this.registry = WorkerRegistry.getInstance();
 
-        console.log('WorkerManager: Initialized');
+        // console.log('WorkerManager: Initialized');
     }
 
     public createWorker(type: WorkerType, x: number, y: number, depositPoint?: WorkerPosition): Worker | null {
         try {
-            console.log(`WorkerManager: Creating worker ${type} at (${x}, ${y})`);
+            // console.log(`WorkerManager: Creating worker ${type} at (${x}, ${y})`);
 
             const worker = this.registry.createWorker(type, this.scene, x, y, depositPoint);
             if (!worker) {
@@ -36,7 +36,7 @@ export class WorkerManager {
             this.workers.set(internalId, worker);
             this.workerIdMap.set(workerId, internalId);
 
-            console.log(`WorkerManager: Created worker ${internalId} with workerId ${workerId}`);
+            // console.log(`WorkerManager: Created worker ${internalId} with workerId ${workerId}`);
 
             return worker;
 
@@ -56,7 +56,7 @@ export class WorkerManager {
         try {
             worker.destroy();
             this.workers.delete(workerId);
-            console.log(`WorkerManager: Removed worker ${workerId}`);
+            // console.log(`WorkerManager: Removed worker ${workerId}`);
 
             // Notifier Vue.js
             window.dispatchEvent(new CustomEvent('game:workerRemoved', {
@@ -113,7 +113,7 @@ export class WorkerManager {
 
             const buildingManager = (this.scene as any).buildingManager;
             if (!buildingManager) {
-                console.log(`WorkerManager: No buildingManager available`);
+                // console.log(`WorkerManager: No buildingManager available`);
                 return null;
             }
 
@@ -150,18 +150,18 @@ export class WorkerManager {
         this.workers.forEach(worker => {
             worker.forceIdle();
         });
-        console.log('WorkerManager: Paused all workers');
+        // console.log('WorkerManager: Paused all workers');
     }
 
     public resumeAllWorkers(): void {
         this.workers.forEach(worker => {
             worker.forceIdle(); // This will restart their main loop
         });
-        console.log('WorkerManager: Resumed all workers');
+        // console.log('WorkerManager: Resumed all workers');
     }
 
     public clearAllWorkers(): void {
-        console.log('WorkerManager: Clearing all workers');
+        // console.log('WorkerManager: Clearing all workers');
 
         this.workers.forEach((worker, id) => {
             try {
@@ -186,7 +186,7 @@ export class WorkerManager {
         });
 
         destroyedWorkers.forEach(id => {
-            console.log(`WorkerManager: Cleaning up destroyed worker ${id}`);
+            // console.log(`WorkerManager: Cleaning up destroyed worker ${id}`);
             this.workers.delete(id);
         });
     }

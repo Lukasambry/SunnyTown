@@ -72,7 +72,7 @@ export class AnimationRegistry {
                         usageCount: state.usageCount + 1,
                     });
 
-                    console.log(`Animation ${type} registered for scene`);
+                    // console.log(`Animation ${type} registered for scene`);
                 } catch (error) {
                     console.error(`Failed to register animation ${type}:`, error);
                 }

@@ -32,6 +32,7 @@ export class ZoneBlockerService {
     private cornerSprites: Phaser.GameObjects.Sprite[] = [];
     private hoverCornerSprites: Phaser.GameObjects.Sprite[] = [];
     private currentMap: Phaser.Tilemaps.Tilemap | null = null;
+    private blockerConfigs: any;
 
     constructor(scene: Scene, cameraService: CameraService) {
         this.scene = scene;
@@ -84,7 +85,7 @@ export class ZoneBlockerService {
                         const blockerConfig = this.createBlockerConfigFromTiledGroup(map, objectLayer, blockerName);
                         this.registry.registerBlocker(blockerConfig);
 
-                        console.log(`Registered blocker: ${blockerName}`, blockerConfig);
+                        // console.log(`Registered blocker: ${blockerName}`, blockerConfig);
                     }
                 }
             });
@@ -161,7 +162,6 @@ export class ZoneBlockerService {
             name: blockerName,
             displayName: groupProperties.displayName || this.capitalizeFirstLetter(blockerName),
             description: groupProperties.description || `Zone de ${blockerName}`,
-            unlocked: false, // Par défaut, toutes les zones sont bloquées
             unlockRequirements: Object.keys(unlockRequirements).length > 0 ? unlockRequirements : undefined
         };
 
@@ -704,4 +704,64 @@ export class ZoneBlockerService {
         }
         return null;
     }
+    public unlockZone(zoneName: string): boolean {
+        try {
+            const config = this.blockerConfigs.get(zoneName);
+            if (!config) {
+                console.error(`Zone ${zoneName} non trouvée`);
+                return false;
+            }
+
+            if (config.unlocked) {
+                 console.log(`Zone ${zoneName} déjà débloquée`);
+                return true;
+            }
+
+            config.unlocked = true;
+            this.blockerConfigs.set(zoneName, config);
+
+            window.dispatchEvent(new CustomEvent('game:zoneUnlocked', {
+                detail: { zoneName }
+            }));
+
+            this.updateZoneVisual(zoneName, true);
+
+            console.log(`✅ Zone ${zoneName} débloquée avec succès`);
+            return true;
+
+        } catch (error) {
+            console.error(`❌ Erreur lors du déblocage de la zone ${zoneName}:`, error);
+            return false;
+        }
+    }
+
+    private updateZoneVisual(zoneName: string, unlocked: boolean): void {
+        const blockerData = this.zoneBlockers.get(zoneName);
+        if (blockerData) {
+            blockerData.layers.forEach(layer => {
+                if (layer && layer.setVisible) {
+                    layer.setVisible(!unlocked);
+                }
+            });
+
+            if (blockerData.interactionZone) {
+                blockerData.interactionZone.setAlpha(unlocked ? 0 : 0.3);
+                blockerData.interactionZone.setInteractive(!unlocked);
+            }
+        }
+    }
+
+    public getUnlockedZones(): string[] {
+        if (!this.blockerConfigs) return [];
+
+        const unlockedZones: string[] = [];
+        this.blockerConfigs.forEach((config, zoneName) => {
+            if (config.unlocked) {
+                unlockedZones.push(zoneName);
+            }
+        });
+
+        return unlockedZones;
+    }
+
 }

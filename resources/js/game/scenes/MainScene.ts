@@ -23,6 +23,9 @@ import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 import { ZoneBlockerService } from '../services/ZoneBlockerService';
+import { saveIntegrationService } from '@/game/services/SaveIntegrationService';
+import { useGameStore } from '@/game/stores/gameStore';
+import { SaveGameManager } from '@/game/services/SaveGameManager';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -154,11 +157,31 @@ export class MainScene extends Scene {
     }
 
     create() {
-        console.log('MainScene create called');
+        // console.log('MainScene create called');
         this.pathDotsGroup = this.add.group();
         // Initialize animation registry for this scene
         this.setupAnimations();
         this.setupVueResourceSync();
+
+        try {
+            saveIntegrationService.initialize();
+            // console.log('Système de sauvegarde initialisé dans MainScene');
+        } catch (error) {
+            console.error('Erreur initialisation sauvegarde dans MainScene:', error);
+        }
+
+        const gameStore = useGameStore();
+        const saveManager = SaveGameManager.getInstance();
+
+        // Charger les données de sauvegarde depuis le localStorage
+        const savedData = localStorage.getItem(saveManager.STORAGE_KEY);
+        if (savedData) {
+            // Appliquer les données si elles existent
+            const success = saveManager.importSave(savedData);
+            if (success) {
+                gameStore.applyLoadedData(JSON.parse(savedData));
+            }
+        }
 
         // Create map
         this.map = this.make.tilemap({ key: 'map' });
@@ -400,7 +423,7 @@ export class MainScene extends Scene {
 
         // Player movement: only on left click, not when right is used for camera drag
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-            console.log('pointerdown event triggered');
+            // console.log('pointerdown event triggered');
             if ((this.buildingPreview && this.buildingPreview.isDraggingActive()) || pointer.event.defaultPrevented) {
                 return;
             }
@@ -427,15 +450,15 @@ export class MainScene extends Scene {
                         targetTileX = nearestTile.x;
                         targetTileY = nearestTile.y;
                     } else {
-                        console.log('No accessible tile found nearby');
+                        // console.log('No accessible tile found nearby');
                         return;
                     }
                 }
 
                 this.easyStar.findPath(playerTileX, playerTileY, targetTileX, targetTileY, (path) => {
-                    console.log('findPath callback called, path:', path);
+                    // console.log('findPath callback called, path:', path);
                     if (path === null) {
-                        console.log('No path found!');
+                        // console.log('No path found!');
                     } else {
                         this.player.setPath(path);
                         this.createTargetIndicator(path);
@@ -568,7 +591,7 @@ export class MainScene extends Scene {
 
             this.notifyGameReady();
 
-            console.log('Vue resource sync configured successfully');
+            // console.log('Vue resource sync configured successfully');
         } catch (error) {
             console.error('Error setting up Vue resource sync:', error);
         }
@@ -590,7 +613,7 @@ export class MainScene extends Scene {
 
         if (isValid) {
             if (!this.canAffordBuilding(this.selectedBuildingType)) {
-                console.log('Cannot afford building anymore');
+                // console.log('Cannot afford building anymore');
 
                 window.dispatchEvent(
                     new CustomEvent('game:notification', {
@@ -666,7 +689,7 @@ export class MainScene extends Scene {
                 }),
             );
 
-            console.log('Resource change notified to Vue:', event.type, event.newAmount);
+            // console.log('Resource change notified to Vue:', event.type, event.newAmount);
         } catch (error) {
             console.error('Error notifying Vue of resource change:', error);
         }
@@ -720,7 +743,7 @@ export class MainScene extends Scene {
 
             this.triggerInitialResourceSync();
 
-            console.log('Game ready notification sent to Vue with resources');
+            // console.log('Game ready notification sent to Vue with resources');
         } catch (error) {
             console.error('Error notifying game ready to Vue:', error);
         }
@@ -746,7 +769,7 @@ export class MainScene extends Scene {
                 }
             });
 
-            console.log('Initial resource sync completed');
+            // console.log('Initial resource sync completed');
         } catch (error) {
             console.error('Error in initial resource sync:', error);
         }
@@ -776,30 +799,31 @@ export class MainScene extends Scene {
         window.addEventListener('game:requestAvailableWorkers', this.handleAvailableWorkersRequest.bind(this))
     }
 
+
     private testBuildingSetFunctionality(building: TiledBuilding): void {
-        console.log('\n=== TESTING SET FUNCTIONALITY ===');
+        // console.log('\n=== TESTING SET FUNCTIONALITY ===');
 
         // Test direct du Set
         const testSet = new Set<string>();
-        console.log('New Set size:', testSet.size);
+        // console.log('New Set size:', testSet.size);
         testSet.add('test1');
-        console.log('After adding test1:', testSet.size);
+        // console.log('After adding test1:', testSet.size);
         testSet.add('test2');
-        console.log('After adding test2:', testSet.size);
-        console.log('Set contents:', Array.from(testSet));
+        // console.log('After adding test2:', testSet.size);
+        // console.log('Set contents:', Array.from(testSet));
 
         // Test sur le bâtiment
-        console.log('\nTesting building Set...');
+        // console.log('\nTesting building Set...');
         const buildingSet = (building as any).assignedWorkers;
-        console.log('Building Set type:', typeof buildingSet);
-        console.log('Building Set constructor:', buildingSet?.constructor?.name);
-        console.log('Has add method:', typeof buildingSet?.add === 'function');
+        // console.log('Building Set type:', typeof buildingSet);
+        // console.log('Building Set constructor:', buildingSet?.constructor?.name);
+        // console.log('Has add method:', typeof buildingSet?.add === 'function');
 
-        console.log('=== END SET TEST ===\n');
+        // console.log('=== END SET TEST ===\n');
     }
 
     private handleAssignWorker(event: CustomEvent): void {
-        console.log('=== ASSIGN WORKER EVENT ===');
+        // console.log('=== ASSIGN WORKER EVENT ===');
         const { building } = event.detail;
 
         if (!this.workerManager) {
@@ -813,8 +837,8 @@ export class MainScene extends Scene {
             return;
         }
 
-        console.log(`Building ID: "${buildingId}"`);
-        console.log(`Building type: "${building.getType()}"`);
+        // console.log(`Building ID: "${buildingId}"`);
+        // console.log(`Building type: "${building.getType()}"`);
 
         building.debugWorkerAssignment();
 
@@ -829,7 +853,7 @@ export class MainScene extends Scene {
             return isNeutral && isUnassigned;
         });
 
-        console.log(`Available workers for assignment: ${availableWorkers.length}`);
+        // console.log(`Available workers for assignment: ${availableWorkers.length}`);
 
         if (availableWorkers.length === 0) {
             console.warn('No available workers to assign');
@@ -839,7 +863,7 @@ export class MainScene extends Scene {
         const worker = availableWorkers[0];
         const workerId = worker.getWorkerId();
 
-        console.log(`Attempting assignment with worker ID: "${workerId}"`);
+        // console.log(`Attempting assignment with worker ID: "${workerId}"`);
 
         try {
             // Étape 1: Vérifier les prérequis
@@ -860,16 +884,16 @@ export class MainScene extends Scene {
             }
 
             // Étape 3: Essayer l'assignation normale, puis fallback si échec
-            console.log('=== STEP 3: Trying normal assignment ===');
+            // console.log('=== STEP 3: Trying normal assignment ===');
             let assignmentResult = building.assignWorker(workerId);
 
             if (!assignmentResult) {
-                console.log('=== Normal assignment failed, trying fallback ===');
+                // console.log('=== Normal assignment failed, trying fallback ===');
 
                 // Vérifier si la méthode fallback existe
                 if (typeof building.assignWorkerFallback === 'function') {
                     assignmentResult = building.assignWorkerFallback(workerId);
-                    console.log(`Fallback assignment result: ${assignmentResult}`);
+                    // console.log(`Fallback assignment result: ${assignmentResult}`);
                 } else {
                     throw new Error('Both normal and fallback assignment methods failed');
                 }
@@ -880,11 +904,11 @@ export class MainScene extends Scene {
             }
 
             // Étape 4: Convertir le worker
-            console.log('=== STEP 4: Converting worker ===');
+            // console.log('=== STEP 4: Converting worker ===');
 
             try {
                 worker.convertToSpecializedWorker(newConfig, buildingId);
-                console.log(`Worker converted to ${targetWorkerType}`);
+                // console.log(`Worker converted to ${targetWorkerType}`);
 
                 if (worker.getConfig().id !== targetWorkerType) {
                     throw new Error(`Worker conversion failed: expected ${targetWorkerType}, got ${worker.getConfig().id}`);
@@ -902,7 +926,7 @@ export class MainScene extends Scene {
             }
 
             // Étape 5: Configurer le point de dépôt
-            console.log('=== STEP 5: Setting deposit point ===');
+            // console.log('=== STEP 5: Setting deposit point ===');
             const pos = building.getPosition();
             const dim = building.getDimensions();
 
@@ -914,7 +938,7 @@ export class MainScene extends Scene {
             worker.setDepositPoint(depositPoint);
 
             // Étape 6: Diagnostiquer l'état final
-            console.log('=== STEP 6: Final state verification ===');
+            // console.log('=== STEP 6: Final state verification ===');
             building.debugWorkerAssignment();
 
             // Obtenir le count selon la méthode utilisée
@@ -924,7 +948,7 @@ export class MainScene extends Scene {
                 const normalCount = building.getAssignedWorkerCount();
                 const fallbackCount = building.getAssignedWorkerCountFallback();
 
-                console.log(`Normal count: ${normalCount}, Fallback count: ${fallbackCount}`);
+                // console.log(`Normal count: ${normalCount}, Fallback count: ${fallbackCount}`);
 
                 // Utiliser le count le plus élevé (celui qui fonctionne)
                 finalAssignedCount = Math.max(normalCount, fallbackCount);
@@ -932,7 +956,7 @@ export class MainScene extends Scene {
                 finalAssignedCount = building.getAssignedWorkerCount();
             }
 
-            console.log(`Final assigned count: ${finalAssignedCount}`);
+            // console.log(`Final assigned count: ${finalAssignedCount}`);
 
             // Étape 7: Mettre à jour et notifier
             this.handleAvailableWorkersRequest();
@@ -959,7 +983,7 @@ export class MainScene extends Scene {
                 }
             }));
 
-            console.log('Worker assignment completed successfully');
+            // console.log('Worker assignment completed successfully');
 
         } catch (error) {
             console.error('Error during worker assignment:', error);
@@ -973,7 +997,7 @@ export class MainScene extends Scene {
                 if (worker.setDepositPoint) {
                     worker.setDepositPoint(null);
                 }
-                console.log('Rollback completed successfully');
+                // console.log('Rollback completed successfully');
             } catch (rollbackError) {
                 console.error('Rollback failed:', rollbackError);
             }
@@ -1004,12 +1028,12 @@ export class MainScene extends Scene {
             this.handleAvailableWorkersRequest();
         }
 
-        console.log('=== END ASSIGN WORKER EVENT ===');
+        // console.log('=== END ASSIGN WORKER EVENT ===');
     }
 
 
     private handleAvailableWorkersRequest(): void {
-        console.log('=== HANDLING AVAILABLE WORKERS REQUEST ===');
+        // console.log('=== HANDLING AVAILABLE WORKERS REQUEST ===');
 
         if (!this.workerManager) {
             console.warn('WorkerManager not available');
@@ -1021,7 +1045,7 @@ export class MainScene extends Scene {
 
         try {
             const allWorkers = this.workerManager.getAllWorkers();
-            console.log(`Total workers in manager: ${allWorkers.length}`);
+            // console.log(`Total workers in manager: ${allWorkers.length}`);
 
             // Diagnostiquer tous les workers
             allWorkers.forEach((worker, index) => {
@@ -1029,7 +1053,7 @@ export class MainScene extends Scene {
                 const isAssigned = worker.isAssignedToBuilding?.() || false;
                 const assignedBuildingId = worker.getAssignedBuildingId?.() || 'none';
 
-                console.log(`Worker ${index}: id=${worker.getWorkerId()}, type=${config.id}, assigned=${isAssigned}, buildingId=${assignedBuildingId}`);
+                // console.log(`Worker ${index}: id=${worker.getWorkerId()}, type=${config.id}, assigned=${isAssigned}, buildingId=${assignedBuildingId}`);
             });
 
             // Filtrer les workers neutres non assignés
@@ -1037,11 +1061,11 @@ export class MainScene extends Scene {
                 const isNeutral = worker.getConfig().id === WorkerType.NEUTRAL;
                 const isAssigned = worker.isAssignedToBuilding?.() || false;
 
-                console.log(`Worker ${worker.getWorkerId()}: neutral=${isNeutral}, assigned=${isAssigned}`);
+                // console.log(`Worker ${worker.getWorkerId()}: neutral=${isNeutral}, assigned=${isAssigned}`);
                 return isNeutral && !isAssigned;
             });
 
-            console.log(`Available neutral workers: ${neutralWorkers.length}`);
+            // console.log(`Available neutral workers: ${neutralWorkers.length}`);
 
             // Notifier l'UI
             window.dispatchEvent(new CustomEvent('game:availableWorkersUpdate', {
@@ -1059,11 +1083,11 @@ export class MainScene extends Scene {
             }));
         }
 
-        console.log('=== END AVAILABLE WORKERS REQUEST ===');
+        // console.log('=== END AVAILABLE WORKERS REQUEST ===');
     }
 
     private handleUnassignWorker(event: CustomEvent): void {
-        console.log('=== UNASSIGN WORKER EVENT ===');
+        // console.log('=== UNASSIGN WORKER EVENT ===');
         const { building } = event.detail;
 
         if (!this.workerManager) {
@@ -1077,16 +1101,16 @@ export class MainScene extends Scene {
             return;
         }
 
-        console.log(`Building ID: "${buildingId}"`);
-        console.log(`Building type: "${building.getType()}"`);
+        // console.log(`Building ID: "${buildingId}"`);
+        // console.log(`Building type: "${building.getType()}"`);
 
         // Diagnostiquer l'état avant désassignation
-        console.log('=== BUILDING STATE BEFORE UNASSIGNMENT ===');
+        // console.log('=== BUILDING STATE BEFORE UNASSIGNMENT ===');
         building.debugWorkerAssignment();
 
         // Récupérer les workers assignés à ce bâtiment
         const assignedWorkerIds = building.getAssignedWorkerIds();
-        console.log(`Workers assigned to building: [${assignedWorkerIds.join(', ')}]`);
+        // console.log(`Workers assigned to building: [${assignedWorkerIds.join(', ')}]`);
 
         if (assignedWorkerIds.length === 0) {
             console.warn('No workers assigned to this building');
@@ -1104,22 +1128,22 @@ export class MainScene extends Scene {
             return;
         }
 
-        console.log(`Attempting to unassign worker ${workerIdToUnassign}`);
+        // console.log(`Attempting to unassign worker ${workerIdToUnassign}`);
 
         try {
             // Étape 1: Désassigner du bâtiment
             const unassignResult = building.unassignWorker(workerIdToUnassign);
-            console.log(`Unassignment from building result: ${unassignResult}`);
+            // console.log(`Unassignment from building result: ${unassignResult}`);
 
             if (unassignResult) {
                 // Étape 2: Convertir le worker en neutre
                 worker.convertToNeutral();
                 worker.setDepositPoint(null);
 
-                console.log(`Worker ${workerIdToUnassign} converted back to NEUTRAL`);
+                // console.log(`Worker ${workerIdToUnassign} converted back to NEUTRAL`);
 
                 // Étape 3: Diagnostiquer l'état final
-                console.log('=== BUILDING STATE AFTER UNASSIGNMENT ===');
+                // console.log('=== BUILDING STATE AFTER UNASSIGNMENT ===');
                 building.debugWorkerAssignment();
 
                 // Étape 4: Mettre à jour les compteurs
@@ -1136,7 +1160,7 @@ export class MainScene extends Scene {
                     }
                 }));
 
-                console.log('Worker unassignment completed successfully');
+                // console.log('Worker unassignment completed successfully');
 
             } else {
                 console.error('Failed to unassign worker from building');
@@ -1156,7 +1180,7 @@ export class MainScene extends Scene {
             }));
         }
 
-        console.log('=== END UNASSIGN WORKER EVENT ===');
+        // console.log('=== END UNASSIGN WORKER EVENT ===');
     }
 
 
@@ -1178,7 +1202,7 @@ export class MainScene extends Scene {
             worker.convertToNeutral();
             worker.setDepositPoint(null);
 
-            console.log(`Worker ${workerId} unassigned and converted to NEUTRAL`);
+            // console.log(`Worker ${workerId} unassigned and converted to NEUTRAL`);
             return true;
         }
 
@@ -1192,19 +1216,19 @@ export class MainScene extends Scene {
 
         try {
             const buildings = this.buildingManager.getBuildings();
-            console.log(`Searching for building ID "${buildingId}" among ${buildings.length} buildings`);
+            // console.log(`Searching for building ID "${buildingId}" among ${buildings.length} buildings`);
 
             for (const building of buildings) {
                 const currentBuildingId = building.getBuildingId();
-                console.log(`Checking building: "${currentBuildingId}" vs "${buildingId}"`);
+                // console.log(`Checking building: "${currentBuildingId}" vs "${buildingId}"`);
 
                 if (currentBuildingId === buildingId) {
-                    console.log('Building found!');
+                    // console.log('Building found!');
                     return building;
                 }
             }
 
-            console.log('Building not found');
+            // console.log('Building not found');
             return null;
 
         } catch (error) {
@@ -1216,9 +1240,9 @@ export class MainScene extends Scene {
 
     private assignWorkerToBuilding(worker: Worker, building: TiledBuilding): boolean {
         const workerId = worker.getWorkerId();
-        console.log(`=== ASSIGNING WORKER ${workerId} ===`);
+        // console.log(`=== ASSIGNING WORKER ${workerId} ===`);
 
-        console.log(`Worker found: ${workerId}, type: ${worker.getConfig().id}`);
+        // console.log(`Worker found: ${workerId}, type: ${worker.getConfig().id}`);
 
         if (!building.canAssignWorker()) {
             console.error('Building cannot accept more workers');
@@ -1239,19 +1263,19 @@ export class MainScene extends Scene {
         }
 
         const buildingId = building.getBuildingId();
-        console.log(`Building ID: ${buildingId}`);
-        console.log(`Assigning worker ${workerId} to building...`);
+        // console.log(`Building ID: ${buildingId}`);
+        // console.log(`Assigning worker ${workerId} to building...`);
 
         // Assigner le worker au bâtiment AVANT la conversion
         if (building.assignWorker(workerId)) {
-            console.log('Worker assigned to building successfully');
+            // console.log('Worker assigned to building successfully');
 
             // Convertir le worker après l'assignment
             worker.convertToSpecializedWorker(newConfig, buildingId);
             const pos = building.getPosition();
             worker.setDepositPoint({ x: pos.x, y: pos.y });
 
-            console.log(`Worker ${workerId} converted to ${targetWorkerType}`);
+            // console.log(`Worker ${workerId} converted to ${targetWorkerType}`);
 
             return true;
         } else {
@@ -1265,7 +1289,7 @@ export class MainScene extends Scene {
     }
 
     private onBuildingSelectedFromVue(buildingType: string): void {
-        console.log('Building selected from Vue:', buildingType);
+        // console.log('Building selected from Vue:', buildingType);
 
         this.selectedBuildingType = buildingType;
 
@@ -1283,7 +1307,7 @@ export class MainScene extends Scene {
             this.uiScene.hoverCursor.setVisible(false);
         }
 
-        console.log('Building preview activated for:', buildingType);
+        // console.log('Building preview activated for:', buildingType);
     }
 
     private onBuildingDeselectedFromVue(): void {
@@ -1301,7 +1325,7 @@ export class MainScene extends Scene {
     }
 
     private onWorkerCreationFromVue(workerType: string, positionHint?: string | { x: number; y: number }): void {
-        console.log('Worker creation requested from Vue:', workerType, positionHint);
+        // console.log('Worker creation requested from Vue:', workerType, positionHint);
 
         let spawnPosition = { x: 100, y: 100 };
 
@@ -1355,7 +1379,7 @@ export class MainScene extends Scene {
                     y: pos.y + dim.tilesHeight * 16 + 16,
                 };
 
-                console.log('Deposit point configured at sawmill:', depositPoint);
+                // console.log('Deposit point configured at sawmill:', depositPoint);
             }
         }
 
@@ -1373,7 +1397,7 @@ export class MainScene extends Scene {
                 }),
             );
 
-            console.log(`${workerType} created successfully at (${spawnPosition.x}, ${spawnPosition.y})`);
+            // console.log(`${workerType} created successfully at (${spawnPosition.x}, ${spawnPosition.y})`);
         } else {
             window.dispatchEvent(
                 new CustomEvent('game:notification', {
@@ -1391,13 +1415,13 @@ export class MainScene extends Scene {
         const spawnX = x || this.player.x + 32;
         const spawnY = y || this.player.y;
 
-        console.log(`MainScene: Creating worker ${type} at (${spawnX}, ${spawnY})`);
+        // console.log(`MainScene: Creating worker ${type} at (${spawnX}, ${spawnY})`);
 
         const depositPoint = this.findNearestDepositPoint(type, { x: spawnX, y: spawnY });
         const worker = this.workerManager.createWorker(type, spawnX, spawnY, depositPoint);
 
         if (worker) {
-            console.log(`MainScene: Successfully created worker ${type}`);
+            // console.log(`MainScene: Successfully created worker ${type}`);
         } else {
             console.error(`MainScene: Failed to create worker ${type}`);
         }
@@ -1406,13 +1430,13 @@ export class MainScene extends Scene {
     }
 
     public testWorkerSystem(): void {
-        console.log('=== TESTING WORKER SYSTEM ===');
+        // console.log('=== TESTING WORKER SYSTEM ===');
 
         if (this.resourceEntityManager) {
             const trees = this.resourceEntityManager.getEntitiesByType('tree');
-            console.log(`Found ${trees.length} trees`);
+            // console.log(`Found ${trees.length} trees`);
             trees.forEach((tree, index) => {
-                console.log(`Tree ${index}: (${tree.x}, ${tree.y})`);
+                // console.log(`Tree ${index}: (${tree.x}, ${tree.y})`);
             });
         } else {
             console.error('ResourceEntityManager not available!');
@@ -1420,18 +1444,18 @@ export class MainScene extends Scene {
 
         if (this.buildingManager) {
             const sawmills = this.buildingManager.getBuildingsByType('sawmill');
-            console.log(`Found ${sawmills.length} sawmills`);
+            // console.log(`Found ${sawmills.length} sawmills`);
         } else {
             console.error('BuildingManager not available!');
         }
 
         if (this.workerManager) {
-            console.log('WorkerManager is available');
+            // console.log('WorkerManager is available');
 
             for (let i = 0; i < 3; i++) {
                 const worker = this.workerManager.createWorker(WorkerType.NEUTRAL, this.player.x + 50, this.player.y + (i * 16));
                 if (worker) {
-                    console.log(`Created NEUTRAL worker ${i+1}:`, worker.getConfig().id);
+                    // console.log(`Created NEUTRAL worker ${i+1}:`, worker.getConfig().id);
                 } else {
                     console.error(`Failed to create NEUTRAL worker ${i+1}`);
                 }
@@ -1439,15 +1463,15 @@ export class MainScene extends Scene {
 
             const allWorkers = this.workerManager.getAllWorkers();
             const neutralWorkers = this.workerManager.getWorkersByType(WorkerType.NEUTRAL);
-            console.log(`Total workers created: ${allWorkers.length}`);
-            console.log(`Neutral workers: ${neutralWorkers.length}`);
+            // console.log(`Total workers created: ${allWorkers.length}`);
+            // console.log(`Neutral workers: ${neutralWorkers.length}`);
 
             const testWorker = this.createWorker(WorkerType.LUMBERJACK, this.player.x + 50, this.player.y);
             if (testWorker) {
-                console.log('Test worker created successfully!');
+                // console.log('Test worker created successfully!');
 
                 const config = testWorker.getConfig();
-                console.log('Worker config:', config);
+                // console.log('Worker config:', config);
             } else {
                 console.error('Failed to create test worker!');
             }
@@ -1455,7 +1479,7 @@ export class MainScene extends Scene {
             console.error('WorkerManager not available!');
         }
 
-        console.log('=== END WORKER SYSTEM TEST ===');
+        // console.log('=== END WORKER SYSTEM TEST ===');
     }
 
     private findNearestDepositPoint(workerType: WorkerType, position: WorkerPosition): WorkerPosition | undefined {
@@ -1565,7 +1589,7 @@ export class MainScene extends Scene {
         pathfinder.initializeGrid(fullGrid);
         this.easyStar.setGrid(fullGrid);
 
-        console.log('Pathfinding grid rebuilt');
+        // console.log('Pathfinding grid rebuilt');
     }
 
     public showResourceError(message: string = 'Insufficient resources!'): void {
@@ -1626,7 +1650,7 @@ export class MainScene extends Scene {
 
         if (this.buildingPreview.isValidPlacement()) {
             if (!this.canAffordBuilding(this.selectedBuildingType)) {
-                console.log('Cannot afford building anymore');
+                // console.log('Cannot afford building anymore');
 
                 window.dispatchEvent(
                     new CustomEvent('game:notification', {
@@ -1664,9 +1688,9 @@ export class MainScene extends Scene {
                 this.uiScene.grabbingCursor.setVisible(false);
             }
 
-            console.log('Building placed and resources deducted:', cost);
+            // console.log('Building placed and resources deducted:', cost);
         } else {
-            console.log('Invalid building placement');
+            // console.log('Invalid building placement');
             this.buildingPreview.flashInvalid();
 
             window.dispatchEvent(
@@ -1770,7 +1794,7 @@ export class MainScene extends Scene {
 
         if (this.buildingPreview.isValidPlacement()) {
             if (!this.canAffordBuilding(this.selectedBuildingType)) {
-                console.log('Cannot afford building anymore');
+                // console.log('Cannot afford building anymore');
 
                 window.dispatchEvent(
                     new CustomEvent('game:notification', {
@@ -1828,9 +1852,9 @@ export class MainScene extends Scene {
                 this.uiScene.defaultCursor.setVisible(true);
             }
 
-            console.log('Building placed and resources deducted:', cost);
+            // console.log('Building placed and resources deducted:', cost);
         } else {
-            console.log('Invalid building placement');
+            // console.log('Invalid building placement');
 
             if (this.buildingPreview) {
                 this.buildingPreview.flashInvalid();
@@ -1976,7 +2000,7 @@ export class MainScene extends Scene {
 
             try {
                 const totalResources = this.resourceManager.getGlobalInventory().getTotalItems();
-                console.log('Current total resources:', totalResources);
+                // console.log('Current total resources:', totalResources);
 
                 window.dispatchEvent(
                     new CustomEvent('game:resourceDebug', {
@@ -2026,7 +2050,7 @@ export class MainScene extends Scene {
     private showPathDots(path: { x: number; y: number }[]): void {
         this.clearPathDots();
         if (!path || path.length === 0 || !this.pathDotsGroup) return;
-        console.log('showPathDots called, path:', path);
+        // console.log('showPathDots called, path:', path);
 
         // Afficher les dots normaux sur les tuiles intermédiaires
         for (let i = 1; i < path.length - 1; i++) {

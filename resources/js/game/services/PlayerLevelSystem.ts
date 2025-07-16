@@ -14,25 +14,30 @@ export class PlayerLevelSystem {
     }
 
     public addExperience(amount: number, source: string = 'unknown', resourceType?: ResourceType): void {
-        // Calculer le multiplicateur selon le type de ressource
         const multiplier = resourceType ? this.getResourceExperienceMultiplier(resourceType) : 1.0;
         const finalAmount = Math.floor(amount * multiplier);
 
-        // Récupérer les données actuelles du joueur
         const currentData = this.getCurrentPlayerData();
 
-        // Calculer la nouvelle expérience
-        let newExp = currentData.currentExperience + finalAmount;
+       let newExp = currentData.currentExperience + finalAmount;
         let newLevel = currentData.level;
         let newNextLevelExp = currentData.nextLevelExperience;
 
-        // Vérifier si le joueur monte de niveau
-        const levelUpData = this.checkLevelUp(newExp, newLevel, newNextLevelExp);
+       const levelUpData = this.checkLevelUp(newExp, newLevel, newNextLevelExp);
 
         if (levelUpData.hasLeveledUp) {
             newLevel = levelUpData.newLevel;
             newExp = levelUpData.remainingExp;
             newNextLevelExp = levelUpData.newNextLevelExp;
+
+            window.dispatchEvent(new CustomEvent('game:levelUp', {
+                detail: {
+                    newLevel,
+                    previousLevel: levelUpData.newLevel - 1,
+                    source,
+                    resourceType
+                }
+            }));
 
             this.handleLevelUp(newLevel);
         }

@@ -16,15 +16,15 @@ export class GlobalWorkerStorage {
                 workerBuildings: {},
                 initialized: true
             };
-            console.log('GlobalWorkerStorage: Initialized global storage');
+            // console.log('GlobalWorkerStorage: Initialized global storage');
         }
     }
 
     public static assignWorkerToBuilding(workerId: string, buildingId: string, maxWorkers: number): boolean {
-        console.log(`\n=== GLOBAL ASSIGNMENT ===`);
-        console.log(`WorkerId: "${workerId}"`);
-        console.log(`BuildingId: "${buildingId}"`);
-        console.log(`Max workers: ${maxWorkers}`);
+        // console.log(`\n=== GLOBAL ASSIGNMENT ===`);
+        // console.log(`WorkerId: "${workerId}"`);
+        // console.log(`BuildingId: "${buildingId}"`);
+        // console.log(`Max workers: ${maxWorkers}`);
 
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
@@ -56,12 +56,12 @@ export class GlobalWorkerStorage {
             // Assigner le bâtiment au worker
             storage.workerBuildings[workerId] = buildingId;
 
-            console.log(`Assignment successful! Building now has ${newWorkerList.length} workers`);
-            console.log(`Worker list: [${newWorkerList.join(', ')}]`);
+            // console.log(`Assignment successful! Building now has ${newWorkerList.length} workers`);
+            // console.log(`Worker list: [${newWorkerList.join(', ')}]`);
 
             // Vérification immédiate
             const verifyCount = this.getWorkerCount(buildingId);
-            console.log(`Verification: getWorkerCount returns ${verifyCount}`);
+            // console.log(`Verification: getWorkerCount returns ${verifyCount}`);
 
             return true;
 
@@ -72,8 +72,8 @@ export class GlobalWorkerStorage {
     }
 
     public static unassignWorkerFromBuilding(workerId: string): boolean {
-        console.log(`\n=== GLOBAL UNASSIGNMENT ===`);
-        console.log(`WorkerId: "${workerId}"`);
+        // console.log(`\n=== GLOBAL UNASSIGNMENT ===`);
+        // console.log(`WorkerId: "${workerId}"`);
 
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
@@ -98,8 +98,8 @@ export class GlobalWorkerStorage {
             // Retirer l'assignation du worker
             delete storage.workerBuildings[workerId];
 
-            console.log(`Unassignment successful! Building now has ${newWorkerList.length} workers`);
-            console.log(`Worker list: [${newWorkerList.join(', ')}]`);
+            // console.log(`Unassignment successful! Building now has ${newWorkerList.length} workers`);
+            // console.log(`Worker list: [${newWorkerList.join(', ')}]`);
 
             return true;
 
@@ -113,7 +113,7 @@ export class GlobalWorkerStorage {
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
         const workers = storage.buildingWorkers[buildingId] || [];
-        console.log(`getWorkersForBuilding("${buildingId}"): [${workers.join(', ')}]`);
+        // console.log(`getWorkersForBuilding("${buildingId}"): [${workers.join(', ')}]`);
         return [...workers]; // Clone pour éviter les mutations
     }
 
@@ -121,7 +121,7 @@ export class GlobalWorkerStorage {
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
         const count = (storage.buildingWorkers[buildingId] || []).length;
-        console.log(`getWorkerCount("${buildingId}"): ${count}`);
+        // console.log(`getWorkerCount("${buildingId}"): ${count}`);
         return count;
     }
 
@@ -129,7 +129,7 @@ export class GlobalWorkerStorage {
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
         const buildingId = storage.workerBuildings[workerId] || null;
-        console.log(`getBuildingForWorker("${workerId}"): "${buildingId}"`);
+        // console.log(`getBuildingForWorker("${workerId}"): "${buildingId}"`);
         return buildingId;
     }
 
@@ -137,7 +137,7 @@ export class GlobalWorkerStorage {
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
         const assigned = !!storage.workerBuildings[workerId];
-        console.log(`isWorkerAssigned("${workerId}"): ${assigned}`);
+        // console.log(`isWorkerAssigned("${workerId}"): ${assigned}`);
         return assigned;
     }
 
@@ -154,25 +154,25 @@ export class GlobalWorkerStorage {
         // Vider la liste des workers du bâtiment
         storage.buildingWorkers[buildingId] = [];
 
-        console.log(`Cleared all workers from building: ${buildingId}`);
+        // console.log(`Cleared all workers from building: ${buildingId}`);
     }
 
     public static debugStorage(): void {
         this.ensureStorage();
         const storage = window.__WORKER_BUILDING_STORAGE__!;
 
-        console.log('\n=== GLOBAL STORAGE DEBUG ===');
-        console.log('Raw storage object:', storage);
-        console.log('Building -> Workers:');
+        // console.log('\n=== GLOBAL STORAGE DEBUG ===');
+        // console.log('Raw storage object:', storage);
+        // console.log('Building -> Workers:');
         Object.entries(storage.buildingWorkers).forEach(([buildingId, workers]) => {
-            console.log(`  ${buildingId}: [${workers.join(', ')}]`);
+            // console.log(`  ${buildingId}: [${workers.join(', ')}]`);
         });
 
-        console.log('Worker -> Building:');
+        // console.log('Worker -> Building:');
         Object.entries(storage.workerBuildings).forEach(([workerId, buildingId]) => {
-            console.log(`  ${workerId}: ${buildingId}`);
+            // console.log(`  ${workerId}: ${buildingId}`);
         });
-        console.log('=== END GLOBAL STORAGE DEBUG ===\n');
+        // console.log('=== END GLOBAL STORAGE DEBUG ===\n');
     }
 
     public static getAllAssignments(): { buildingWorkers: Record<string, string[]>, workerBuildings: Record<string, string> } {

@@ -8,6 +8,9 @@
 
     <!-- Loading Screen -->
     <LoadingScreen v-if="!isGameReady" :progress="loadingProgress" />
+
+
+    <SaveManagerUI v-if="isGameReady" />
   </div>
 </template>
 
@@ -18,6 +21,7 @@ import { gameConfig } from '@game/config.ts'
 import { useGameState } from '@game/ui/composables/useGameState.ts'
 import GameUI from './ui/GameUI.vue'
 import LoadingScreen from './ui/LoadingScreen.vue'
+import SaveManagerUI from '@/components/game/ui/SaveManagerUI.vue';
 
 // Refs
 const gameContainer = ref<HTMLElement>()
