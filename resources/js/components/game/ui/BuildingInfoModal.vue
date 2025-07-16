@@ -3,16 +3,22 @@
     <!-- Modal Overlay -->
     <Teleport to="body">
         <Transition name="modal-fade">
-            <div v-if="isVisible" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
-                @click="handleOverlayClick">
-                <!-- Modal Content -->
-                <div class="modal-content relative w-full max-w-md mx-auto" @click.stop>
-                    <div class="bg-gray-900/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl">
-                        <!-- Header -->
-                        <div class="flex items-center justify-between p-6 border-b border-gray-700/50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                    <BuildingIcon :building-type="buildingData?.type || 'unknown'" :size="20" />
+            <div v-if="isVisible" class="modal-overlay fixed inset-0 flex items-center justify-center p-4 !z-[9999]"
+                 @click="handleOverlayClick">
+                <div class="modal-content relative w-full max-w-[1020px] mx-auto" @click.stop>
+                    <div class="relative m-auto h-128 w-full flex gap-6">
+                        <button class="absolute top-0 -right-4 translate-x-1/1 h-18 aspect-square cursor-pointer hover:scale-105 transition duration-150 ease-in-out" @click="handleClose">
+                            <img src="/assets/game/ui/building-cancel-button.png"
+                                 class="w-auto h-full pixelated"
+                                 alt="cancel-button">
+                        </button>
+
+                        <div class="flex flex-col gap-6 w-[30%]">
+                            <div class="pixel-border pixel-border-dirt w-full flex items-center gap-6 p-1 h-fit">
+                                <div class="pixel-border pixel-border-stone relative h-full w-16">
+                                    <p class="absolute left-1/2 -bottom-0.5 -translate-x-1/2">
+                                        <img :src="`/assets/game/buildings/icons/${buildingType}.png`" class="h-15 max-w-14 pixelated" :alt="buildingType">
+                                    </p>
                                 </div>
                                 <h2 class="text-xl font-bold text-white">
                                     {{ buildingDisplayName }}
@@ -233,8 +239,8 @@ watch(isVisible, (visible) => {
 
 <style scoped>
 .modal-overlay {
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
 }
 
 /* Modal transitions */

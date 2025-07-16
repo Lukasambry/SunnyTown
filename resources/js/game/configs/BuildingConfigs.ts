@@ -9,7 +9,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         cost: { [ResourceType.WOOD]: 10 },
         workerType: WorkerType.NEUTRAL,
         maxWorkers: 1,
-        description: 'Logement pour les ouvriers, améliore leur efficacité'
+        description: 'TestFromConfigs: Logement pour les ouvriers, améliore leur efficacité'
     },
     {
         key: 'sawmill',
@@ -19,7 +19,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         cost: { [ResourceType.WOOD]: 10 },
         workerType: WorkerType.LUMBERJACK,
         maxWorkers: 3,
-        description: 'Traite le bois et stocke les ressources'
+        description: 'TestFromConfigs: Traite le bois et stocke les ressources'
     },
     {
         key: 'mine',
@@ -32,7 +32,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         },
         workerType: WorkerType.MINER,
         maxWorkers: 2,
-        description: 'Extrait pierre et métaux du sous-sol'
+        description: 'TestFromConfigs: Extrait pierre et métaux du sous-sol'
     },
     {
         key: 'farm',
@@ -42,6 +42,6 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         cost: { [ResourceType.WOOD]: 12 },
         workerType: WorkerType.FARMER,
         maxWorkers: 2,
-        description: 'Produit de la nourriture pour les ouvriers'
+        description: 'TestFromConfigs: Produit de la nourriture pour les ouvriers'
     }
 ];

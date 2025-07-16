@@ -1,49 +1,146 @@
 <template>
     <Teleport to="body">
         <Transition name="modal-fade">
-            <div v-if="isVisible" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
+            <div v-if="isVisible" class="modal-overlay fixed inset-0 flex items-center justify-center p-4 !z-[9999]"
                  @click="handleOverlayClick">
-                <div class="modal-content relative w-full max-w-2xl mx-auto" @click.stop>
-                    <div class="bg-gray-900/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl">
-                        <div class="flex items-center justify-between p-6 border-b border-gray-700/50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                    <BuildingIcon building-type="house" :size="24" />
-                                </div>
-                                <div>
-                                    <h2 class="text-xl font-bold text-white">
-                                        Bâtiments disponibles
-                                    </h2>
-                                    <p class="text-sm text-gray-400">
-                                        {{ totalBuildings }} bâtiment{{ totalBuildings > 1 ? 's' : '' }} sur la carte
+                <div class="modal-content relative w-full max-w-[1020px] mx-auto" @click.stop>
+
+                    <div class="relative m-auto max-w-[1020px] h-128 w-full flex gap-6">
+                        <button class="absolute top-0 -right-4 translate-x-1/1 h-18 aspect-square cursor-pointer hover:scale-105 transition duration-150 ease-in-out" @click="handleClose">
+                            <img src="/assets/game/ui/building-cancel-button.png"
+                                 class="w-auto h-full pixelated"
+                                 alt="cancel-button">
+                        </button>
+
+                        <div class="flex flex-col gap-6 w-[30%]">
+                            <div class="pixel-border pixel-border-dirt w-full flex items-center gap-6 p-2 h-fit">
+                                <div class="pixel-border pixel-border-stone relative h-full w-16">
+                                    <p class="absolute left-1/2 -bottom-0.5 -translate-x-1/2">
+                                        <img src="#" class="h-15 max-w-14 pixelated" alt="icon_scierie">
                                     </p>
                                 </div>
+                                <h2 class="!text-slate-900 !text-3xl">Atelier</h2>
                             </div>
-
-                            <button
-                                class="w-8 h-8 rounded-lg bg-gray-700/50 hover:bg-gray-600/50 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                                @click="handleClose">
-                                <ActionIcon icon="close" :size="16" />
-                            </button>
+                            <div class="pixel-border pixel-border-stone w-full p-4 h-full flex flex-col gap-6">
+                                <div class="flex justify-between items-center h-20">
+                                    <div class="flex flex-col gap-2 w-full text-center">
+                                        <div class="!text-slate-900 font-mono">
+                                            Total: {{ totalBuildings }}
+                                        </div>
+                                        <div class="!text-slate-900 font-mono">
+                                            Ouvriers: {{ totalWorkers }}
+                                        </div>
+                                        <button
+                                            class="pixel-border pixel-border-stone w-full p-2 !text-slate-900 hover:bg-slate-100 transition-colors mt-4"
+                                            @click="handleClose">
+                                            Fermer
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="p-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <BuildingCard v-for="building in availableBuildings" :key="building.key"
-                                              :building="building" :count="getBuildingCount(building.key)"
-                                              :can-afford="canAffordBuilding(building)" @select="handleBuildingSelect" />
+                        <!-- Panneau principal droite - structure exacte de l'exemple -->
+                        <div class="pixel-border pixel-border-dark-dirt w-[70%] flex flex-col-reverse justify-between">
+                            <div class="pixel-border pixel-border-dirt w-full h-full max-h-110.5">
+                                <div class="px-8 py-10 flex flex-col gap-6 scroll overflow-auto max-h-full">
+
+                                    <!-- Bâtiments disponibles - style exact de l'exemple -->
+                                    <div v-for="building in availableBuildings" :key="building.key"
+                                         class="flex gap-5 w-full p-6 cursor-pointer hover:-translate-y-0.5 transition duration-150 ease-in-out"
+                                         :class="canAffordBuilding(building) ? 'pixel-border pixel-border-gold' : 'pixel-border pixel-border-stone'"
+                                         @click="handleBuildingSelect(building.key)">
+
+                                        <!-- Image du bâtiment - même structure que l'exemple -->
+                                        <div class="relative h-28">
+                                            <div class="h-full w-28 flex items-center justify-center p-1">
+                                                <img :src="`/assets/game/buildings/${building.key}.png`"
+                                                     class="w-auto max-w-full max-h-full h-auto pixelated"
+                                                     :alt="building.key">
+                                            </div>
+                                        </div>
+
+                                        <!-- Contenu - structure identique à l'exemple -->
+                                        <div class="flex gap-4 items-center w-full py-1">
+                                            <div class="flex flex-col gap-6 w-full">
+                                                <div class="flex justify-between w-full">
+                                                    <div class="flex gap-4 items-center">
+                                                        <div class="ml-1 pixel-border pixel-border-stone w-fit text-xs px-1 max-h-4.5 flex justify-center items-center !text-slate-900 !text-base line-height-0">
+                                                            {{ building.name }}
+                                                        </div>
+                                                        <div v-if="getBuildingCount(building.key) > 0"
+                                                             class="ml-1 pixel-border pixel-border-gold w-fit text-xs px-1 max-h-4.5 flex justify-center items-center !text-slate-900 !text-sm line-height-0">
+                                                            x{{ getBuildingCount(building.key) }}
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Coûts - même structure que l'exemple -->
+                                                    <div class="ml-1 flex gap-5 text-xs line-height-0">
+                                                        <div v-if="building.cost?.wood"
+                                                             class="pixel-border pixel-border-stone w-fit text-xs px-1 max-h-4.5 flex justify-center items-center gap-1.5 !text-slate-900 !text-sm line-height-0">
+                                                            <img src="https://i.postimg.cc/7ZRVm9Xv/wood.png"
+                                                                 class="w-auto h-4 pixelated"
+                                                                 alt="wood">
+                                                            <p :class="canAffordBuilding(building) ? '' : '!text-red-400'">
+                                                                {{ building.cost.wood }}
+                                                            </p>
+                                                        </div>
+                                                        <div v-if="building.cost?.coin"
+                                                             class="pixel-border pixel-border-gold w-fit text-xs px-1 max-h-4.5 flex justify-center items-center gap-1.5 !text-sm line-height-0">
+                                                            <img src="https://i.postimg.cc/ncPcz90V/coin.png"
+                                                                 class="w-auto h-4 pixelated"
+                                                                 alt="coins">
+                                                            <p :class="canAffordBuilding(building) ? '' : '!text-red-400'">
+                                                                {{ building.cost.coin }}
+                                                            </p>
+                                                        </div>
+                                                        <div v-if="building.cost?.stone"
+                                                             class="pixel-border pixel-border-stone w-fit text-xs px-1 max-h-4.5 flex justify-center items-center gap-1.5 !text-sm line-height-0">
+                                                            <img src="https://i.postimg.cc/4x9vHzNr/stone.png"
+                                                                 class="w-auto h-4 pixelated"
+                                                                 alt="stone">
+                                                            <p :class="canAffordBuilding(building) ? '' : '!text-red-400'">
+                                                                {{ building.cost.stone }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Description - même style que l'exemple -->
+                                                <div class="flex gap-4">
+                                                    <p class="!text-slate-900 leading-5 !text-base">
+                                                        {{ building.description }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Message si pas de bâtiments -->
+                                    <div v-if="availableBuildings.length === 0" class="text-center py-20">
+                                        <p class="!text-slate-600">Aucun bâtiment disponible</p>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="mt-8 pt-6 border-t border-gray-700/50">
-                                <h3 class="text-lg font-semibold text-white mb-4">
-                                    Statistiques
-                                </h3>
+                            <!-- Onglets - exactement comme dans l'exemple -->
+                            <div class="flex gap-5">
+                                <div class="w-fit no-bottom py-1 pb-2 px-3 flex gap-3 items-center !text-slate-900 cursor-pointer pixel-no-bottom"
+                                     :class="{'pixel-border pixel-border-dirt': activeTab === 'buildings'}"
+                                     @click="activeTab = 'buildings'">
+                                    <img src="/assets/game/ui/arrow_up.png"
+                                         class="h-10 pixelated"
+                                         alt="ArrowUp">
+                                    <h3 class="!text-slate-900 !text-3xl">Batiments</h3>
+                                </div>
 
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <StatCard title="Total bâtiments" :value="totalBuildings" icon="house" color="blue" />
-                                    <StatCard title="Ressources stockées" :value="totalStoredResources" icon="plus" color="green" />
-                                    <StatCard title="Ouvriers actifs" :value="totalWorkers" icon="worker" color="purple" />
-                                    <StatCard title="Valeur totale" :value="totalValue" icon="info" color="yellow" />
+                                <div class="w-fit no-bottom py-1 pb-2 px-3 flex gap-3 items-center !text-slate-900 cursor-pointer pixel-no-bottom"
+                                     :class="{'pixel-border pixel-border-dirt': activeTab === 'decorations'}"
+                                     @click="activeTab = 'decorations'">
+                                    <img src="/assets/game/ui/playercount.png"
+                                         class="h-10 pixelated"
+                                         alt="playercount">
+                                    <h3 class="!text-slate-900 !text-3xl">Decorations</h3>
                                 </div>
                             </div>
                         </div>
@@ -56,16 +153,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
-import { useGameStore } from '@game/stores/gameStore.ts'
-import type { BuildingConfig } from '@game/types/BuildingTypes.ts'
-import BuildingIcon from './BuildingIcon.vue'
-import ActionIcon from './ActionIcon.vue'
-import BuildingCard from './BuildingCard.vue'
-import StatCard from './StatCard.vue'
+import { useGameStore } from '@/game/stores/gameStore'
+import type { BuildingConfig } from '@/game/types/BuildingTypes'
 
 const gameStore = useGameStore()
 
 const isVisible = ref(false)
+const activeTab = ref('buildings')
 
 const buildingRegistry = computed(() => {
     const registry = gameStore.getBuildingRegistry()
@@ -82,7 +176,22 @@ const availableBuildings = computed((): readonly BuildingConfig[] => {
     }
 
     try {
-        return buildingRegistry.value.getAllBuildings()
+        const buildings = buildingRegistry.value.getAllBuildings()
+
+        // Filtrer selon l'onglet actif
+        if (activeTab.value === 'buildings') {
+            return buildings.filter(building =>
+                !building.isDecoration &&
+                building.category !== 'decoration'
+            )
+        } else if (activeTab.value === 'decorations') {
+            return buildings.filter(building =>
+                building.isDecoration ||
+                building.category === 'decoration'
+            )
+        }
+
+        return buildings
     } catch (error) {
         console.error('Error getting available buildings:', error)
         return []
@@ -95,27 +204,6 @@ const totalBuildings = computed(() => {
 
 const totalWorkers = computed(() => {
     return gameStore.workerCount
-})
-
-const totalStoredResources = computed(() => {
-    return gameStore.state.buildings?.reduce((total, building) => {
-        const resources = building.getAllBuildingResources?.() || new Map()
-        return total + Array.from(resources.values()).reduce((sum, amount) => sum + amount, 0)
-    }, 0) || 0
-})
-
-const totalValue = computed(() => {
-    const resourceManager = gameStore.getResourceManager()
-    if (!resourceManager) {
-        return 0
-    }
-
-    try {
-        return resourceManager.getGlobalInventory().getTotalValue()
-    } catch (error) {
-        console.error('Error calculating total value:', error)
-        return 0
-    }
 })
 
 const getBuildingCount = (buildingType: string): number => {
@@ -214,14 +302,9 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-    transition: opacity 0.3s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-    opacity: 0;
+.modal-overlay {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {

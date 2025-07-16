@@ -9,25 +9,6 @@
                 @click="toggleCameraMode"
             />
         </div>
-        <!-- Resource Display -->
-        <ResourceDisplay :show-resource-list="true" :max-visible-resources="8" />
-
-        <!-- Building UI -->
-        <BuildingUI />
-
-        <!-- Building FAB Button -->
-        <BuildingFabButton />
-
-        <!-- Building Info Modal -->
-        <BuildingInfoModal />
-        <BuildingSelectionOverlay />
-
-        <!-- Zone Overlay -->
-        <ZoneBlockerOverlay />
-
-        <!-- Notification System -->
-        <NotificationSystem />
-
         <Level
             :avatar="gameStore.playerAvatar"
             :level="gameStore.playerLevel"
@@ -35,22 +16,20 @@
             :health="gameStore.playerHealth"
             :experience="gameStore.playerExperience"
         />
-
-        <!-- Debug resource info -->
-        <!--
-        <div v-if="isDevelopment" class="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs">
-          Resources: {{ totalResources }} | Updates: {{ resourceUpdateCount }}
-        </div>
-        -->
+        <ResourceDisplay :show-resource-list="true" :max-visible-resources="8" />
+        <BuildingFabButton />
+        <BuildingInfoModal />
+        <BuildingSelectionOverlay />
+        <ZoneBlockerOverlay />
+        <NotificationSystem />
     </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { useGameStore } from '@game/stores/gameStore.ts'
-import { ResourceType } from '@game/types/ResourceSystemTypes.ts'
+import { useGameStore } from '@/game/stores/gameStore'
+import { ResourceType } from '@/game/types/ResourceSystemTypes'
 import ResourceDisplay from './ResourceDisplay.vue'
-import BuildingUI from './BuildingUI.vue'
 import BuildingFabButton from './BuildingFabButton.vue'
 import BuildingInfoModal from './BuildingInfoModal.vue'
 import BuildingSelectionOverlay from './BuildingSelectionOverlay.vue'
