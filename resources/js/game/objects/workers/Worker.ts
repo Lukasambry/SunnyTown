@@ -406,6 +406,11 @@ export class Worker extends Sprite {
             }
 
             const waypoint = path[currentWaypointIndex];
+            const dx = waypoint.x - this.x;
+            if (Math.abs(dx) > 1) { 
+                this.flipX = dx < 0;
+            }
+
             this.scene.physics.moveTo(this.getThisGameObject(), waypoint.x, waypoint.y, this.config.moveSpeed);
 
             const distance = Phaser.Math.Distance.Between(this.x, this.y, waypoint.x, waypoint.y);

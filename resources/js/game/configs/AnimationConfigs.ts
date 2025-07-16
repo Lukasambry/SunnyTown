@@ -26,18 +26,23 @@ export const ANIMATION_CONFIGS: AnimationConfig[] = [
         description: 'Player chopping animation'
     },
 
+
+
+
+
+
     // Worker animations
     {
         key: AnimationType.WORKER_IDLE,
-        texture: 'player-idle',
+        texture: 'worker-idle',
         frames: { start: 0, end: 8 },
-        frameRate: 8,
+        frameRate: 10,
         repeat: -1,
         description: 'Worker idle animation'
     },
     {
         key: AnimationType.WORKER_WALK,
-        texture: 'player-walk',
+        texture: 'worker-walk',
         frames: { start: 0, end: 7 },
         frameRate: 12,
         repeat: -1,
@@ -45,11 +50,27 @@ export const ANIMATION_CONFIGS: AnimationConfig[] = [
     },
     {
         key: AnimationType.WORKER_CHOP,
-        texture: 'player-chop',
-        frames: { start: 0, end: 7 },
-        frameRate: 20,
+        texture: 'worker-chop',
+        frames: { start: 0, end: 9 },
+        frameRate: 16,
         repeat: 0,
         description: 'Worker chopping animation'
+    },
+    {
+        key: AnimationType.WORKER_MINING,
+        texture: 'worker-mining',
+        frames: { start: 0, end: 9 },
+        frameRate: 16,
+        repeat: 0,
+        description: 'Worker Mining animation'
+    },
+    {
+        key: AnimationType.WORKER_CARRY,
+        texture: 'worker-carry',
+        frames: { start: 0, end: 7 },
+        frameRate: 12,
+        repeat: 0,
+        description: 'Worker Carrying animation'
     },
 
     // Tree animations

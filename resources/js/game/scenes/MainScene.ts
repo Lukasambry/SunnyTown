@@ -84,18 +84,18 @@ export class MainScene extends Scene {
         this.resourceManager = ResourceManager.getInstance();
         this.resourceManager.prepareSceneLoading(this);
 
-        this.load.spritesheet('player-walk', 'sprites/player-walk.png', {
-            frameWidth: 96,
-            frameHeight: 64,
-        });
-        this.load.spritesheet('player-idle', 'sprites/player-idle.png', {
-            frameWidth: 96,
-            frameHeight: 64,
-        });
-        this.load.spritesheet('player-chop', 'sprites/player-chop.png', {
-            frameWidth: 96,
-            frameHeight: 64,
-        });
+        const characterFrameConfig = { frameWidth: 96, frameHeight: 64, };
+
+        this.load.spritesheet('player-walk', 'sprites/player-walk.png', characterFrameConfig);
+        this.load.spritesheet('player-idle', 'sprites/player-idle.png', characterFrameConfig);
+        this.load.spritesheet('player-chop', 'sprites/player-chop.png', characterFrameConfig);
+
+        this.load.spritesheet('worker-idle', 'sprites/workers/spr_idle_strip9.png', characterFrameConfig);
+        this.load.spritesheet('worker-walk', 'sprites/workers/spr_walk_strip8.png', characterFrameConfig);
+        this.load.spritesheet('worker-chop', 'sprites/workers/spr_axe_strip10.png', characterFrameConfig);
+        this.load.spritesheet('worker-mining', 'sprites/workers/spr_mining_strip10.png', characterFrameConfig);
+        this.load.spritesheet('worker-carry', 'sprites/workers/spr_carry_strip8.png', characterFrameConfig);
+
         this.load.spritesheet('leaves-hit', 'sprites/leaves-hit.png', {
             frameWidth: 64,
             frameHeight: 32,

@@ -8,12 +8,14 @@ export enum AnimationType {
     WORKER_IDLE = 'worker-idle',
     WORKER_WALK = 'worker-walk',
     WORKER_CHOP = 'worker-chop',
-    LEAVES_FALL = 'leaves-fall',
+    WORKER_MINING = 'worker-mining',
+    WORKER_CARRY = 'worker-carry',
 
     // Tree
     TREE_IDLE = 'tree-idle',
     TREE_HIT = 'tree-hit',
     TREE_DESTROY = 'tree-destroy',
+    LEAVES_FALL = 'leaves-fall',
 
     // Coal Vein
     COAL_VEIN_IDLE = 'coal-vein-idle',
@@ -35,4 +37,4 @@ export interface AnimationFrameConfig {
     readonly hitFrame?: number;
     readonly onHitFrame?: () => void;
     readonly onComplete?: () => void;
-} 
+}

@@ -8,7 +8,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.LUMBERJACK,
         name: 'Bûcheron',
         description: 'Coupe les arbres et récolte le bois',
-        texture: 'player-idle',
+        texture: 'worker-idle',
 
         carryCapacity: 10,
         harvestSpeed: 3000,
@@ -35,13 +35,13 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'player-idle',
-            walking: 'player-walk',
-            working: 'player-chop',
-            carrying: 'player-carry'
+            idle: 'worker-idle',
+            walking: 'worker-walk',
+            working: 'worker-chop',
+            carrying: 'worker-carry'
         },
 
-        tint: 0xdd9955,
+        //tint: 0xdd9955,
         scale: 1.0
     },
 
@@ -49,7 +49,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.MINER,
         name: 'Mineur',
         description: 'Extrait la pierre et les minerais',
-        texture: 'player-idle',
+        texture: 'worker-idle',
 
         carryCapacity: 8,
         harvestSpeed: 4000,
@@ -71,13 +71,13 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'player-idle',
-            walking: 'player-walk',
-            working: 'player-mine',
-            carrying: 'player-carry'
+            idle: 'worker-idle',
+            walking: 'worker-walk',
+            working: 'worker-mining',
+            carrying: 'worker-carry'
         },
 
-        tint: 0x8b7355,
+        //tint: 0x8b7355,
         scale: 1.0
     },
 
@@ -85,7 +85,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.FARMER,
         name: 'Fermier',
         description: 'Cultive et récolte la nourriture',
-        texture: 'player-idle',
+        texture: 'worker-idle',
 
         carryCapacity: 12,
         harvestSpeed: 2500,
@@ -112,13 +112,13 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'player-idle',
-            walking: 'player-walk',
-            working: 'player-harvest',
-            carrying: 'player-carry'
+            idle: 'worker-idle',
+            walking: 'worker-walk',
+            working: 'worker-carry',
+            carrying: 'worker-carry'
         },
 
-        tint: 0x228b22,
+        //tint: 0x228b22,
         scale: 1.0
     },
 
@@ -126,7 +126,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.TRANSPORTER,
         name: 'Transporteur',
         description: 'Transporte les ressources entre bâtiments',
-        texture: 'player-idle',
+        texture: 'worker-idle',
 
         carryCapacity: 15,
         harvestSpeed: 1000,
@@ -148,20 +148,20 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'player-idle',
-            walking: 'player-walk',
-            working: 'player-load',
-            carrying: 'player-carry'
+            idle: 'worker-idle',
+            walking: 'worker-walk',
+            working: 'worker-carry',
+            carrying: 'worker-carry'
         },
 
-        tint: 0x3498db,
+        //tint: 0x3498db,
         scale: 1.0
     },
     [WorkerType.NEUTRAL]: {
         id: WorkerType.NEUTRAL,
         name: 'Ouvrier',
         description: 'Ouvrier neutre, peut être assigné à n\'importe quel métier.',
-        texture: 'player-idle',
+        texture: 'worker-idle',
         carryCapacity: 0,
         harvestSpeed: 0,
         moveSpeed: 60,
@@ -169,12 +169,13 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         harvestTargets: [],
         depositTargets: [],
         animations: {
-            idle: 'player-idle',
-            walking: 'player-walk',
-            working: 'player-idle',
-            carrying: 'player-idle'
+            idle: 'worker-idle',
+            walking: 'worker-walk',
+            working: 'worker-chop',
+            carrying: 'worker-carry'
         },
-        tint: 0xaaaaaa,
+
+        //tint: 0xaaaaaa,
         scale: 1.0
     }
 };

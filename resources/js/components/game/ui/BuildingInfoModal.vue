@@ -1,10 +1,15 @@
 <template>
     <Teleport to="body">
         <Transition name="modal-fade">
-            <div v-if="isVisible" class="modal-overlay fixed inset-0 flex items-center justify-center p-4 z-50"
+            <div v-if="isVisible" class="modal-overlay fixed inset-0 flex items-center justify-center p-4 !z-[9999]"
                  @click="handleOverlayClick">
-                <div class="modal-content relative w-full max-w-[1220px] mx-auto" @click.stop>
-                    <div class="m-auto h-158 w-full flex gap-6">
+                <div class="modal-content relative w-full max-w-[1020px] mx-auto" @click.stop>
+                    <div class="relative m-auto h-128 w-full flex gap-6">
+                        <button class="absolute top-0 -right-4 translate-x-1/1 h-18 aspect-square cursor-pointer hover:scale-105 transition duration-150 ease-in-out" @click="handleClose">
+                            <img src="/assets/game/ui/building-cancel-button.png"
+                                 class="w-auto h-full pixelated"
+                                 alt="cancel-button">
+                        </button>
 
                         <div class="flex flex-col gap-6 w-[30%]">
                             <div class="pixel-border pixel-border-dirt w-full flex items-center gap-6 p-1 h-fit">
@@ -657,7 +662,8 @@ watch(isVisible, (visible) => {
 
 <style scoped>
 .modal-overlay {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
 }
 
 .modal-fade-enter-from .modal-content,
