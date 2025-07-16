@@ -154,12 +154,12 @@ export class Worker extends Sprite {
         // NOUVELLE LOGIQUE: Si le worker est assigné à un bâtiment, déposer là-bas
         if (this.isAssignedToBuilding()) {
             const assignedBuildingId = this.getAssignedBuildingId();
-            // console.log(`Worker ${this.workerId} is assigned to building ${assignedBuildingId}`);
+            console.log(`Worker ${this.workerId} is assigned to building ${assignedBuildingId}`);
 
             target = this.findBuildingById(assignedBuildingId);
 
             if (target) {
-                // console.log(`Moving to assigned building for deposit`);
+                console.log(`Moving to assigned building for deposit`);
                 this.currentTarget = target;
                 this.moveToTarget(target, WorkerState.MOVING_TO_DEPOSIT);
                 return;
@@ -169,18 +169,18 @@ export class Worker extends Sprite {
         }
 
         // LOGIQUE ORIGINALE: Worker non assigné, chercher le bâtiment le plus proche
-        // console.log(`Worker ${this.workerId} not assigned, finding nearest deposit target`);
+        console.log(`Worker ${this.workerId} not assigned, finding nearest deposit target`);
         target = this.findBestDepositTarget();
 
         if (target) {
-            // console.log(`Moving to nearest building for deposit: ${target.getType()}`);
+            console.log(`Moving to nearest building for deposit: ${target.getType()}`);
             this.currentTarget = target;
             this.moveToTarget(target, WorkerState.MOVING_TO_DEPOSIT);
         } else if (this.depositPoint) {
-            // console.log(`No building found, moving to deposit point`);
+            console.log(`No building found, moving to deposit point`);
             this.moveToPosition(this.depositPoint, WorkerState.MOVING_TO_DEPOSIT);
         } else {
-            // console.log(`No deposit target found, waiting`);
+            console.log(`No deposit target found, waiting`);
             this.setWorkerState(WorkerState.WAITING);
         }
     }
@@ -552,10 +552,10 @@ export class Worker extends Sprite {
     private completeDepositing(): void {
         try {
             if (this.currentTarget instanceof TiledBuilding) {
-                // console.log(`Depositing to building: ${this.currentTarget.getType()} (${this.currentTarget.getBuildingId()})`);
+                console.log(`Depositing to building: ${this.currentTarget.getType()} (${this.currentTarget.getBuildingId()})`);
                 this.depositToBuilding(this.currentTarget);
             } else if (this.depositPoint) {
-                // console.log(`Depositing to deposit point`);
+                console.log(`Depositing to deposit point`);
                 this.depositAllResources();
             }
         } catch (error) {
@@ -668,7 +668,7 @@ export class Worker extends Sprite {
                     if (added > 0) {
                         this.removeFromInventory(resourceType, added);
                         deposited = true;
-                        // console.log(`Deposited ${added} ${resourceType} to building ${building.getBuildingId()}`);
+                        console.log(`Deposited ${added} ${resourceType} to building ${building.getBuildingId()}`);
                     }
                 }
             });
@@ -828,7 +828,7 @@ export class Worker extends Sprite {
     }
 
     public convertToNeutral(): void {
-        // console.log(`Converting worker from ${this.config.id} to NEUTRAL`);
+        console.log(`Converting worker from ${this.config.id} to NEUTRAL`);
         const neutralConfig = WorkerRegistry.getInstance().getWorkerConfig(WorkerType.NEUTRAL);
         if (neutralConfig) {
             this.config = neutralConfig;
@@ -841,7 +841,7 @@ export class Worker extends Sprite {
     }
 
     public convertToSpecializedWorker(newConfig: WorkerConfig, buildingId: string): void {
-        // console.log(`Converting worker from ${this.config.id} to ${newConfig.id}`);
+        console.log(`Converting worker from ${this.config.id} to ${newConfig.id}`);
         this.config = newConfig;
 
         // Note: L'assignation est maintenant gérée par GlobalWorkerStorage

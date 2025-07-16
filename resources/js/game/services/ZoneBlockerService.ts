@@ -85,7 +85,7 @@ export class ZoneBlockerService {
                         const blockerConfig = this.createBlockerConfigFromTiledGroup(map, objectLayer, blockerName);
                         this.registry.registerBlocker(blockerConfig);
 
-                        // console.log(`Registered blocker: ${blockerName}`, blockerConfig);
+                        // // console.log(`Registered blocker: ${blockerName}`, blockerConfig);
                     }
                 }
             });
@@ -99,7 +99,7 @@ export class ZoneBlockerService {
         // Méthode 1: Propriétés directement sur l'object layer
         if (objectLayer.properties) {
             groupProperties = this.extractLayerProperties(objectLayer);
-            console.log(`Found properties on object layer for ${blockerName}:`, groupProperties);
+            // console.log(`Found properties on object layer for ${blockerName}:`, groupProperties);
         }
 
         // Méthode 2: Chercher dans les groupes de la map si disponible
@@ -111,7 +111,7 @@ export class ZoneBlockerService {
             if (groupLayer && groupLayer.properties) {
                 const groupProps = this.extractPropertiesFromArray(groupLayer.properties);
                 groupProperties = { ...groupProperties, ...groupProps };
-                console.log(`Found properties on group layer for ${blockerName}:`, groupProps);
+                // console.log(`Found properties on group layer for ${blockerName}:`, groupProps);
             }
         }
 
@@ -121,12 +121,12 @@ export class ZoneBlockerService {
                 if (layer.name === `Blocker_${blockerName}` && layer.properties) {
                     const layerProps = this.extractLayerProperties(layer);
                     groupProperties = { ...groupProperties, ...layerProps };
-                    console.log(`Found properties on map layer for ${blockerName}:`, layerProps);
+                    // console.log(`Found properties on map layer for ${blockerName}:`, layerProps);
                 }
             });
         }
 
-        console.log(`Final properties for ${blockerName}:`, groupProperties);
+        // console.log(`Final properties for ${blockerName}:`, groupProperties);
 
         // Créer les requirements basés sur les propriétés trouvées
         const unlockRequirements: any = {};
@@ -165,7 +165,7 @@ export class ZoneBlockerService {
             unlockRequirements: Object.keys(unlockRequirements).length > 0 ? unlockRequirements : undefined
         };
 
-        console.log(`Created config for ${blockerName}:`, config);
+        // console.log(`Created config for ${blockerName}:`, config);
         return config;
     }
 
@@ -466,7 +466,7 @@ export class ZoneBlockerService {
         }
 
         if (blockerConfig.unlocked) {
-            console.log(`Blocker ${blockerName} is already unlocked`);
+            // console.log(`Blocker ${blockerName} is already unlocked`);
             return;
         }
 
@@ -483,13 +483,13 @@ export class ZoneBlockerService {
         // Reconstruire la grid du pathfinder après suppression des layers
         this.rebuildPathfindingGrid();
 
-        console.log(`Zone blocker ${blockerName} unlocked and removed from map!`);
+        // console.log(`Zone blocker ${blockerName} unlocked and removed from map!`);
     }
 
     private removeBlockerFromMap(blockerName: string): void {
         if (!this.currentMap) return;
 
-        console.log(`Removing blocker: ${blockerName}`);
+        // console.log(`Removing blocker: ${blockerName}`);
 
         // Trouver le layer d'objets du groupe et récupérer son blockerId
         const groupName = `Blocker_${blockerName}`;
@@ -504,14 +504,14 @@ export class ZoneBlockerService {
             const layerProperties = this.extractLayerProperties(objectLayer);
             if (layerProperties.blockerId) {
                 blockerId = layerProperties.blockerId;
-                console.log(`Found blockerId from object layer: ${blockerId}`);
+                // console.log(`Found blockerId from object layer: ${blockerId}`);
             } else {
                 console.warn(`No blockerId found in object layer ${groupName}, using fallback: ${blockerId}`);
             }
 
             // Supprimer le layer d'objets
             this.currentMap.objects.splice(objectLayerIndex, 1);
-            console.log(`Removed object layer: ${groupName}`);
+            // console.log(`Removed object layer: ${groupName}`);
         } else {
             console.warn(`Object layer not found: ${groupName}`);
         }
@@ -523,7 +523,7 @@ export class ZoneBlockerService {
     private hideLayersByBlockerId(blockerId: string): void {
         if (!this.currentMap) return;
 
-        console.log(`Looking for layers with blockerId: ${blockerId}`);
+        // console.log(`Looking for layers with blockerId: ${blockerId}`);
 
         const layersToDestroy: string[] = [];
 
@@ -532,7 +532,7 @@ export class ZoneBlockerService {
             const layerProperties = this.extractLayerProperties(layerData);
 
             if (layerProperties.blockerId === blockerId) {
-                console.log(`Found layer with matching blockerId: ${layerData.name}`);
+                // console.log(`Found layer with matching blockerId: ${layerData.name}`);
                 layersToDestroy.push(layerData.name);
             }
         });
@@ -542,7 +542,7 @@ export class ZoneBlockerService {
             this.destroyLayer(layerName);
         });
 
-        console.log(`Destroyed ${layersToDestroy.length} layers with blockerId: ${blockerId}`);
+        // console.log(`Destroyed ${layersToDestroy.length} layers with blockerId: ${blockerId}`);
     }
 
     private destroyLayer(layerName: string): void {
@@ -551,7 +551,7 @@ export class ZoneBlockerService {
         // Récupérer le layer Phaser correspondant
         const tilemapLayer = this.currentMap.getLayer(layerName);
         if (tilemapLayer?.tilemapLayer) {
-            console.log(`Destroying layer: ${layerName}`);
+            // console.log(`Destroying layer: ${layerName}`);
 
             // Supprimer les collisions de ce layer de la baseGrid AVANT de détruire le layer
             this.removeLayerCollisionsFromBaseGrid(tilemapLayer.tilemapLayer);
@@ -563,7 +563,7 @@ export class ZoneBlockerService {
             const layerIndex = this.currentMap.layers.findIndex(layer => layer.name === layerName);
             if (layerIndex !== -1) {
                 this.currentMap.layers.splice(layerIndex, 1);
-                console.log(`Removed layer from map layers array: ${layerName}`);
+                // console.log(`Removed layer from map layers array: ${layerName}`);
             }
         } else {
             console.warn(`Could not find tilemap layer for: ${layerName}`);
@@ -607,11 +607,11 @@ export class ZoneBlockerService {
         try {
             const mainScene = this.scene as any;
             if (mainScene.rebuildPathfindingGrid && typeof mainScene.rebuildPathfindingGrid === 'function') {
-                console.log('Rebuilding pathfinding grid after zone unlock...');
-                console.log('BaseGrid state before rebuild:', this.getBaseGridSummary());
+                // console.log('Rebuilding pathfinding grid after zone unlock...');
+                // console.log('BaseGrid state before rebuild:', this.getBaseGridSummary());
                 mainScene.rebuildPathfindingGrid();
-                console.log('Pathfinding grid rebuilt successfully');
-                console.log('BaseGrid state after rebuild:', this.getBaseGridSummary());
+                // console.log('Pathfinding grid rebuilt successfully');
+                // console.log('BaseGrid state after rebuild:', this.getBaseGridSummary());
             } else {
                 console.warn('rebuildPathfindingGrid method not found on scene');
             }
@@ -713,7 +713,7 @@ export class ZoneBlockerService {
             }
 
             if (config.unlocked) {
-                 console.log(`Zone ${zoneName} déjà débloquée`);
+                 // console.log(`Zone ${zoneName} déjà débloquée`);
                 return true;
             }
 
@@ -726,7 +726,7 @@ export class ZoneBlockerService {
 
             this.updateZoneVisual(zoneName, true);
 
-            console.log(`✅ Zone ${zoneName} débloquée avec succès`);
+            // console.log(`✅ Zone ${zoneName} débloquée avec succès`);
             return true;
 
         } catch (error) {
