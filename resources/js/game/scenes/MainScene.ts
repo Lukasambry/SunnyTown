@@ -1278,7 +1278,13 @@ export class MainScene extends Scene {
             this.buildingPreview = null;
         }
 
-        const templateKey = `${buildingType}-template`;
+        // Correction : utiliser le template du config
+        const buildingConfig = this.buildingRegistry.getBuildingConfig(buildingType);
+        if (!buildingConfig) {
+            console.error('Aucun config trouvé pour le bâtiment', buildingType);
+            return;
+        }
+        const templateKey = buildingConfig.template;
         this.buildingPreview = new TiledBuildingPreview(this, templateKey);
         this.buildingPreview.setInitialPosition(this.player.x, this.player.y);
 

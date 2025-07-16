@@ -13,23 +13,12 @@ export interface BuildingConfig {
     workerType: string;
     description?: string;
     maxWorkers: number;
+    storageCapacities?: BuildingStorageCapacity;
 }
 
 export enum BuildingType {
-    HOUSE = 'house',
-    SAWMILL = 'sawmill',
-    MINE = 'mine',
-    FARM = 'farm',
     STORAGE = 'storage'
 }
-/*
-export enum BuildingCategory {
-    HOUSING = 'housing',
-    PRODUCTION = 'production',
-    STORAGE = 'storage',
-    UTILITY = 'utility'
-}
-*/
 
 export interface BuildingDimensions {
     readonly tilesWidth: number;
@@ -41,13 +30,8 @@ export interface BuildingPosition {
     readonly y: number;
 }
 
-export interface BuildingStorageCapacity {
+export type BuildingStorageCapacity = {
     readonly [key in ResourceType]?: number;
-}
-
-// Type guards
-export const isValidBuildingCategory = (value: string): value is BuildingCategory => {
-    return Object.values(BuildingCategory).includes(value as BuildingCategory);
 };
 
 // Utilitaires

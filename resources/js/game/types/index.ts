@@ -7,7 +7,6 @@ export {
     type BuildingDimensions,
     type BuildingPosition,
     type BuildingStorageCapacity,
-    isValidBuildingCategory,
     calculateBuildingCost,
     canAffordBuilding
 } from './BuildingTypes';
