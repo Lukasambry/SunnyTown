@@ -645,8 +645,8 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowUp, Facebook, MessageCircle, Twitter, Users } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+ import { ArrowUp, Facebook, MessageCircle, Twitter } from 'lucide-vue-next';
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import SmoothScroll from '../../components/SmoothScroll.vue';
 
 const props = defineProps({
@@ -665,57 +665,15 @@ const props = defineProps({
     },
 });
 
-const scrollY = ref(0);
 const coins = ref(props.stats?.active_players ? parseFloat(props.stats.active_players.replace(/\D/g, '')) / 100 : 12345);
 const population = ref(props.stats?.cities_created ? parseFloat(props.stats.cities_created.replace(/\D/g, '')) / 1000 : 876);
 const happiness = ref(props.stats?.happiness || 92);
 const autoProgress = ref(0);
-const parallax = ref({ bg: 0, logo: 0 });
 const showBackToTop = ref(false);
 const particles = ref([]);
-let particleId = 0;
 
 const mousePos = reactive({ x: 0, y: 0 });
 const currentFeatureIndex = ref(0);
-const featureElements = ref([]);
-
-const currentFeatureImage = computed(() => {
-    return gameFeaturesData.value[currentFeatureIndex.value]?.imageUrl || gameFeaturesData.value[0]?.imageUrl;
-});
-
-const currentFeatureAlt = computed(() => {
-    return gameFeaturesData.value[currentFeatureIndex.value]?.imageAlt || gameFeaturesData.value[0]?.imageAlt;
-});
-
-const gameFeaturesData = ref([
-    {
-        title: 'UNE VILLE QUI PROSPÈRE ⛏️🌳🌾',
-        text: `Prenez un peu d'habileté de bûcheron, un zeste d'agriculture tranquille et un chouïa de simulation de magnat, puis mélangez le tout... et qu'est-ce que vous obtenez ? SunnyTown, pardi !
-
-Ni une ni deux, munissez-vous de vos outils de prédilection et lancez-vous dans l'abattage de bois, l'extraction de minerais et la récolte de cultures pour les transformer en biens précieux !`,
-        imageUrl: '/images/frame 313.png',
-        imageAlt: 'Une ville prospère dans SunnyTown',
-        align: 'left',
-    },
-    {
-        title: 'UN JEU QUI A DU POTENTIEL ✨',
-        text: `🎯 Votre objectif est simple : collecter des ressources pour préparer des produits que vous vendrez dans votre ville.
-
-🏞️ Graphismes captivants : Abattre des arbres, miner des roches et récolter des champs n'a jamais été aussi agréable à regarder et à écouter !
-
-🏘️ Bâtissez votre empire : mettez tout en œuvre pour devenir le magnat suprême de SunnyTown !`,
-        imageUrl: '/images/Frame 613.png',
-        imageAlt: 'Potentiel de jeu et graphismes captivants',
-        align: 'right',
-    },
-    {
-        title: 'ÇA VA ÊTRE PRODUCTIF 🌱🏭💰',
-        text: `Mettez à rude épreuve votre sens de la gestion pour devenir le n° 1 des magnats de SunnyTown ! Collectez les ressources, maîtrisez le côté commercial en recrutant des habitants et en vendant vos produits finis, histoire de vous faire un petit pactole.`,
-        imageUrl: '/images/fond.jpg',
-        imageAlt: 'Gameplay productif et gestion de ville',
-        align: 'left',
-    },
-]);
 
 const handleMouseMove = (event) => {
     mousePos.x = event.clientX - window.innerWidth / 2;
@@ -724,23 +682,6 @@ const handleMouseMove = (event) => {
 
 const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-const handleResourceClick = (type, event) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const emojiMap = { coins: '💰', population: '🧑‍🌾', happiness: '😊' };
-    for (let i = 0; i < 5; i++) {
-        particles.value.push({
-            id: particleId++,
-            x: rect.left + rect.width / 2 + (Math.random() - 0.5) * rect.width,
-            y: rect.top + rect.height / 2 + (Math.random() - 0.5) * rect.height,
-            emoji: emojiMap[type],
-            type: type,
-        });
-    }
-    setTimeout(() => {
-        particles.value = particles.value.filter((p) => Date.now() - p.id < 1000);
-    }, 1000);
 };
 
 const observer = ref(null);

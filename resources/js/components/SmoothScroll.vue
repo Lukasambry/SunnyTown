@@ -6,7 +6,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const scrollContainer = ref(null)
@@ -14,7 +14,7 @@ const scrollContent = ref(null)
 
 let currentScroll = 0
 let targetScroll = 0
-let ease = 0.1
+const ease = 0.1
 
 const updateScroll = () => {
     currentScroll += (targetScroll - currentScroll) * ease
