@@ -5,7 +5,7 @@
             class="save-toggle-btn"
             :class="{ 'active': isPanelOpen }"
         >
-            ��� Sauvegarde
+            💾 Sauvegarde
         </button>
 
         <Transition name="panel-slide">
