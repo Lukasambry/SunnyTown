@@ -1,5 +1,6 @@
 import { TiledBuilding } from '../objects/TiledBuilding';
 import type { BuildingPosition } from '../types';
+import { BuildingRegistry } from './BuildingRegistry';
 
 interface StoredBuilding {
     readonly type: string;
@@ -18,14 +19,21 @@ export class BuildingManager {
     private readonly buildings: TiledBuilding[] = [];
     private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<(...args: any[]) => void>>();
     private readonly STORAGE_KEY = 'BUILDINGS_STORAGE';
+    private readonly buildingRegistry: BuildingRegistry;
 
     constructor(scene: any) {
         this.scene = scene;
+        this.buildingRegistry = BuildingRegistry.getInstance();
     }
 
     public placeBuilding(type: string, x: number, y: number): TiledBuilding {
-        const templateKey = `${type}-template`;
-        const building = new TiledBuilding(this.scene, x, y, templateKey);
+        // Correction : utiliser le template du config
+        const buildingConfig = this.buildingRegistry.getBuildingConfig(type);
+        if (!buildingConfig) {
+            throw new Error(`Aucun config trouvé pour le bâtiment ${type}`);
+        }
+        const templateKey = buildingConfig.template;
+        const building = new TiledBuilding(this.scene, x, y, templateKey, type);
 
         const player = (this.scene as any).player;
         if (player) {

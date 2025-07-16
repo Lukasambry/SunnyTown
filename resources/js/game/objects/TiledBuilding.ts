@@ -63,15 +63,10 @@ export class TiledBuilding {
 
     private readonly resourceStorage: ResourceStorage;
 
-    constructor(scene: Scene, x: number, y: number, templateKey: string) {
+    constructor(scene: Scene, x: number, y: number, templateKey: string, buildingType: string) {
         this.scene = scene;
         this.position = { x, y };
-
-        if (templateKey.endsWith('-template')) {
-            this.buildingType = templateKey.replace('-template', '');
-        } else {
-            this.buildingType = templateKey;
-        }
+        this.buildingType = buildingType;
 
         this.resourceManager = ResourceManager.getInstance();
         this.maxWorkers = this.getMaxWorkersForBuilding();
@@ -337,29 +332,17 @@ export class TiledBuilding {
     }
 
     private getStorageConfig(): Record<ResourceType, number> {
-        const configs: Record<string, Record<ResourceType, number>> = {
-            sawmill: {
-                [ResourceType.WOOD]: 500,
-                [ResourceType.PLANKS]: 300,
-                [ResourceType.TOOLS]: 50
-            },
-            house: {
-                [ResourceType.FOOD]: 200,
-                [ResourceType.POPULATION]: 10
-            },
-            mine: {
-                [ResourceType.STONE]: 400,
-                [ResourceType.METAL_ORE]: 200,
-                [ResourceType.COAL_ORE]: 150,
-                [ResourceType.METAL]: 100
-            },
-            farm: {
-                [ResourceType.FOOD]: 300,
-                [ResourceType.WOOD]: 100
+        const config = BuildingRegistry.getInstance().getBuildingConfig(this.buildingType);
+        const raw = config?.storageCapacities || {};
+        // Filtrer les undefined pour respecter Record<ResourceType, number>
+        const filtered: Record<ResourceType, number> = {};
+        for (const key in raw) {
+            const value = raw[key as ResourceType];
+            if (typeof value === 'number') {
+                filtered[key as ResourceType] = value;
             }
-        };
-
-        return configs[this.buildingType] || {};
+        }
+        return filtered;
     }
 
     public getAllBuildingResourceCapacities(): ReadonlyMap<ResourceType, number> {
