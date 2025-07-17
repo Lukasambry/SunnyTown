@@ -12,6 +12,7 @@
                             <a href="#features" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> JEU </a>
                             <a href="#community" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> COMMUNAUTÉ </a>
                             <a href="/forum" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> FORUM </a>
+                            <a href="/blog" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> BLOG </a>
                         </div>
 
                         <div class="flex items-center space-x-4">
@@ -279,6 +280,29 @@
                                         L'aspect familial du jeu est vraiment réussi."
                                     </p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="xsm:py-[100px] bg-cover bg-center pt-[150px] pb-[150px] sm:py-[100px] relative overflow-hidden">
+                    <div class="container mx-auto px-6 relative z-10">
+                        <div class="max-w-4xl mx-auto text-center">
+                            <div class="mb-8">
+                                <div class="text-8xl mb-6">🎉</div>
+                                <h2 class="title xsm:text-[40px] mx-0 mt-0 mb-7 text-[55px] leading-none font-extrabold tracking-[3px] sm:text-[40px] md:text-[50px] lg:text-[50px]">
+                                    Prêt à Commencer Votre Aventure ?
+                                </h2>
+                                <p class="text-2xl text-gray-300 mb-12">
+                                    Rejoignez des milliers de joueurs et construisez la ville de vos rêves dès aujourd'hui !
+                                </p>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-6 justify-center mb-12">
+                                <a href="/game" class="group relative px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-yellow-400 to-orange-400 rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+                                    <span class="relative z-10">🚀 Jouer Maintenant</span>
+                                    <div class="absolute inset-0 bg-gradient-to-r from-yellow-300 to-orange-300 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </a>
                             </div>
                         </div>
                     </div>
