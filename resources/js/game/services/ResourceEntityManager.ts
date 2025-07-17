@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { ResourceEntity } from '../objects/ResourceEntity';
 import { ResourceEntityRegistry } from './ResourceEntityRegistry';
 import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '../types/ResourceEntityTypes';
@@ -107,6 +108,23 @@ export class ResourceEntityManager {
             allEntities.push(...entities);
         });
         return allEntities;
+    }
+
+    public getEntitiesInArea(bounds: Phaser.Geom.Rectangle): ResourceEntity[] {
+        const entitiesInArea: ResourceEntity[] = [];
+        
+        this.entities.forEach(entities => {
+            entities.forEach(entity => {
+                if (!entity.isDestroyed()) {
+                    const entityBounds = entity.getBounds();
+                    if (Phaser.Geom.Intersects.RectangleToRectangle(bounds, entityBounds)) {
+                        entitiesInArea.push(entity);
+                    }
+                }
+            });
+        });
+        
+        return entitiesInArea;
     }
 
     public updateEntities(): void {

@@ -1,4 +1,4 @@
-import { Scene } from 'phaser';
+import Phaser from 'phaser';
 import type { BuildingDimensions, Position } from '../types';
 
 interface LayerConfig {
@@ -22,7 +22,7 @@ interface CollisionObject {
 }
 
 export class TiledBuildingPreview {
-    private readonly scene: Scene;
+    private readonly scene: Phaser.Scene;
     private readonly layers: Phaser.Tilemaps.TilemapLayer[] = [];
     private readonly map: Phaser.Tilemaps.Tilemap;
     private readonly tileset: Phaser.Tilemaps.Tileset;
@@ -353,7 +353,88 @@ export class TiledBuildingPreview {
         const dimensions = this.getDimensions();
 
         return this.isWithinMapBounds(map, tilePosition, dimensions) &&
-            this.hasNoCollisions(mapLayers, tilePosition, dimensions);
+            this.hasNoCollisions(mapLayers, tilePosition, dimensions) &&
+            this.hasNoBuildingCollisions() &&
+            this.hasNoResourceEntityCollisions();
+    }
+
+    private hasNoBuildingCollisions(): boolean {
+    const buildingManager = (this.scene as any).buildingManager;
+    if (!buildingManager || typeof buildingManager.getBuildings !== 'function') {
+        return true;
+    }
+
+    const existingBuildings = buildingManager.getBuildings();
+
+    for (const building of existingBuildings) {
+        const existingBuildingCollisionZones = building.getCollisionZones();
+        
+        if (this.collisionObjects.length > 0) {
+            for (const previewCollisionObj of this.collisionObjects) {
+                const previewCollisionBounds = new Phaser.Geom.Rectangle(
+                    this.currentPosition.x + previewCollisionObj.x,
+                    this.currentPosition.y + previewCollisionObj.y,
+                    previewCollisionObj.width,
+                    previewCollisionObj.height
+                );
+
+                for (const existingCollisionZone of existingBuildingCollisionZones) {
+                    if (Phaser.Geom.Intersects.RectangleToRectangle(previewCollisionBounds, existingCollisionZone)) {
+                        return false;
+                    }
+                }
+            }
+        } else {
+            const previewBounds = this.getWorldBounds();
+            
+            for (const existingCollisionZone of existingBuildingCollisionZones) {
+                if (Phaser.Geom.Intersects.RectangleToRectangle(previewBounds, existingCollisionZone)) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+    private hasNoResourceEntityCollisions(): boolean {
+        const resourceEntityManager = (this.scene as any).resourceEntityManager;
+        if (!resourceEntityManager || typeof resourceEntityManager.getAllEntities !== 'function') {
+            return true; 
+        }
+
+        const allEntities = resourceEntityManager.getAllEntities();
+
+        for (const entity of allEntities) {
+            if (entity.isDestroyed()) {
+                continue; 
+            }
+
+            const entityBounds = entity.getBounds();
+            
+            if (this.collisionObjects.length > 0) {
+                for (const collisionObj of this.collisionObjects) {
+                    const collisionBounds = new Phaser.Geom.Rectangle(
+                        this.currentPosition.x + collisionObj.x,
+                        this.currentPosition.y + collisionObj.y,
+                        collisionObj.width,
+                        collisionObj.height
+                    );
+
+                    if (Phaser.Geom.Intersects.RectangleToRectangle(collisionBounds, entityBounds)) {
+                        return false;
+                    }
+                }
+            } else {
+                const previewBounds = this.getWorldBounds();
+                if (Phaser.Geom.Intersects.RectangleToRectangle(previewBounds, entityBounds)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private worldToTilePosition(worldPos: Position): Position {
