@@ -17,6 +17,10 @@ export interface BuildingConfig {
 }
 
 export enum BuildingType {
+    HOUSE = 'house',
+    SAWMILL = 'sawmill',
+    FORGE = 'forge',
+    FARM = 'farm',
     STORAGE = 'storage'
 }
 

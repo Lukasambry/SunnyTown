@@ -1,8 +1,9 @@
 import { BuildingConfig, ResourceType, WorkerType } from '@/game/types';
+import { BuildingType } from '../types/BuildingTypes';
 
 export const BUILDING_CONFIGS: BuildingConfig[] = [
     {
-        key: 'house',
+        key: BuildingType.HOUSE,
         name: 'Maison',
         template: 'house-template',
         icon: 'house',
@@ -16,7 +17,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         }
     },
     {
-        key: 'sawmill',
+        key: BuildingType.SAWMILL,
         name: 'Scierie',
         template: 'sawmill-template',
         icon: 'sawmill',
@@ -29,7 +30,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         }
     },
     {
-        key: 'forge',
+        key: BuildingType.FORGE,
         name: 'Forge',
         template: 'house-template',
         icon: 'forge',
@@ -45,7 +46,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         }
     },
     {
-        key: 'farm',
+        key: BuildingType.FARM,
         name: 'Ferme',
         template: 'farm-template',
         icon: 'farm',
@@ -56,6 +57,25 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         storageCapacities: {
             [ResourceType.FOOD]: 300,
             [ResourceType.WOOD]: 100
+        }
+    },
+    {
+        key: BuildingType.STORAGE,
+        name: 'Entrepot',
+        template: 'sawmill-template',
+        icon: 'storage',
+        cost: {
+            [ResourceType.WOOD]: 12,
+            [ResourceType.STONE]: 10
+        },
+        workerType: WorkerType.TRANSPORTER,
+        maxWorkers: 2,
+        description: 'TestFromConfigs: Permet de stocker les ressources',
+        storageCapacities: {
+            [ResourceType.WOOD]: 900,
+            [ResourceType.FOOD]: 900,
+            [ResourceType.STONE]: 900,
+            [ResourceType.METAL]: 900
         }
     }
 ];
