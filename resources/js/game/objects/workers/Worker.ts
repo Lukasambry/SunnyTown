@@ -562,7 +562,7 @@ export class Worker extends Sprite {
         this.setWorkerState(WorkerState.DEPOSITING);
 
         try {
-            this.play(this.config.animations.working);
+            this.play(this.config.animations.depositing);
         } catch (error) {
             console.warn('Worker: Could not play working animation:', error);
         }

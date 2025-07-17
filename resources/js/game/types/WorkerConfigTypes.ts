@@ -35,6 +35,7 @@ export interface WorkerAnimationConfig {
     walking: string;
     working: string;
     carrying: string;
+    depositing: string; 
 }
 
 export interface WorkerPosition {
