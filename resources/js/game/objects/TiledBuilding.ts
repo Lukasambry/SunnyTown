@@ -933,6 +933,34 @@ export class TiledBuilding {
 
         return canAdd;
     }
+    
+    public getCollisionZones(): Phaser.Geom.Rectangle[] {
+        const zones: Phaser.Geom.Rectangle[] = [];
+        const position = this.getPosition();
+
+        const collisionLayer = this.map.getObjectLayer('Collision');
+        
+        if (collisionLayer && collisionLayer.objects) {
+            collisionLayer.objects.forEach(obj => {
+                zones.push(new Phaser.Geom.Rectangle(
+                    position.x + obj.x!,
+                    position.y + obj.y!,
+                    obj.width || 0,
+                    obj.height || 0
+                ));
+            });
+        } else {
+            const dimensions = this.getDimensions();
+            zones.push(new Phaser.Geom.Rectangle(
+                position.x,
+                position.y,
+                dimensions.tilesWidth * 16,
+                dimensions.tilesHeight * 16
+            ));
+        }
+
+        return zones;
+    }
 
     public removeResourceFromBuilding(type: ResourceType, amount: number): number {
         const currentStored = this.resourceStorage.stored.get(type) || 0;

@@ -218,6 +218,15 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    public getBounds(): Phaser.Geom.Rectangle {
+        return new Phaser.Geom.Rectangle(
+            this.spawnData.x,
+            this.spawnData.y,
+            this.spawnData.width,
+            this.spawnData.height
+        );
+    }
+
     public startPlayerHarvesting(player: any, manageTarget: boolean = true): void {
         if (this._state.isBeingHarvested || this._state.isDestroyed) return;
 
