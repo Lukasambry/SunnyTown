@@ -42,6 +42,8 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         maxWorkers: 2,
         description: 'TestFromConfigs: Extrait pierre et métaux du sous-sol',
         storageCapacities: {
+            [ResourceType.COAL_ORE]: 100,
+            [ResourceType.STONE]: 100,
             [ResourceType.METAL]: 100
         }
     },

@@ -62,15 +62,23 @@ export const ANIMATION_CONFIGS: AnimationConfig[] = [
         frames: { start: 0, end: 9 },
         frameRate: 16,
         repeat: 0,
-        description: 'Worker Mining animation'
+        description: 'Worker mining animation'
     },
     {
         key: AnimationType.WORKER_CARRY,
         texture: 'worker-carry',
         frames: { start: 0, end: 7 },
         frameRate: 12,
+        repeat: -1,
+        description: 'Worker carrying animation'
+    },
+    {
+        key: AnimationType.WORKER_DOING,
+        texture: 'worker-doing',
+        frames: { start: 0, end: 7 },
+        frameRate: 12,
         repeat: 0,
-        description: 'Worker Carrying animation'
+        description: 'Worker doing animation'
     },
 
     // Tree animations

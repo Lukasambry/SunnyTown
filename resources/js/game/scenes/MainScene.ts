@@ -95,6 +95,7 @@ export class MainScene extends Scene {
         this.load.spritesheet('worker-chop', 'sprites/workers/spr_axe_strip10.png', characterFrameConfig);
         this.load.spritesheet('worker-mining', 'sprites/workers/spr_mining_strip10.png', characterFrameConfig);
         this.load.spritesheet('worker-carry', 'sprites/workers/spr_carry_strip8.png', characterFrameConfig);
+        this.load.spritesheet('worker-doing', 'sprites/workers/spr_doing_strip8.png', characterFrameConfig);
 
         this.load.spritesheet('leaves-hit', 'sprites/leaves-hit.png', {
             frameWidth: 64,

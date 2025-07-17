@@ -495,10 +495,24 @@ export class Worker extends Sprite {
             } else {
                 success = this.harvestFromBuilding(this.currentTarget);
 
-                targetDestroyed = !this.buildingHasResources(
-                    this.currentTarget,
-                    this.config.harvestTargets.flatMap((t) => t.resourceTypes),
+                const harvestConfig = this.config.harvestTargets.find(target => 
+                    target.actionType === WorkerActionType.HARVEST_BUILDING
                 );
+
+                if (harvestConfig) {
+                    const hasResources = this.buildingHasResources(
+                        this.currentTarget,
+                        harvestConfig.resourceTypes
+                    );
+                    
+                    const availableSpace = this.config.carryCapacity - this.getTotalInventory();
+                    targetDestroyed = !hasResources && availableSpace > 0;
+                } else {
+                    targetDestroyed = !this.buildingHasResources(
+                        this.currentTarget,
+                        this.config.harvestTargets.flatMap((t) => t.resourceTypes),
+                    );
+                }
             }
 
             if (!success || targetDestroyed) {
@@ -518,6 +532,10 @@ export class Worker extends Sprite {
             if (this.isInventoryFull()) {
                 if (this.currentTarget instanceof ResourceEntity) {
                     this.currentTarget.releaseHarvester();
+                }
+                
+                if (this.currentTarget instanceof ResourceEntity) {
+                    this.currentTarget = null;
                 }
                 this.setWorkerState(WorkerState.IDLE);
                 return;
