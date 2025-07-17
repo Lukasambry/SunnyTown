@@ -27,11 +27,6 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
             targetTypes: [BuildingType.SAWMILL],
             resourceTypes: [ResourceType.WOOD],
             priority: 1
-        }, {
-            actionType: WorkerActionType.DEPOSIT_TO_BUILDING,
-            targetTypes: [BuildingType.HOUSE],
-            resourceTypes: [ResourceType.WOOD],
-            priority: 2
         }],
 
         animations: {
@@ -65,7 +60,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
 
         depositTargets: [{
             actionType: WorkerActionType.DEPOSIT_TO_BUILDING,
-            targetTypes: [BuildingType.MINE],
+            targetTypes: [BuildingType.FORGE],
             resourceTypes: [ResourceType.STONE, ResourceType.METAL_ORE],
             priority: 1
         }],
@@ -135,14 +130,14 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
 
         harvestTargets: [{
             actionType: WorkerActionType.HARVEST_BUILDING,
-            targetTypes: [BuildingType.SAWMILL, BuildingType.MINE, BuildingType.FARM],
+            targetTypes: [BuildingType.SAWMILL, BuildingType.FORGE, BuildingType.FARM],
             resourceTypes: Object.values(ResourceType),
             priority: 1
         }],
 
         depositTargets: [{
             actionType: WorkerActionType.DEPOSIT_TO_BUILDING,
-            targetTypes: [BuildingType.HOUSE],
+            targetTypes: [BuildingType.STORAGE],
             resourceTypes: Object.values(ResourceType),
             priority: 1
         }],
