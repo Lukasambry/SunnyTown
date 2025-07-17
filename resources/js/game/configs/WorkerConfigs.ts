@@ -34,7 +34,8 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
             idle: AnimationType.WORKER_IDLE,
             walking: AnimationType.WORKER_WALK,
             working: AnimationType.WORKER_CHOP,
-            carrying: AnimationType.WORKER_CHOP
+            carrying: AnimationType.WORKER_CHOP,
+            depositing: AnimationType.WORKER_DOING
         },
 
         //tint: 0xdd9955,
@@ -68,8 +69,9 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         animations: {
             idle: AnimationType.WORKER_IDLE,
             walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_CHOP,
-            carrying: AnimationType.WORKER_WALK
+            working: AnimationType.WORKER_MINING,
+            carrying: AnimationType.WORKER_WALK,
+            depositing: AnimationType.WORKER_DOING
         },
 
         //tint: 0x8b7355,
@@ -109,8 +111,9 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         animations: {
             idle: AnimationType.WORKER_IDLE,
             walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_CHOP,
-            carrying: AnimationType.WORKER_CHOP
+            working: AnimationType.WORKER_DOING,
+            carrying: AnimationType.WORKER_WALK,
+            depositing: AnimationType.WORKER_DOING
         },
 
         //tint: 0x228b22,
@@ -144,9 +147,10 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
 
         animations: {
             idle: AnimationType.WORKER_IDLE,
-            walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_CHOP,
-            carrying: AnimationType.WORKER_CHOP
+            walking: AnimationType.WORKER_CARRY,
+            working: AnimationType.WORKER_DOING,
+            carrying: AnimationType.WORKER_CARRY,
+            depositing: AnimationType.WORKER_DOING
         },
 
         //tint: 0x3498db,
@@ -166,8 +170,9 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         animations: {
             idle: AnimationType.WORKER_IDLE,
             walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_CHOP,
-            carrying: AnimationType.WORKER_CHOP
+            working: AnimationType.WORKER_DOING,
+            carrying: AnimationType.WORKER_CARRY,
+            depositing: AnimationType.WORKER_DOING
         },
 
         //tint: 0xaaaaaa,

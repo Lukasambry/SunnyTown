@@ -257,7 +257,7 @@ export class AnimationRegistry {
     public getAnimationsForEntityType(entityType: 'player' | 'worker' | 'tree' | 'effects' | 'coal_vein'): AnimationType[] {
         const entityAnimations = {
             player: [AnimationType.PLAYER_IDLE, AnimationType.PLAYER_WALK, AnimationType.PLAYER_CHOP],
-            worker: [AnimationType.WORKER_IDLE, AnimationType.WORKER_WALK, AnimationType.WORKER_CHOP],
+            worker: [AnimationType.WORKER_IDLE, AnimationType.WORKER_WALK, AnimationType.WORKER_CHOP, AnimationType.WORKER_DOING, AnimationType.WORKER_MINING, AnimationType.WORKER_CARRY],
             tree: [AnimationType.TREE_IDLE, AnimationType.TREE_HIT, AnimationType.TREE_DESTROY],
             coal_vein: [AnimationType.COAL_VEIN_IDLE],
             effects: [AnimationType.LEAVES_FALL],
