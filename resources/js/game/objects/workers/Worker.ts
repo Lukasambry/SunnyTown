@@ -356,7 +356,25 @@ export class Worker extends Sprite {
             }
         }
 
-        const targetPos = target instanceof ResourceEntity ? { x: target.x, y: target.y } : target.getPosition();
+        let targetPos: { x: number, y: number };
+
+        if (target instanceof ResourceEntity) {
+            targetPos = { x: target.x, y: target.y };
+        } else {
+            if (newState === WorkerState.MOVING_TO_DEPOSIT || newState === WorkerState.MOVING_TO_HARVEST) {
+                const depositPoint = target.getDepositPosition();
+                if (depositPoint) {
+                    targetPos = depositPoint;
+                } else {
+                    const pos = target.getPosition();
+                    targetPos = { x: pos.x, y: pos.y };
+                }
+            } else {
+                const pos = target.getPosition();
+                targetPos = { x: pos.x, y: pos.y };
+            }
+        }
+
         this.moveToPosition(targetPos, newState);
     }
 
@@ -407,7 +425,7 @@ export class Worker extends Sprite {
 
             const waypoint = path[currentWaypointIndex];
             const dx = waypoint.x - this.x;
-            if (Math.abs(dx) > 1) { 
+            if (Math.abs(dx) > 1) {
                 this.flipX = dx < 0;
             }
 
@@ -495,7 +513,7 @@ export class Worker extends Sprite {
             } else {
                 success = this.harvestFromBuilding(this.currentTarget);
 
-                const harvestConfig = this.config.harvestTargets.find(target => 
+                const harvestConfig = this.config.harvestTargets.find(target =>
                     target.actionType === WorkerActionType.HARVEST_BUILDING
                 );
 
@@ -504,7 +522,7 @@ export class Worker extends Sprite {
                         this.currentTarget,
                         harvestConfig.resourceTypes
                     );
-                    
+
                     const availableSpace = this.config.carryCapacity - this.getTotalInventory();
                     targetDestroyed = !hasResources && availableSpace > 0;
                 } else {
@@ -533,7 +551,7 @@ export class Worker extends Sprite {
                 if (this.currentTarget instanceof ResourceEntity) {
                     this.currentTarget.releaseHarvester();
                 }
-                
+
                 if (this.currentTarget instanceof ResourceEntity) {
                     this.currentTarget = null;
                 }

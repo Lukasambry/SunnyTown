@@ -4,13 +4,13 @@
  "layers":[
         {
          "data":[0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0],
+            0, 587, 587, 587, 0,
+            0, 587, 587, 587, 0,
+            0, 0, 1641, 0, 0,
+            0, 398, 399, 400, 0],
          "height":5,
-         "id":5,
-         "name":"Shadows",
+         "id":1,
+         "name":"Ground",
          "opacity":1,
          "properties":[
                 {
@@ -26,13 +26,13 @@
         }, 
         {
          "data":[0, 0, 0, 0, 0,
-            0, 587, 587, 587, 0,
-            0, 587, 587, 587, 0,
-            0, 0, 1641, 0, 0,
-            0, 0, 0, 0, 0],
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0,
+            79, 77, 77, 77, 2147483727],
          "height":5,
-         "id":1,
-         "name":"Ground",
+         "id":5,
+         "name":"Shadows",
          "opacity":1,
          "properties":[
                 {
@@ -170,8 +170,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":80,
-                 "y":80
+                 "x":75.2,
+                 "y":74.36
                 }, 
                 {
                  "height":0,
@@ -188,8 +188,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":0,
-                 "y":80
+                 "x":4.8,
+                 "y":74.36
                 }, 
                 {
                  "height":0,
@@ -206,8 +206,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":0,
-                 "y":16
+                 "x":4.8,
+                 "y":18.04
                 }, 
                 {
                  "height":0,
@@ -224,8 +224,8 @@
                  "type":"",
                  "visible":true,
                  "width":0,
-                 "x":80,
-                 "y":16
+                 "x":75.2,
+                 "y":18.04
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -381,9 +381,38 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "draworder":"topdown",
+         "id":16,
+         "name":"Points",
+         "objects":[
+                {
+                 "height":0,
+                 "id":13,
+                 "name":"",
+                 "point":true,
+                 "properties":[
+                        {
+                         "name":"type",
+                         "type":"string",
+                         "value":"deposit"
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":40.25,
+                 "y":41.25
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":16,
- "nextobjectid":11,
+ "nextlayerid":17,
+ "nextobjectid":14,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -4210,6 +4239,23 @@
                         }]
                 }, 
                 {
+                 "animation":[
+                        {
+                         "duration":200,
+                         "tileid":414
+                        }, 
+                        {
+                         "duration":200,
+                         "tileid":415
+                        }, 
+                        {
+                         "duration":200,
+                         "tileid":416
+                        }, 
+                        {
+                         "duration":200,
+                         "tileid":417
+                        }],
                  "id":414,
                  "properties":[
                         {
@@ -5388,6 +5434,23 @@
                         }]
                 }, 
                 {
+                 "animation":[
+                        {
+                         "duration":100,
+                         "tileid":542
+                        }, 
+                        {
+                         "duration":100,
+                         "tileid":543
+                        }, 
+                        {
+                         "duration":100,
+                         "tileid":544
+                        }, 
+                        {
+                         "duration":100,
+                         "tileid":545
+                        }],
                  "id":542,
                  "properties":[
                         {

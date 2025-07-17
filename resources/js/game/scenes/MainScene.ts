@@ -285,79 +285,21 @@ export class MainScene extends Scene {
         this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
 
         const minDimension = Math.min(window.innerWidth, window.innerHeight);
-        const zoomLevel = minDimension / 280; // Adjust 800 according to your needs
-        this.cameras.main.setZoom(Math.min(3.3, zoomLevel)); // Limit maximum zoom to 2
+        const zoomLevel = minDimension / 250;
+        this.cameras.main.setZoom(Math.min(3.5, zoomLevel));
 
         this.physics.world.bounds.width = this.map.widthInPixels;
         this.physics.world.bounds.height = this.map.heightInPixels;
 
-        /*
-        // Add semi-transparent background for better readability
-        const padding = 8
-        const textBg = this.add.rectangle(
-          10,  // A bit to the left of text
-          10,  // A bit above text
-          200, // Approximate width
-          50,  // Approximate height
-          0x000000,
-          0.5
-        ).setScrollFactor(0).setDepth(9998)      // Just below text
-        */
-        /*
-        // Listen for wood addition event
-        this.events.on('addWood', (amount: number) => {
-          this.resources.wood += amount
-          this.events.emit('resourcesUpdated', this.resources)
-        })
-        */
         this.resourceEntityManager = new ResourceEntityManager(this);
         this.resourceEntityManager.spawnFromMap(this.map);
 
-        /*
-        this.game.events.on('selectBuilding', (buildingType: string) => {
-          const buildingUI = this.scene.get('BuildingUI') as BuildingUI
-
-          if (buildingUI.canAffordBuilding(buildingType, this.resources)) {
-            this.selectedBuildingType = buildingType
-            // Create preview based on Tiled template
-            if (this.buildingPreview) {
-              this.buildingPreview.destroy()
-            }
-            this.buildingPreview = new TiledBuildingPreview(
-              this,
-              buildingType
-            )
-          } else {
-            // Show error message
-            this.showResourceError()
-          }
-        })
-        */
 
         this.game.events.on('clearBuildings', () => {
             this.buildingManager.clearAll();
         });
 
         this.initializeBuildingSystem();
-
-        // Start building UI scene
-        //this.scene.launch('BuildingUI')
-
-        // Debug collision visualization in development
-        /*
-        if (process.env.NODE_ENV === 'development' && false) {
-          this.mapLayers.forEach((config, name) => {
-            if (config.hasCollision) {
-              const layer = this.map.getLayer(name).tilemapLayer
-              const debugGraphics = this.add.graphics().setAlpha(0.75)
-              layer.renderDebug(debugGraphics, {
-                tileColor: null,
-                collidingTileColor: new Phaser.Display.Color(243, 134, 48, 255),
-                faceColor: new Phaser.Display.Color(40, 39, 37, 255)
-              })
-            }
-          })
-        }*/
 
         this.buildingManager = new BuildingManager(this);
 
@@ -377,16 +319,14 @@ export class MainScene extends Scene {
                     const tile = layer.getTileAt(x, y);
                     if (!tile) continue;
 
-                    // First criterion: the "collides" property at tile level
                     const hasCollidesProp = !!(tile.properties && tile.properties.collides);
 
-                    // Second criterion: objectgroup in tileset (collision shapes)
                     const tileData = tile.tileset.getTileData(tile.index);
                     const hasCollisionShapes =
                         tileData && tileData.objectgroup && tileData.objectgroup.objects && tileData.objectgroup.objects.length > 0;
 
                     if (hasCollidesProp || hasCollisionShapes) {
-                        this.baseGrid[y][x] = 1; // Mark tile as blocked
+                        this.baseGrid[y][x] = 1;
                     }
                 }
             }
@@ -399,13 +339,12 @@ export class MainScene extends Scene {
         this.easyStar.setIterationsPerCalculation(1000);
         this.easyStar.disableCornerCutting();
 
-        // Player movement: only on left click, not when right is used for camera drag
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             console.log('pointerdown event triggered');
             if ((this.buildingPreview && this.buildingPreview.isDraggingActive()) || pointer.event.defaultPrevented) {
                 return;
             }
-            // Si on clique ailleurs que sur une ResourceEntity, désactive les coins
+
             const objects = this.input.hitTestPointer(pointer);
             const isResourceEntity = objects.some(obj => obj.constructor && obj.constructor.name === 'ResourceEntity');
             if (!isResourceEntity && this.currentHarvestTarget) {
@@ -413,7 +352,7 @@ export class MainScene extends Scene {
                 this.currentHarvestTarget.isPlayerApproaching = false;
                 this.currentHarvestTarget = null;
             }
-            // Only move player if left button is pressed and not right
+
             if (pointer.leftButtonDown() && !pointer.rightButtonDown()) {
                 const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
                 let targetTileX = Math.floor(worldPoint.x / this.tileWidth);
