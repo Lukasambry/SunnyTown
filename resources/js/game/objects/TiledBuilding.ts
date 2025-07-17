@@ -348,6 +348,26 @@ export class TiledBuilding {
         return filtered;
     }
 
+    public getDepositPosition(): { x: number, y: number } | null {
+        const pointsLayer = this.map.getObjectLayer('Points');
+
+        if (pointsLayer && pointsLayer.objects) {
+            for (const obj of pointsLayer.objects) {
+                if (obj.properties && Array.isArray(obj.properties)) {
+                    const typeProperty = obj.properties.find(p => p.name === 'type');
+                    if (typeProperty && typeProperty.value === 'deposit') {
+                        return {
+                            x: this.position.x + (obj.x || 0),
+                            y: this.position.y + (obj.y || 0)
+                        };
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
     public getAllBuildingResourceCapacities(): ReadonlyMap<ResourceType, number> {
         return new Map(this.resourceStorage.capacity);
     }
@@ -933,13 +953,13 @@ export class TiledBuilding {
 
         return canAdd;
     }
-    
+
     public getCollisionZones(): Phaser.Geom.Rectangle[] {
         const zones: Phaser.Geom.Rectangle[] = [];
         const position = this.getPosition();
 
         const collisionLayer = this.map.getObjectLayer('Collision');
-        
+
         if (collisionLayer && collisionLayer.objects) {
             collisionLayer.objects.forEach(obj => {
                 zones.push(new Phaser.Geom.Rectangle(
