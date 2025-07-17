@@ -38,6 +38,7 @@ export class TiledBuilding {
     private readonly position: BuildingPosition;
     private readonly resourceManager: ResourceManager;
     private readonly config: BuildingInteractionConfig;
+    private readonly buildingRegistry: BuildingRegistry;
 
     private readonly layers: Phaser.Tilemaps.TilemapLayer[] = [];
     private readonly map: Phaser.Tilemaps.Tilemap;
@@ -67,6 +68,8 @@ export class TiledBuilding {
         this.scene = scene;
         this.position = { x, y };
         this.buildingType = buildingType;
+
+        this.buildingRegistry = BuildingRegistry.getInstance();
 
         this.resourceManager = ResourceManager.getInstance();
         this.maxWorkers = this.getMaxWorkersForBuilding();
@@ -127,7 +130,7 @@ export class TiledBuilding {
     }
 
     public getMaxWorkersForBuilding(): number {
-        const config = BuildingRegistry.getInstance().getBuildingConfig(this.buildingType);
+        const config = this.buildingRegistry.getBuildingConfig(this.buildingType);
         return config?.maxWorkers || 0;
     }
 
@@ -284,7 +287,7 @@ export class TiledBuilding {
     }
 
     public getWorkerType(): WorkerType {
-        const config = BuildingRegistry.getInstance().getBuildingConfig(this.buildingType);
+        const config = this.buildingRegistry.getBuildingConfig(this.buildingType);
         return config?.workerType || WorkerType.NEUTRAL;
     }
 
@@ -332,7 +335,7 @@ export class TiledBuilding {
     }
 
     private getStorageConfig(): Record<ResourceType, number> {
-        const config = BuildingRegistry.getInstance().getBuildingConfig(this.buildingType);
+        const config = this.buildingRegistry.getBuildingConfig(this.buildingType);
         const raw = config?.storageCapacities || {};
         // Filtrer les undefined pour respecter Record<ResourceType, number>
         const filtered: Record<ResourceType, number> = {};
@@ -984,13 +987,7 @@ export class TiledBuilding {
     }
 
     public getBuildingName(): string {
-        const names: Record<string, string> = {
-            'house': 'Maison',
-            'sawmill': 'Scierie',
-            'mine': 'Mine',
-            'farm': 'Ferme'
-        };
-        return names[this.buildingType] || this.buildingType;
+        return this.buildingRegistry.getBuildingName(this.buildingType);
     }
 
     public destroy(): void {

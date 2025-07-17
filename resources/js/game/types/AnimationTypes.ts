@@ -8,6 +8,7 @@ export enum AnimationType {
     WORKER_IDLE = 'worker-idle',
     WORKER_WALK = 'worker-walk',
     WORKER_CHOP = 'worker-chop',
+    WORKER_DOING = 'worker-doing',
     WORKER_MINING = 'worker-mining',
     WORKER_CARRY = 'worker-carry',
 

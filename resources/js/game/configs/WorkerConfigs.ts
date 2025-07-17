@@ -2,13 +2,14 @@ import { WorkerType, WorkerActionType, type WorkerConfig } from '../types/Worker
 import { ResourceType } from '../types/ResourceSystemTypes';
 import { BuildingType } from '../types/BuildingTypes';
 import { ResourceEntityType } from '../types/ResourceEntityTypes';
+import { AnimationType } from '../services';
 
 export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
     [WorkerType.LUMBERJACK]: {
         id: WorkerType.LUMBERJACK,
         name: 'Bûcheron',
         description: 'Coupe les arbres et récolte le bois',
-        texture: 'worker-idle',
+        texture: AnimationType.WORKER_IDLE,
 
         carryCapacity: 10,
         harvestSpeed: 3000,
@@ -30,10 +31,10 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'worker-idle',
-            walking: 'worker-walk',
-            working: 'worker-chop',
-            carrying: 'worker-carry'
+            idle: AnimationType.WORKER_IDLE,
+            walking: AnimationType.WORKER_WALK,
+            working: AnimationType.WORKER_CHOP,
+            carrying: AnimationType.WORKER_CHOP
         },
 
         //tint: 0xdd9955,
@@ -44,7 +45,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.MINER,
         name: 'Mineur',
         description: 'Extrait la pierre et les minerais',
-        texture: 'worker-idle',
+        texture: AnimationType.WORKER_IDLE,
 
         carryCapacity: 8,
         harvestSpeed: 4000,
@@ -53,23 +54,22 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
 
         harvestTargets: [{
             actionType: WorkerActionType.HARVEST_RESOURCE_ENTITY,
-            targetTypes: [ResourceEntityType.ROCK],
-            resourceTypes: [ResourceType.STONE, ResourceType.METAL_ORE],
+            targetTypes: [ResourceEntityType.ROCK, ResourceEntityType.COAL_VEIN],
+            resourceTypes: [ResourceType.STONE, ResourceType.COAL_ORE],
             priority: 1
         }],
-
         depositTargets: [{
             actionType: WorkerActionType.DEPOSIT_TO_BUILDING,
             targetTypes: [BuildingType.FORGE],
-            resourceTypes: [ResourceType.STONE, ResourceType.METAL_ORE],
+            resourceTypes: [ResourceType.STONE, ResourceType.COAL_ORE],
             priority: 1
         }],
 
         animations: {
-            idle: 'worker-idle',
-            walking: 'worker-walk',
-            working: 'worker-mining',
-            carrying: 'worker-carry'
+            idle: AnimationType.WORKER_IDLE,
+            walking: AnimationType.WORKER_WALK,
+            working: AnimationType.WORKER_CHOP,
+            carrying: AnimationType.WORKER_WALK
         },
 
         //tint: 0x8b7355,
@@ -80,7 +80,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.FARMER,
         name: 'Fermier',
         description: 'Cultive et récolte la nourriture',
-        texture: 'worker-idle',
+        texture: AnimationType.WORKER_IDLE,
 
         carryCapacity: 12,
         harvestSpeed: 2500,
@@ -107,10 +107,10 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'worker-idle',
-            walking: 'worker-walk',
-            working: 'worker-carry',
-            carrying: 'worker-carry'
+            idle: AnimationType.WORKER_IDLE,
+            walking: AnimationType.WORKER_WALK,
+            working: AnimationType.WORKER_CHOP,
+            carrying: AnimationType.WORKER_CHOP
         },
 
         //tint: 0x228b22,
@@ -121,7 +121,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.TRANSPORTER,
         name: 'Transporteur',
         description: 'Transporte les ressources entre bâtiments',
-        texture: 'worker-idle',
+        texture: AnimationType.WORKER_IDLE,
 
         carryCapacity: 15,
         harvestSpeed: 1000,
@@ -130,7 +130,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
 
         harvestTargets: [{
             actionType: WorkerActionType.HARVEST_BUILDING,
-            targetTypes: [BuildingType.SAWMILL, BuildingType.FORGE, BuildingType.FARM],
+            targetTypes: [BuildingType.SAWMILL, BuildingType.FORGE],
             resourceTypes: Object.values(ResourceType),
             priority: 1
         }],
@@ -143,10 +143,10 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: 'worker-idle',
-            walking: 'worker-walk',
-            working: 'worker-carry',
-            carrying: 'worker-carry'
+            idle: AnimationType.WORKER_IDLE,
+            walking: AnimationType.WORKER_WALK,
+            working: AnimationType.WORKER_CHOP,
+            carrying: AnimationType.WORKER_CHOP
         },
 
         //tint: 0x3498db,
@@ -156,7 +156,7 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         id: WorkerType.NEUTRAL,
         name: 'Ouvrier',
         description: 'Ouvrier neutre, peut être assigné à n\'importe quel métier.',
-        texture: 'worker-idle',
+        texture: AnimationType.WORKER_IDLE,
         carryCapacity: 0,
         harvestSpeed: 0,
         moveSpeed: 60,
@@ -164,10 +164,10 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         harvestTargets: [],
         depositTargets: [],
         animations: {
-            idle: 'worker-idle',
-            walking: 'worker-walk',
-            working: 'worker-chop',
-            carrying: 'worker-carry'
+            idle: AnimationType.WORKER_IDLE,
+            walking: AnimationType.WORKER_WALK,
+            working: AnimationType.WORKER_CHOP,
+            carrying: AnimationType.WORKER_CHOP
         },
 
         //tint: 0xaaaaaa,
