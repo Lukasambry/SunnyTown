@@ -46,6 +46,11 @@ export class BuildingRegistry {
         return building?.name || key;
     }
 
+    public getBuildingDescription(key: string): string {
+        const building = this.buildings.get(key);
+        return building?.description || key;
+    }
+
     public isValidBuilding(key: string): boolean {
         return this.buildings.has(key);
     }

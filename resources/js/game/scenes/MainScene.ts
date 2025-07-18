@@ -162,7 +162,7 @@ export class MainScene extends Phaser.Scene {
     create() {
         console.log('MainScene create called');
         this.pathDotsGroup = this.add.group();
-        
+
         this.setupAnimations();
         this.setupVueResourceSync();
 
@@ -199,7 +199,7 @@ export class MainScene extends Phaser.Scene {
         );
         this.input.setDefaultCursor('none');
 
-        
+
         this.player = new Player(this, 830, 700);
         this.player.setScale(1);
 
@@ -732,8 +732,6 @@ export class MainScene extends Phaser.Scene {
         console.log(`Building ID: "${buildingId}"`);
         console.log(`Building type: "${building.getType()}"`);
 
-        building.debugWorkerAssignment();
-
         if (!building.canAssignWorker()) {
             console.warn('Building cannot accept more workers');
             return;
@@ -829,20 +827,13 @@ export class MainScene extends Phaser.Scene {
 
             worker.setDepositPoint(depositPoint);
 
-            // Étape 6: Diagnostiquer l'état final
-            console.log('=== STEP 6: Final state verification ===');
-            building.debugWorkerAssignment();
-
-            // Obtenir le count selon la méthode utilisée
             let finalAssignedCount;
             if (typeof building.getAssignedWorkerCountFallback === 'function') {
-                // Vérifier si on utilise le fallback
                 const normalCount = building.getAssignedWorkerCount();
                 const fallbackCount = building.getAssignedWorkerCountFallback();
 
                 console.log(`Normal count: ${normalCount}, Fallback count: ${fallbackCount}`);
 
-                // Utiliser le count le plus élevé (celui qui fonctionne)
                 finalAssignedCount = Math.max(normalCount, fallbackCount);
             } else {
                 finalAssignedCount = building.getAssignedWorkerCount();
@@ -850,7 +841,6 @@ export class MainScene extends Phaser.Scene {
 
             console.log(`Final assigned count: ${finalAssignedCount}`);
 
-            // Étape 7: Mettre à jour et notifier
             this.handleAvailableWorkersRequest();
 
             window.dispatchEvent(new CustomEvent('game:workerAssignedToBuilding', {
@@ -993,16 +983,8 @@ export class MainScene extends Phaser.Scene {
             return;
         }
 
-        console.log(`Building ID: "${buildingId}"`);
-        console.log(`Building type: "${building.getType()}"`);
-
-        // Diagnostiquer l'état avant désassignation
-        console.log('=== BUILDING STATE BEFORE UNASSIGNMENT ===');
-        building.debugWorkerAssignment();
-
         // Récupérer les workers assignés à ce bâtiment
         const assignedWorkerIds = building.getAssignedWorkerIds();
-        console.log(`Workers assigned to building: [${assignedWorkerIds.join(', ')}]`);
 
         if (assignedWorkerIds.length === 0) {
             console.warn('No workers assigned to this building');
@@ -1028,20 +1010,11 @@ export class MainScene extends Phaser.Scene {
             console.log(`Unassignment from building result: ${unassignResult}`);
 
             if (unassignResult) {
-                // Étape 2: Convertir le worker en neutre
                 worker.convertToNeutral();
                 worker.setDepositPoint(null);
 
-                console.log(`Worker ${workerIdToUnassign} converted back to NEUTRAL`);
-
-                // Étape 3: Diagnostiquer l'état final
-                console.log('=== BUILDING STATE AFTER UNASSIGNMENT ===');
-                building.debugWorkerAssignment();
-
-                // Étape 4: Mettre à jour les compteurs
                 this.handleAvailableWorkersRequest();
 
-                // Notifier le succès
                 window.dispatchEvent(new CustomEvent('game:workerUnassignedFromBuilding', {
                     detail: {
                         buildingId,

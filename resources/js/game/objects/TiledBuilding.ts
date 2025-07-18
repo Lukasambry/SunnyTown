@@ -989,6 +989,10 @@ export class TiledBuilding {
         return this.buildingRegistry.getBuildingName(this.buildingType);
     }
 
+    public getBuildingDescription(): string {
+        return this.buildingRegistry.getBuildingDescription(this.buildingType);
+    }
+
     public destroy(): void {
         this.hideSelectionCorners();
         this.hideHoverCorners();
