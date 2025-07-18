@@ -55,7 +55,7 @@
                                         <div class="relative h-28">
                                             <div class="h-full w-28 flex items-center justify-center p-1">
                                                 <img :src="`/assets/game/buildings/${building.key}.png`"
-                                                     class="w-auto max-w-full max-h-full h-auto pixelated"
+                                                     class="h-full w-full object-contain pixelated"
                                                      :alt="building.key">
                                             </div>
                                         </div>
