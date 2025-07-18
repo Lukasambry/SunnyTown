@@ -1,5 +1,6 @@
-import { Scene } from 'phaser';
-type Scene = typeof Scene;
+import Phaser from 'phaser';
+import Scene = Phaser.Scene;
+import Sprite = Phaser.GameObjects.Sprite;
 
 import {
     type WorkerConfig,
@@ -11,13 +12,16 @@ import { ResourceType } from '@/game/types/ResourceSystemTypes';
 import { ResourceEntity } from '../ResourceEntity';
 import { TiledBuilding } from '../TiledBuilding';
 import { AnimationUtils } from '@/game/utils/AnimationUtils';
-import Sprite = Phaser.GameObjects.Sprite;
 import { WorkerRegistry } from '@/game/services';
 import { GlobalWorkerStorage } from '@/game/stores/GlobalWorkerStorage';
 import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
+import { WorkerItemDisplayManager } from './WorkerItemDisplayManager';
 
 export class Worker extends Sprite {
     private assignedBuildingId: string | null = null;
+    private itemDisplayManager: WorkerItemDisplayManager;
+    private itemUpdateTimer: Phaser.Time.TimerEvent | null = null;
+    private workerId: string = '';
 
     protected config: WorkerConfig;
     protected inventory = new Map<ResourceType, number>();
@@ -33,7 +37,6 @@ export class Worker extends Sprite {
     protected lastBlacklistCleanup: number = 0;
 
     public state: WorkerState = WorkerState.IDLE;
-    private workerId: string = '';
 
     constructor(scene: Scene, x: number, y: number, config: WorkerConfig, depositPoint?: WorkerPosition) {
         super(scene, x, y, config.texture);
@@ -43,6 +46,8 @@ export class Worker extends Sprite {
         this.workerId = `worker_${Math.floor(x)}_${Math.floor(y)}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
         this.resourceEntityManager = (scene as any).resourceEntityManager;
         this.buildingManager = (scene as any).buildingManager;
+
+        this.itemDisplayManager = new WorkerItemDisplayManager(this, scene);
 
         this.initializeWorker();
         this.setupAnimations();
@@ -77,7 +82,7 @@ export class Worker extends Sprite {
     private setupAnimations(): void {
         try {
             AnimationUtils.initializeEntityAnimations(this as any as Sprite, 'player');
-            this.play(this.config.animations.idle);
+            this.play(this.config.animations.idle.type);
         } catch (error) {
             console.warn('Worker: Could not setup animations:', error);
         }
@@ -383,7 +388,8 @@ export class Worker extends Sprite {
         this.isMoving = true;
 
         try {
-            this.play(this.config.animations.walking);
+            // Au lieu de jouer directement l'animation, utiliser updateAnimation()
+            this.updateAnimation();
         } catch (error) {
             console.warn('Worker: Could not play walking animation:', error);
         }
@@ -415,38 +421,69 @@ export class Worker extends Sprite {
             this.onPathCompleted();
             return;
         }
-
+    
+        this.startItemUpdateTimer();
+    
         let currentWaypointIndex = 0;
         const moveToNextWaypoint = () => {
             if (currentWaypointIndex >= path.length) {
                 this.onPathCompleted();
                 return;
             }
-
+    
             const waypoint = path[currentWaypointIndex];
             const dx = waypoint.x - this.x;
             if (Math.abs(dx) > 1) {
                 this.flipX = dx < 0;
             }
-
+    
             this.scene.physics.moveTo(this.getThisGameObject(), waypoint.x, waypoint.y, this.config.moveSpeed);
-
+    
             const distance = Phaser.Math.Distance.Between(this.x, this.y, waypoint.x, waypoint.y);
             const travelTime = (distance / this.config.moveSpeed) * 1000;
-
+    
             this.scene.time.delayedCall(Math.max(travelTime, 100), () => {
                 currentWaypointIndex++;
                 moveToNextWaypoint();
             });
         };
-
+    
         moveToNextWaypoint();
+    }
+
+    private startItemUpdateTimer(): void {
+        this.stopItemUpdateTimer();
+    
+        this.itemUpdateTimer = this.scene.time.addEvent({
+            delay: 16, // ~60 FPS
+            callback: () => {
+                if (this.isMoving) {
+                    this.itemDisplayManager.updateItemPosition();
+                }
+            },
+            callbackScope: this,
+            loop: true
+        });
+    }
+    
+    private stopItemUpdateTimer(): void {
+        if (this.itemUpdateTimer) {
+            this.itemUpdateTimer.destroy();
+            this.itemUpdateTimer = null;
+        }
+    }
+
+    public refreshItemDisplay(): void {
+        this.updateItemDisplay();
     }
 
     private onPathCompleted(): void {
         this.isMoving = false;
         (this.body as Phaser.Physics.Arcade.Body)?.stop();
-
+    
+        this.stopItemUpdateTimer();
+        this.updateItemDisplay();
+        
         if (this.state === WorkerState.MOVING_TO_HARVEST) {
             this.startHarvesting();
         } else if (this.state === WorkerState.MOVING_TO_DEPOSIT) {
@@ -471,7 +508,7 @@ export class Worker extends Sprite {
         }
 
         try {
-            this.play(this.config.animations.working);
+            this.play(this.config.animations.working.type);
             this.once('animationcomplete', this.onHarvestAnimationComplete, this);
         } catch (error) {
             this.actionTimer = this.scene.time.delayedCall(this.config.harvestSpeed, () => {
@@ -580,7 +617,7 @@ export class Worker extends Sprite {
         this.setWorkerState(WorkerState.DEPOSITING);
 
         try {
-            this.play(this.config.animations.depositing);
+            this.play(this.config.animations.depositing.type);
         } catch (error) {
             console.warn('Worker: Could not play working animation:', error);
         }
@@ -606,7 +643,7 @@ export class Worker extends Sprite {
         this.currentTarget = null;
 
         try {
-            this.play(this.config.animations.idle);
+            this.play(this.config.animations.idle.type);
         } catch (error) {
             console.warn('Worker: Could not play idle animation:', error);
         }
@@ -763,9 +800,64 @@ export class Worker extends Sprite {
     // #region Gestion d'état
 
     private setWorkerState(newState: WorkerState): void {
-        if (this.state !== newState) {
-            this.state = newState;
-            this.clearTimers();
+        //const oldState = this.state;
+        this.state = newState;
+
+        this.updateAnimation();
+        this.updateItemDisplay();
+    }
+
+    private updateAnimation(): void {
+        try {
+            let animationKey: string;
+            
+            switch (this.state) {
+                case WorkerState.IDLE:
+                case WorkerState.WAITING:
+                    animationKey = this.config.animations.idle.type;
+                    break;
+                case WorkerState.MOVING_TO_HARVEST:
+                case WorkerState.MOVING_TO_DEPOSIT:
+                    // Choisir entre walking et carrying selon l'inventaire
+                    animationKey = this.getTotalInventory() > 0 
+                        ? this.config.animations.carrying.type 
+                        : this.config.animations.walking.type;
+                    break;
+                case WorkerState.HARVESTING:
+                    animationKey = this.config.animations.working.type;
+                    break;
+                case WorkerState.DEPOSITING:
+                    animationKey = this.config.animations.depositing.type;
+                    break;
+                default:
+                    animationKey = this.config.animations.idle.type;
+            }
+
+            this.play(animationKey);
+        } catch (error) {
+            console.warn('Worker: Could not update animation:', error);
+        }
+    }
+
+    private updateItemDisplay(): void {
+        const animationState = this.getAnimationStateKey();
+        this.itemDisplayManager.updateItemDisplay(animationState);
+    }
+
+    private getAnimationStateKey(): string {
+        switch (this.state) {
+            case WorkerState.IDLE:
+            case WorkerState.WAITING:
+                return 'idle';
+            case WorkerState.MOVING_TO_HARVEST:
+            case WorkerState.MOVING_TO_DEPOSIT:
+                return this.getTotalInventory() > 0 ? 'carrying' : 'walking';
+            case WorkerState.HARVESTING:
+                return 'working';
+            case WorkerState.DEPOSITING:
+                return 'depositing';
+            default:
+                return 'idle';
         }
     }
 
@@ -808,6 +900,8 @@ export class Worker extends Sprite {
             this.idleTimer.destroy();
             this.idleTimer = null;
         }
+        
+        this.stopItemUpdateTimer();
     }
 
     // #endregion
@@ -906,16 +1000,20 @@ export class Worker extends Sprite {
 
     public destroy(): void {
         this.clearTimers();
-
+    
+        if (this.itemDisplayManager) {
+            this.itemDisplayManager.destroy();
+        }
+    
         if (this.currentTarget instanceof ResourceEntity) {
             this.currentTarget.releaseHarvester();
         }
-
+    
         if (this.mainLoopTimer) {
             this.mainLoopTimer.destroy();
             this.mainLoopTimer = null;
         }
-
+    
         super.destroy();
     }
 
