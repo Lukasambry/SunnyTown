@@ -92,6 +92,18 @@
     --color-stone-primary: #c0cbdc;
     --color-stone-secondary: #ffffff;
 
+    /* Success Theme Colors */
+    --color-success-primary: #63C74D;
+    --color-success-secondary: #84D972;
+
+    /* Danger Theme Colors */
+    --color-danger-primary: #FF7171;
+    --color-danger-secondary: #FF9494;
+
+    /* Info Theme Colors */
+    --color-info-primary: #2CE8F5;
+    --color-info-secondary: #0099DB;
+
     /* Progress Bar Colors */
     --color-progress-bg: #515179;
     --color-progress-fill: dodgerblue;
@@ -307,6 +319,21 @@
     .pixel-border-stone {
         --btn-color-primary: var(--color-stone-primary);
         --btn-color-secondary: var(--color-stone-secondary);
+    }
+
+    .pixel-border-success {
+        --btn-color-primary: var(--color-success-primary);
+        --btn-color-secondary: var(--color-success-secondary);
+    }
+
+    .pixel-border-danger {
+        --btn-color-primary: var(--color-danger-primary);
+        --btn-color-secondary: var(--color-danger-secondary);
+    }
+
+    .pixel-border-info {
+        --btn-color-primary: var(--color-info-primary);
+        --btn-color-secondary: var(--color-info-secondary);
     }
 
     /* Border Side Controls */
