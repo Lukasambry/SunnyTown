@@ -31,11 +31,11 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: AnimationType.WORKER_IDLE,
-            walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_CHOP,
-            carrying: AnimationType.WORKER_CHOP,
-            depositing: AnimationType.WORKER_DOING
+            idle: { type: AnimationType.WORKER_IDLE },
+            walking: { type: AnimationType.WORKER_WALK },
+            working: { type: AnimationType.WORKER_CHOP },
+            carrying: { type: AnimationType.WORKER_WALK },
+            depositing: { type: AnimationType.WORKER_DOING }
         },
 
         //tint: 0xdd9955,
@@ -67,11 +67,11 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: AnimationType.WORKER_IDLE,
-            walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_MINING,
-            carrying: AnimationType.WORKER_WALK,
-            depositing: AnimationType.WORKER_DOING
+            idle: { type: AnimationType.WORKER_IDLE },
+            walking: { type: AnimationType.WORKER_WALK },
+            working: { type: AnimationType.WORKER_MINING },
+            carrying: { type: AnimationType.WORKER_WALK },
+            depositing: { type: AnimationType.WORKER_DOING }
         },
 
         //tint: 0x8b7355,
@@ -109,11 +109,11 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: AnimationType.WORKER_IDLE,
-            walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_DOING,
-            carrying: AnimationType.WORKER_WALK,
-            depositing: AnimationType.WORKER_DOING
+            idle: { type: AnimationType.WORKER_IDLE },
+            walking: { type: AnimationType.WORKER_WALK },
+            working: { type: AnimationType.WORKER_DOING },
+            carrying: { type: AnimationType.WORKER_WALK },
+            depositing: { type: AnimationType.WORKER_DOING }
         },
 
         //tint: 0x228b22,
@@ -146,11 +146,18 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         }],
 
         animations: {
-            idle: AnimationType.WORKER_IDLE,
-            walking: AnimationType.WORKER_CARRY,
-            working: AnimationType.WORKER_DOING,
-            carrying: AnimationType.WORKER_CARRY,
-            depositing: AnimationType.WORKER_DOING
+            idle: { type: AnimationType.WORKER_IDLE },
+            walking: { type: AnimationType.WORKER_CARRY },
+            working: { type: AnimationType.WORKER_DOING },
+            carrying: { type: AnimationType.WORKER_CARRY,
+                item: {
+                    img: (resource) => `resource_${resource?.type || 'unknown'}`,
+                    posY: -16,
+                    posX: 2,
+                    depth: 1
+                }
+            },
+            depositing: { type: AnimationType.WORKER_DOING }
         },
 
         //tint: 0x3498db,
@@ -168,11 +175,11 @@ export const WORKER_CONFIGS: Record<WorkerType, WorkerConfig> = {
         harvestTargets: [],
         depositTargets: [],
         animations: {
-            idle: AnimationType.WORKER_IDLE,
-            walking: AnimationType.WORKER_WALK,
-            working: AnimationType.WORKER_DOING,
-            carrying: AnimationType.WORKER_CARRY,
-            depositing: AnimationType.WORKER_DOING
+            idle: { type: AnimationType.WORKER_IDLE },
+            walking: { type: AnimationType.WORKER_WALK },
+            working: { type: AnimationType.WORKER_DOING },
+            carrying: { type: AnimationType.WORKER_CARRY },
+            depositing: { type: AnimationType.WORKER_DOING }
         },
 
         //tint: 0xaaaaaa,

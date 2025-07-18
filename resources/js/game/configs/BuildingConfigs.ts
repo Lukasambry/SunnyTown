@@ -12,7 +12,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         maxWorkers: 1,
         description: 'TestFromConfigs: Logement pour les ouvriers, améliore leur efficacité',
         storageCapacities: {
-            [ResourceType.FOOD]: 200,
+            [ResourceType.FOOD]: 5,
             [ResourceType.POPULATION]: 10
         }
     },
@@ -26,7 +26,7 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         maxWorkers: 3,
         description: 'TestFromConfigs: Traite le bois et stocke les ressources',
         storageCapacities: {
-            [ResourceType.WOOD]: 300
+            [ResourceType.WOOD]: 10
         }
     },
     {
@@ -42,8 +42,8 @@ export const BUILDING_CONFIGS: BuildingConfig[] = [
         maxWorkers: 2,
         description: 'TestFromConfigs: Extrait pierre et métaux du sous-sol',
         storageCapacities: {
+            [ResourceType.STONE]: 5,
             [ResourceType.COAL_ORE]: 100,
-            [ResourceType.STONE]: 100,
             [ResourceType.METAL]: 100
         }
     },

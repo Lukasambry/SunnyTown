@@ -23,19 +23,35 @@ export enum WorkerActionType {
     DEPOSIT_TO_BUILDING = 'deposit_to_building'
 }
 
+export interface WorkerAnimationItemConfig {
+    img?: string | ((data?: any) => string | null);
+    posX?: number;
+    posY?: number;
+    scale?: number;
+    alpha?: number;
+    rotation?: number;
+    visible?: boolean;
+    depth?: number;
+}
+
+export interface WorkerAnimationWithItem {
+    type: string;
+    item?: WorkerAnimationItemConfig;
+}
+
+export interface WorkerAnimationConfig {
+    idle: WorkerAnimationWithItem;
+    walking: WorkerAnimationWithItem;
+    working: WorkerAnimationWithItem;
+    carrying: WorkerAnimationWithItem;
+    depositing: WorkerAnimationWithItem;
+}
+
 export interface WorkerTargetConfig {
     actionType: WorkerActionType;
     targetTypes: string[];
     resourceTypes: ResourceType[];
     priority: number;
-}
-
-export interface WorkerAnimationConfig {
-    idle: string;
-    walking: string;
-    working: string;
-    carrying: string;
-    depositing: string; 
 }
 
 export interface WorkerPosition {

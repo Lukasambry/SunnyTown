@@ -1,5 +1,5 @@
 import EasyStar from 'easystarjs';
-import { Scene } from 'phaser';
+import Phaser from 'phaser';
 import { Building } from '@/game/objects/Building';
 import { BuildingPreview } from '@/game/objects/BuildingPreview';
 import { Player } from '@/game/objects/Player';
@@ -30,7 +30,8 @@ interface LayerConfig {
     isAbovePlayer: boolean;
 }
 
-export class MainScene extends Scene {
+export class MainScene extends Phaser.Scene {
+    private GAME_ASSETS_BASE_URL = '/assets/game/';
     private STORAGE_KEY = 'BUILDINGS_STORAGE';
     private player!: Player;
     private map!: Phaser.Tilemaps.Tilemap;
@@ -77,7 +78,7 @@ export class MainScene extends Scene {
     }
 
     preload() {
-        this.load.setBaseURL('/assets/game/');
+        this.load.setBaseURL(this.GAME_ASSETS_BASE_URL);
 
         this.animationRegistry = AnimationRegistry.getInstance();
 
@@ -152,16 +153,19 @@ export class MainScene extends Scene {
         this.load.image('house-icon', 'ui/icons/house.png');
         this.load.image('sawmill-icon', 'ui/icons/sawmill.png');
         this.load.image('target-indicator', 'ui/sm-arrow-down.png');
+
+        this.load.image('resource_wood', 'ui/resources/wood.png');
+        this.load.image('resource_stone', 'ui/resources/stone.png');
+        this.load.image('resource_unknown', 'ui/resources/unknown.png');
     }
 
     create() {
         console.log('MainScene create called');
         this.pathDotsGroup = this.add.group();
-        // Initialize animation registry for this scene
+        
         this.setupAnimations();
         this.setupVueResourceSync();
 
-        // Create map
         this.map = this.make.tilemap({ key: 'map' });
         const tileset = this.map.addTilesetImage('tileset', 'tiles');
 
@@ -169,24 +173,6 @@ export class MainScene extends Scene {
             console.error('Failed to load tileset');
             return;
         }
-
-        // Initialize dialog service
-        // this.dialogService = new DialogService(this)
-
-        /*
-        // Show welcome message
-        this.dialogService.showDialog({
-          text: "Welcome to TinyTown! To start your adventure, you need to harvest wood.",
-          duration: 4000,
-          callback: () => {
-            this.dialogService.showDialog({
-              text: "Approach a tree and click on it to cut it down. Objective: 5 units of wood.",
-              duration: 4000
-            })
-          }
-        })
-
-         */
 
         this.uiScene = this.scene.add(
             'UIScene',
@@ -211,40 +197,25 @@ export class MainScene extends Scene {
             },
             true,
         );
-
-        // Hide default cursor
         this.input.setDefaultCursor('none');
 
-        // Get all layers
-        const allLayers = this.map.layers;
-
-        // Create player before layers that should appear above
+        
         this.player = new Player(this, 830, 700);
         this.player.setScale(1);
 
         this.playerLevelSystem = PlayerLevelSystem.getInstance();
 
-        // Initialize resource manager and inventory
-        this.resourceManager = ResourceManager.getInstance();
-        this.resourceManager.prepareSceneLoading(this);
-
         this.cameraService = new CameraService(this);
         this.cameraService.setPlayer(this.player);
 
-        this.buildingSelectionService = new BuildingSelectionService(this, this.cameraService);
-        this.zoneBlockerService = new ZoneBlockerService(this, this.cameraService);
+        this.resourceManager = ResourceManager.getInstance();
+        this.resourceManager.prepareSceneLoading(this);
 
+        this.buildingSelectionService = new BuildingSelectionService(this, this.cameraService);
         this.buildingRegistry = BuildingRegistry.getInstance();
 
-        // Launch resource UI
-        //this.scene.launch('ResourceUI')
 
-        /*
-        this.events.on('addResource', (type: ResourceType, amount: number) => {
-          this.resourceManager.addResource(type, amount, 'game_event')
-        })
-        */
-
+        const allLayers = this.map.layers;
         allLayers.forEach((layerData) => {
             const layer = this.map.createLayer(layerData.name, tileset, 0, 0);
             if (!layer) return;
@@ -270,6 +241,7 @@ export class MainScene extends Scene {
             });
         });
 
+        this.zoneBlockerService = new ZoneBlockerService(this, this.cameraService);
         this.zoneBlockerService.initialize(this.map);
 
         window.addEventListener('game:unlockZoneBlocker', (event: CustomEvent) => {
