@@ -146,8 +146,6 @@ export class TiledBuilding {
         const previousCount = this.getAssignedWorkerCount();
         GlobalWorkerStorage.clearBuildingWorkers(this.buildingId);
 
-        console.log(`Cleared all workers from building. Previous count: ${previousCount}`);
-
         window.dispatchEvent(new CustomEvent('game:buildingWorkersCleared', {
             detail: {
                 buildingId: this.buildingId,
@@ -172,11 +170,6 @@ export class TiledBuilding {
     }
 
     public assignWorker(workerId: string): boolean {
-        console.log(`\n=== TiledBuilding.assignWorker (GLOBAL) ===`);
-        console.log(`WorkerId: "${workerId}"`);
-        console.log(`Building type: "${this.buildingType}"`);
-        console.log(`Building ID: "${this.buildingId}"`);
-
         if (!workerId || workerId.trim() === '') {
             console.error('Invalid worker ID provided');
             return false;
@@ -187,15 +180,11 @@ export class TiledBuilding {
             return false;
         }
 
-        // Utiliser le stockage global
         const success = GlobalWorkerStorage.assignWorkerToBuilding(workerId, this.buildingId, this.maxWorkers);
 
         if (success) {
-            // Vérification immédiate après assignation
             const newCount = this.getAssignedWorkerCount();
-            console.log(`Post-assignment verification: ${newCount} workers`);
 
-            // Déclencher l'événement avec les bonnes données
             window.dispatchEvent(new CustomEvent('game:workerAssignedToBuilding', {
                 detail: {
                     buildingId: this.buildingId,
@@ -204,44 +193,19 @@ export class TiledBuilding {
                     maxWorkers: this.maxWorkers
                 }
             }));
-
-            console.log(`Worker assigned successfully. Event sent with count: ${newCount}`);
         } else {
             console.error('Global assignment failed');
         }
 
-        console.log(`=== END assignWorker ===\n`);
         return success;
     }
 
     public getAssignedWorkerCount(): number {
         const count = GlobalWorkerStorage.getWorkerCount(this.buildingId);
-        console.log(`getAssignedWorkerCount: ${count} workers assigned`);
         return count;
     }
 
-    public debugWorkerAssignment(): void {
-        console.log('\n=== BUILDING WORKER DEBUG (GLOBAL) ===');
-        console.log('Building type:', this.buildingType);
-        console.log('Building ID:', this.buildingId);
-        console.log('Position:', this.position);
-        console.log('Global worker count:', GlobalWorkerStorage.getWorkerCount(this.buildingId));
-        console.log('Global worker IDs:', GlobalWorkerStorage.getWorkersForBuilding(this.buildingId));
-        console.log('Max workers:', this.maxWorkers);
-        console.log('Worker type for building:', this.getWorkerType());
-        console.log('Can assign worker:', this.canAssignWorker());
-
-        // Debug du stockage global
-        GlobalWorkerStorage.debugStorage();
-
-        console.log('=== END BUILDING DEBUG ===\n');
-    }
-
     public unassignWorker(workerId: string): boolean {
-        console.log(`\n=== TiledBuilding.unassignWorker (GLOBAL) ===`);
-        console.log(`WorkerId: "${workerId}"`);
-        console.log(`Building ID: "${this.buildingId}"`);
-
         if (!workerId || workerId.trim() === '') {
             console.error('Invalid worker ID provided');
             return false;
@@ -260,19 +224,16 @@ export class TiledBuilding {
                     maxWorkers: this.maxWorkers
                 }
             }));
-            console.log(`Worker unassigned successfully. New count: ${newCount}`);
         } else {
             console.warn('Global unassignment failed');
         }
 
-        console.log(`=== END unassignWorker ===\n`);
         return success;
     }
 
 
     public getAssignedWorkerIds(): readonly string[] {
         const workers = GlobalWorkerStorage.getWorkersForBuilding(this.buildingId);
-        console.log(`getAssignedWorkerIds: [${workers.join(', ')}]`);
         return workers;
     }
 
@@ -319,13 +280,11 @@ export class TiledBuilding {
     }
 
     private handlePointerOut(): void {
-        // Rétablir le curseur par défaut
         if (this.scene.uiScene) {
             this.scene.uiScene.defaultCursor.setVisible(true);
             this.scene.uiScene.hoverCursor.setVisible(false);
         }
 
-        // Annuler la surbrillance
         this.setAlpha(1);
     }
 
@@ -337,15 +296,14 @@ export class TiledBuilding {
     private getStorageConfig(): Record<ResourceType, number> {
         const config = this.buildingRegistry.getBuildingConfig(this.buildingType);
         const raw = config?.storageCapacities || {};
-        // Filtrer les undefined pour respecter Record<ResourceType, number>
-        const filtered: Record<ResourceType, number> = {};
+        const filtered: Partial<Record<ResourceType, number>> = {};
         for (const key in raw) {
             const value = raw[key as ResourceType];
             if (typeof value === 'number') {
                 filtered[key as ResourceType] = value;
             }
         }
-        return filtered;
+        return filtered as Record<ResourceType, number>;
     }
 
     public getDepositPosition(): { x: number, y: number } | null {
@@ -729,12 +687,6 @@ export class TiledBuilding {
 
     private startStationaryTimer(): void {
         return;
-        /*
-        this.playerStationaryTimer = this.scene.time.delayedCall(
-            this.config.playerStationaryTime,
-            () => this.openBuildingInterface()
-        );
-        */
     }
 
     private openBuildingInterface(): void {
@@ -761,7 +713,6 @@ export class TiledBuilding {
 
     public setupCollisions(player: Phaser.Physics.Arcade.Sprite): void {
         this.collisionBodies.forEach(body => {
-            // this.scene.physics.add.collider(player, body);
         });
     }
 

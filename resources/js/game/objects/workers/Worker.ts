@@ -18,7 +18,7 @@ import { WorkerPathfinder } from '@/game/services/WorkerPathfinder';
 import { WorkerItemDisplayManager } from './WorkerItemDisplayManager';
 
 export class Worker extends Sprite {
-    private assignedBuildingId: string | null = null;
+    // private assignedBuildingId: string | null = null;
     private itemDisplayManager: WorkerItemDisplayManager;
     private itemUpdateTimer: Phaser.Time.TimerEvent | null = null;
     private workerId: string = '';
@@ -152,19 +152,15 @@ export class Worker extends Sprite {
         }
     }
 
-    // MODIFICATION PRINCIPALE: Logique de deposit basée sur l'assignation
     private findAndMoveToDepositTarget(): void {
         let target: TiledBuilding | null = null;
 
-        // NOUVELLE LOGIQUE: Si le worker est assigné à un bâtiment, déposer là-bas
         if (this.isAssignedToBuilding()) {
             const assignedBuildingId = this.getAssignedBuildingId();
-            console.log(`Worker ${this.workerId} is assigned to building ${assignedBuildingId}`);
 
             target = this.findBuildingById(assignedBuildingId);
 
             if (target) {
-                console.log(`Moving to assigned building for deposit`);
                 this.currentTarget = target;
                 this.moveToTarget(target, WorkerState.MOVING_TO_DEPOSIT);
                 return;
@@ -173,24 +169,18 @@ export class Worker extends Sprite {
             }
         }
 
-        // LOGIQUE ORIGINALE: Worker non assigné, chercher le bâtiment le plus proche
-        console.log(`Worker ${this.workerId} not assigned, finding nearest deposit target`);
         target = this.findBestDepositTarget();
 
         if (target) {
-            console.log(`Moving to nearest building for deposit: ${target.getType()}`);
             this.currentTarget = target;
             this.moveToTarget(target, WorkerState.MOVING_TO_DEPOSIT);
         } else if (this.depositPoint) {
-            console.log(`No building found, moving to deposit point`);
             this.moveToPosition(this.depositPoint, WorkerState.MOVING_TO_DEPOSIT);
         } else {
-            console.log(`No deposit target found, waiting`);
             this.setWorkerState(WorkerState.WAITING);
         }
     }
 
-    // Nouvelle méthode pour trouver un bâtiment par son ID
     private findBuildingById(buildingId: string | null): TiledBuilding | null {
         if (!buildingId || !this.buildingManager) {
             return null;
@@ -218,10 +208,7 @@ export class Worker extends Sprite {
         return null;
     }
 
-    // MODIFICATION: Améliorer la logique de deposit pour les workers non assignés
     private findBestDepositTarget(): TiledBuilding | null {
-        // Si le worker est assigné, on ne devrait pas arriver ici
-        // mais au cas où, vérifier d'abord le bâtiment assigné
         if (this.isAssignedToBuilding()) {
             const assignedBuilding = this.findBuildingById(this.getAssignedBuildingId());
             if (assignedBuilding && this.buildingCanAcceptWorkerResources(assignedBuilding)) {
@@ -229,7 +216,6 @@ export class Worker extends Sprite {
             }
         }
 
-        // Logique originale pour workers non assignés
         for (const depositConfig of this.config.depositTargets.sort((a, b) => a.priority - b.priority)) {
             const target = this.findDepositTargetByConfig(depositConfig);
             if (target) {
@@ -240,10 +226,8 @@ export class Worker extends Sprite {
         return null;
     }
 
-    // Nouvelle méthode pour vérifier si un bâtiment peut accepter les ressources du worker
     private buildingCanAcceptWorkerResources(building: TiledBuilding): boolean {
         try {
-            // Vérifier si le bâtiment peut accepter au moins une des ressources dans l'inventaire
             let canAccept = false;
 
             this.inventory.forEach((amount, resourceType) => {
@@ -388,7 +372,6 @@ export class Worker extends Sprite {
         this.isMoving = true;
 
         try {
-            // Au lieu de jouer directement l'animation, utiliser updateAnimation()
             this.updateAnimation();
         } catch (error) {
             console.warn('Worker: Could not play walking animation:', error);
@@ -630,10 +613,8 @@ export class Worker extends Sprite {
     private completeDepositing(): void {
         try {
             if (this.currentTarget instanceof TiledBuilding) {
-                console.log(`Depositing to building: ${this.currentTarget.getType()} (${this.currentTarget.getBuildingId()})`);
                 this.depositToBuilding(this.currentTarget);
             } else if (this.depositPoint) {
-                console.log(`Depositing to deposit point`);
                 this.depositAllResources();
             }
         } catch (error) {
@@ -650,8 +631,6 @@ export class Worker extends Sprite {
 
         this.setWorkerState(WorkerState.IDLE);
     }
-
-    // #region Gestion inventaire
 
     public addToInventory(resourceType: ResourceType, amount: number): number {
         const currentAmount = this.inventory.get(resourceType) || 0;
@@ -693,8 +672,6 @@ export class Worker extends Sprite {
     public isInventoryFull(): boolean {
         return this.getTotalInventory() >= this.config.carryCapacity;
     }
-
-    // #endregion
 
     private depositAllResources(): void {
         this.inventory.forEach((amount, resourceType) => {
@@ -746,7 +723,6 @@ export class Worker extends Sprite {
                     if (added > 0) {
                         this.removeFromInventory(resourceType, added);
                         deposited = true;
-                        console.log(`Deposited ${added} ${resourceType} to building ${building.getBuildingId()}`);
                     }
                 }
             });
@@ -800,7 +776,6 @@ export class Worker extends Sprite {
     // #region Gestion d'état
 
     private setWorkerState(newState: WorkerState): void {
-        //const oldState = this.state;
         this.state = newState;
 
         this.updateAnimation();
@@ -861,10 +836,6 @@ export class Worker extends Sprite {
         }
     }
 
-    // #endregion
-
-    // #region Blacklist
-
     private blacklistTarget(target: ResourceEntity | TiledBuilding): void {
         const key = this.getEntityKey(target);
         this.blacklistedTargets.add(key);
@@ -887,10 +858,6 @@ export class Worker extends Sprite {
         }
     }
 
-    // #endregion
-
-    // #region Utilitaire
-
     private clearTimers(): void {
         if (this.actionTimer) {
             this.actionTimer.destroy();
@@ -903,10 +870,6 @@ export class Worker extends Sprite {
         
         this.stopItemUpdateTimer();
     }
-
-    // #endregion
-
-    // #region Public - API d'assignation aux bâtiments
 
     public getConfig(): WorkerConfig {
         return this.config;
@@ -947,14 +910,11 @@ export class Worker extends Sprite {
         this.setWorkerState(WorkerState.IDLE);
     }
 
-    // NOUVELLES MÉTHODES: Intégration avec le système d'assignation global
     public getAssignedBuildingId(): string | null {
         return GlobalWorkerStorage.getBuildingForWorker(this.workerId);
     }
 
     public setAssignedBuilding(buildingId: string | null): void {
-        // Cette méthode n'est plus utilisée directement
-        // L'assignation se fait via GlobalWorkerStorage
         console.warn('setAssignedBuilding is deprecated, use GlobalWorkerStorage instead');
     }
 
@@ -963,24 +923,16 @@ export class Worker extends Sprite {
     }
 
     public convertToNeutral(): void {
-        console.log(`Converting worker from ${this.config.id} to NEUTRAL`);
         const neutralConfig = WorkerRegistry.getInstance().getWorkerConfig(WorkerType.NEUTRAL);
         if (neutralConfig) {
             this.config = neutralConfig;
         }
-        // Note: L'assignation est maintenant gérée par GlobalWorkerStorage
-        // this.assignedBuildingId = null; // Plus nécessaire
 
-        // Retirer la teinte si elle existe
         this.clearTint();
     }
 
     public convertToSpecializedWorker(newConfig: WorkerConfig, buildingId: string): void {
-        console.log(`Converting worker from ${this.config.id} to ${newConfig.id}`);
         this.config = newConfig;
-
-        // Note: L'assignation est maintenant gérée par GlobalWorkerStorage
-        // this.assignedBuildingId = buildingId; // Plus nécessaire
 
         if (newConfig.tint) {
             this.setTint(newConfig.tint);
@@ -1016,6 +968,4 @@ export class Worker extends Sprite {
     
         super.destroy();
     }
-
-    // #endregion
 }
