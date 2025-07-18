@@ -19,5 +19,8 @@ class DatabaseSeeder extends Seeder
             BlogPostSeeder::class,
             MessageImageSeeder::class,
         ]);
+
+        $this->call(ForumCategorySeeder::class);
+        $this->call(RoleSeeder::class);
     }
 }

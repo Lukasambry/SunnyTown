@@ -53,7 +53,7 @@ class FortifyServiceProvider extends ServiceProvider
             return Inertia::render('TwoFactorAuthentication/TwoFactorChallenge');
         });
 
-        Fortify::redirects('login', '/dashboard');
+        Fortify::redirects('login', 'home');
     }
 
 }

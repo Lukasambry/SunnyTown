@@ -17,7 +17,7 @@ Route::get('/landing', [LandingController::class, 'index'])->name('landing');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+});
 
 Route::prefix('forum')->name('forums.')->group(function(){
     Route::get('/', [ForumCategoryController::class, 'index'])->name('index');
