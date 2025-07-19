@@ -361,6 +361,7 @@ export class MainScene extends Scene {
         }*/
 
         this.buildingManager = new BuildingManager(this);
+        (window as any).__BUILDING_MANAGER__ = this.buildingManager;
 
         window.addEventListener('game:loadBuildings', (event: CustomEvent) => {
             const { buildings, source } = event.detail;

@@ -123,7 +123,6 @@ export class GameSaveService {
     private collectGameState(): GameState {
         console.log('📊 Collecte de l\'état du jeu...');
 
-        // Accès au gameStore via window.gameStore (votre store l'expose déjà)
         const gameStore = (window as any).gameStore;
 
         if (!gameStore) {
@@ -146,28 +145,79 @@ export class GameSaveService {
             avatar: gameStore.playerAvatar || 'default',
         };
 
-        // Collecter les ressources
+        // NOUVELLE MÉTHODE DE COLLECTE DES RESSOURCES
         const resources: Record<string, number> = {};
-        const resourceTypes = ['WOOD', 'STONE', 'FOOD', 'IRON', 'COAL', 'GOLD', 'METAL', 'TOOLS', 'ENERGY', 'PLANKS', 'POPULATION'];
 
-        resourceTypes.forEach(type => {
+        console.log('🔍 Collecte des ressources...');
+
+        // Méthode 1 : Via le ResourceManager directement
+        try {
+            const resourceManager = gameStore.getResourceManager?.();
+            if (resourceManager) {
+                console.log('✅ ResourceManager trouvé via gameStore');
+                const inventory = resourceManager.getGlobalInventory();
+                const allResources = inventory.getAllResources();
+
+                allResources.forEach((amount: number, type: string) => {
+                    if (amount > 0) {
+                        resources[type.toLowerCase()] = amount;
+                    }
+                });
+
+                console.log('📦 Ressources via ResourceManager:', resources);
+            }
+        } catch (error) {
+            console.warn('⚠️ Erreur ResourceManager:', error);
+        }
+
+        // Méthode 2 : Via gameStore.getResourceAmount (fallback)
+        if (Object.keys(resources).length === 0) {
+            console.log('🔄 Fallback vers getResourceAmount...');
+            const resourceTypes = ['WOOD', 'STONE', 'FOOD', 'IRON', 'COAL', 'GOLD', 'METAL', 'TOOLS', 'ENERGY', 'PLANKS', 'POPULATION'];
+
+            resourceTypes.forEach(type => {
+                try {
+                    const amount = gameStore.getResourceAmount?.(type) || 0;
+                    if (amount > 0) {
+                        resources[type.toLowerCase()] = amount;
+                    }
+                } catch (error) {
+                    console.warn(`Erreur ressource ${type}:`, error);
+                }
+            });
+
+            console.log('📦 Ressources via getResourceAmount:', resources);
+        }
+
+        // Méthode 3 : Via resourcesMap (dernier recours)
+        if (Object.keys(resources).length === 0) {
+            console.log('🔄 Dernier recours via resourcesMap...');
             try {
-                const amount = gameStore.getResourceAmount?.(type) || 0;
-                if (amount > 0) {
-                    resources[type.toLowerCase()] = amount;
+                if (gameStore.resourcesMap && typeof gameStore.resourcesMap.forEach === 'function') {
+                    gameStore.resourcesMap.forEach((amount: number, type: string) => {
+                        if (amount > 0) {
+                            resources[type.toLowerCase()] = amount;
+                        }
+                    });
+                    console.log('📦 Ressources via resourcesMap:', resources);
                 }
             } catch (error) {
-                console.warn(`Erreur ressource ${type}:`, error);
+                console.warn('⚠️ Erreur resourcesMap:', error);
             }
-        });
+        }
 
-        // Collecter les bâtiments depuis sessionStorage (comme dans votre BuildingManager)
+        // Collecter les bâtiments depuis sessionStorage (sera nettoyé plus tard)
         const buildings: any[] = [];
         try {
-            const storedBuildings = sessionStorage.getItem('BUILDINGS_STORAGE');
-            if (storedBuildings) {
-                const buildingsData = JSON.parse(storedBuildings);
-                buildings.push(...buildingsData);
+            // Récupérer les bâtiments via l'événement
+            const buildingManager = (window as any).__BUILDING_MANAGER__;
+            if (buildingManager && typeof buildingManager.getAllBuildings === 'function') {
+                const currentBuildings = buildingManager.getAllBuildings();
+                buildings.push(...currentBuildings);
+                console.log('📦 Bâtiments collectés depuis BuildingManager:', buildings.length);
+            } else {
+                // Fallback : écouter l'événement buildingsChanged
+                console.log('📦 Pas de BuildingManager disponible, bâtiments collectés via événements');
             }
         } catch (error) {
             console.warn('Erreur collecte bâtiments:', error);
@@ -204,6 +254,7 @@ export class GameSaveService {
         console.log('📊 État collecté:', {
             player: player.level,
             resources: Object.keys(resources).length,
+            resourcesDetail: resources,
             buildings: buildings.length,
             zones: unlockedZones.length,
         });
@@ -361,27 +412,6 @@ export class GameSaveService {
         this.isLoading = false;
     }
 
-    private async loadFromDatabase(): Promise<SaveResponse> {
-        if (!this.playerId) return { success: false, message: 'Pas d\'ID joueur' };
-
-        try {
-            const response = await fetch(`${this.baseUrl}/load?player_id=${this.playerId}&save_name=auto`);
-
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success && result.data) {
-                    this.applyGameState(this.convertDbToGameState(result.data.game_state));
-                    return result;
-                }
-            }
-
-            return { success: false, message: 'Aucune sauvegarde BDD' };
-        } catch (error) {
-            console.error('Erreur chargement BDD:', error);
-            return { success: false, message: 'Erreur réseau' };
-        }
-    }
-
     private loadFromLocalStorage(): GameState | null {
         try {
             const data = localStorage.getItem(this.SAVE_DATA_KEY);
@@ -509,12 +539,33 @@ export class GameSaveService {
         }));
     }
 
-    public resetGame(): void {
-        if (confirm('Êtes-vous sûr de vouloir recommencer ? Toutes les données seront perdues.')) {
-            localStorage.removeItem(this.SAVE_DATA_KEY);
-            sessionStorage.clear();
-            this.applyGameState(this.getDefaultGameState());
-            this.notifyUI('success', 'Nouveau jeu commencé');
+    public async resetGame(): Promise<void> {
+        const confirmed = confirm(
+            'Êtes-vous sûr de vouloir commencer une nouvelle partie ?\n\n' +
+            'Cette action va :\n' +
+            '• Supprimer TOUTES vos sauvegardes locales\n' +
+            '• Supprimer TOUTES vos sauvegardes serveur\n' +
+            '• Redémarrer le jeu à zéro\n\n' +
+            'Cette action est IRRÉVERSIBLE !'
+        );
+
+        if (!confirmed) {
+            console.log('🚫 Nouvelle partie annulée par l\'utilisateur');
+            return;
+        }
+
+        try {
+            await this.startNewGame();
+
+            // Recharger la page après un court délai
+            setTimeout(() => {
+                console.log('🔄 Rechargement de la page...');
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            console.error('❌ Erreur lors du reset:', error);
+            this.notifyUI('error', 'Erreur lors de la réinitialisation');
         }
     }
 
@@ -547,6 +598,226 @@ export class GameSaveService {
         }
         return [];
     }
+
+    public async startNewGame(): Promise<void> {
+        console.log('🆕 Démarrage d\'une nouvelle partie...');
+
+        try {
+            // 1. Nettoyage complet AVANT tout
+            this.clearAllData();
+
+            // 2. Purger BDD
+            await this.clearAllDatabaseSaves();
+
+            // 3. Attendre un peu pour que les événements se propagent
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 4. Appliquer l'état par défaut
+            const defaultState = this.getDefaultGameState();
+            this.applyGameState(defaultState);
+
+            // 5. Sauvegarder l'état initial
+            await this.save('auto');
+
+            this.notifyUI('success', 'Nouvelle partie créée !');
+
+            // 6. Recharger la page
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            console.error('❌ Erreur nouvelle partie:', error);
+            this.notifyUI('error', 'Erreur lors de la création');
+        }
+    }
+    private clearAllLocalStorage(): void {
+        console.log('🧹 Nettoyage complet du localStorage...');
+
+        const keysToRemove = [
+            this.SAVE_DATA_KEY,
+            'sunnytown_savegame',
+            'sunnytown_resources',
+            'sunnytown_game_data',
+            'sunnytown_player_data',
+            'sunnytown_buildings'
+        ];
+
+        keysToRemove.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+                console.log(`🗑️ Supprimé: ${key}`);
+            } catch (error) {
+                console.warn(`⚠️ Erreur suppression ${key}:`, error);
+            }
+        });
+
+        // Nettoyer aussi sessionStorage
+        try {
+            sessionStorage.clear();
+            console.log('🗑️ SessionStorage nettoyé');
+        } catch (error) {
+            console.warn('⚠️ Erreur nettoyage sessionStorage:', error);
+        }
+    }
+
+    /**
+     * Nettoyer COMPLÈTEMENT tout pour une nouvelle partie
+     */
+    private clearAllData(): void {
+        console.log('🧹 Nettoyage COMPLET...');
+
+        // 1. Nettoyer localStorage
+        const keysToRemove = [
+            this.SAVE_DATA_KEY,
+            'sunnytown_savegame',
+            'sunnytown_resources',
+            'sunnytown_game_data',
+            'sunnytown_player_data',
+            'sunnytown_buildings'
+        ];
+
+        keysToRemove.forEach(key => {
+            localStorage.removeItem(key);
+        });
+
+        // 2. Nettoyer sessionStorage
+        sessionStorage.clear();
+
+        // 3. Forcer le nettoyage des bâtiments via événement
+        window.dispatchEvent(new CustomEvent('game:clearAllBuildings'));
+
+        // 4. Forcer le reset du gameStore
+        window.dispatchEvent(new CustomEvent('game:forceReset'));
+    }
+
+    private async clearAllDatabaseSaves(): Promise<void> {
+        if (!this.playerId) {
+            console.log('⚠️ Pas d\'ID joueur, skip suppression BDD');
+            return;
+        }
+
+        try {
+            console.log('🗑️ Suppression des sauvegardes BDD...');
+
+            // Récupérer toutes les sauvegardes
+            const saves = await this.listSaves();
+
+            if (saves.length === 0) {
+                console.log('ℹ️ Aucune sauvegarde BDD à supprimer');
+                return;
+            }
+
+            // Supprimer chaque sauvegarde
+            const deletePromises = saves.map(save =>
+                fetch(`${this.baseUrl}/delete`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': this.getCsrfToken(),
+                    },
+                    body: JSON.stringify({
+                        player_id: this.playerId,
+                        save_name: save.save_name,
+                    }),
+                })
+            );
+
+            await Promise.all(deletePromises);
+            console.log(`✅ ${saves.length} sauvegardes BDD supprimées`);
+
+        } catch (error) {
+            console.error('❌ Erreur suppression sauvegardes BDD:', error);
+            // Ne pas bloquer la nouvelle partie si la BDD est inaccessible
+        }
+    }
+
+    public async loadSaveWithReload(saveName: string): Promise<void> {
+        try {
+            console.log(`📥 Chargement de la sauvegarde "${saveName}" avec rechargement...`);
+
+            // 1. Charger la sauvegarde depuis la BDD
+            const result = await this.loadFromDatabase(saveName);
+
+            if (!result.success) {
+                this.notifyUI('error', `Impossible de charger la sauvegarde "${saveName}"`);
+                return;
+            }
+
+            // 2. Nettoyer le localStorage actuel (sauf player_id)
+            this.clearGameDataLocalStorage();
+
+            // 3. La sauvegarde est déjà appliquée par loadFromDatabase
+            this.notifyUI('success', 'Sauvegarde chargée, rechargement...');
+
+            // 4. Recharger la page après un court délai
+            setTimeout(() => {
+                console.log('🔄 Rechargement de la page pour appliquer la sauvegarde...');
+                window.location.reload();
+            }, 1000);
+
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement avec rechargement:', error);
+            this.notifyUI('error', 'Erreur lors du chargement de la sauvegarde');
+        }
+    }
+
+    private async loadFromDatabase(saveName: string = 'auto'): Promise<{ success: boolean, data?: any }> {
+        if (!this.playerId) {
+            return { success: false };
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/load?player_id=${this.playerId}&save_name=${saveName}`);
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data) {
+                    // Convertir et appliquer l'état
+                    const gameState = this.convertDbToGameState(result.data.game_state);
+                    this.applyGameState(gameState);
+
+                    console.log('✅ Sauvegarde BDD chargée et appliquée');
+                    return { success: true, data: result.data };
+                }
+            }
+
+            return { success: false };
+        } catch (error) {
+            console.error('Erreur chargement BDD:', error);
+            return { success: false };
+        }
+    }
+
+    private clearGameDataLocalStorage(): void {
+        console.log('🧹 Nettoyage localStorage (conservation player_id)...');
+
+        const keysToRemove = [
+            this.SAVE_DATA_KEY,
+            'sunnytown_savegame',
+            'sunnytown_resources',
+            'sunnytown_game_data',
+            'sunnytown_player_data',
+            'sunnytown_buildings'
+        ];
+
+        keysToRemove.forEach(key => {
+            try {
+                localStorage.removeItem(key);
+            } catch (error) {
+                console.warn(`Erreur suppression ${key}:`, error);
+            }
+        });
+
+        // Nettoyer sessionStorage
+        try {
+            sessionStorage.clear();
+        } catch (error) {
+            console.warn('Erreur nettoyage sessionStorage:', error);
+        }
+    }
+
+
 }
 
 // Instance globale

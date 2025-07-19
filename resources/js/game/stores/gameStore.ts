@@ -476,6 +476,32 @@ export const useGameStore = defineStore('game', () => {
                 });
             }
 
+            window.addEventListener('game:clearAllBuildings', () => {
+                console.log('🏠 Nettoyage forcé des bâtiments');
+                clearBuildings();
+                // Nettoyer aussi via le building manager si disponible
+                const buildingManager = (window as any).__BUILDING_MANAGER__;
+                if (buildingManager) {
+                    buildingManager.clearAll();
+                }
+            });
+
+            window.addEventListener('game:forceReset', () => {
+                console.log('🔄 Reset forcé du gameStore');
+                // Reset toutes les données
+                updatePlayerLevel(1);
+                updatePlayerGold(0);
+                updatePlayerExperience({ current: 0, nextLevel: 100 });
+                updatePlayerHealth({ current: 100, max: 100 });
+                updatePlayerAvatar('default');
+
+                // Vider les ressources
+                resourcesMap.value.clear();
+                resourceUpdateTrigger.value++;
+
+                state.value.unlockedZones = [];
+            });
+
             console.log('✅ État du jeu appliqué depuis système unifié');
         });
     };
@@ -499,10 +525,6 @@ export const useGameStore = defineStore('game', () => {
             console.error('Erreur chargement:', error);
             return false;
         }
-    };
-
-    const resetGameState = (): void => {
-        gameSaveService.resetGame();
     };
 
     const setAutoSave = (enabled: boolean): void => {
@@ -531,6 +553,13 @@ export const useGameStore = defineStore('game', () => {
             updateResource,
             addResource,
             removeResource,
+
+            getResourceManager: () => {
+                if (!initializeManagers() || !resourceManager) {
+                    return null;
+                }
+                return resourceManager;
+            },
 
             getResourceAmount: (type: ResourceType): number => {
                 try {
@@ -606,7 +635,6 @@ export const useGameStore = defineStore('game', () => {
         // Save system (unified)
         saveProgress,
         loadProgress,
-        resetGameState,
         setAutoSave,
         getPlayerId,
         setupGameSaveEvents,
@@ -627,23 +655,60 @@ export const useGameStore = defineStore('game', () => {
                 URL.revokeObjectURL(url);
             }
         },
+        resetGameState: (): void => {
+            gameSaveService.resetGame();
+        },
 
+        // Nouvelle méthode pour nouvelle partie rapide (sans confirmation)
+        startNewGame: async (): Promise<void> => {
+            try {
+                await gameSaveService.startNewGame();
+            } catch (error) {
+                console.error('Erreur nouvelle partie:', error);
+            }
+        },
+
+        // Méthode import modifiée pour recharger la page
         importSave: () => {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json';
-            input.onchange = (e) => {
+            input.onchange = async (e) => {
                 const file = (e.target as HTMLInputElement).files?.[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
+                    reader.onload = async (e) => {
                         try {
                             const gameState = JSON.parse(e.target?.result as string);
-                            window.dispatchEvent(new CustomEvent('game:loadGameState', {
-                                detail: { gameState }
+
+                            // 1. Nettoyer AVANT d'importer
+                            localStorage.clear();
+                            sessionStorage.clear();
+
+                            // 2. Appliquer l'état immédiatement
+                            localStorage.setItem('sunnytown_save_data', JSON.stringify(gameState));
+
+                            // 3. Notifier et recharger IMMÉDIATEMENT
+                            window.dispatchEvent(new CustomEvent('game:notification', {
+                                detail: {
+                                    type: 'success',
+                                    message: 'Import réussi, rechargement...'
+                                }
                             }));
+
+                            // Rechargement plus rapide
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 300);
+
                         } catch (error) {
                             console.error('Erreur import:', error);
+                            window.dispatchEvent(new CustomEvent('game:notification', {
+                                detail: {
+                                    type: 'error',
+                                    message: 'Fichier de sauvegarde invalide'
+                                }
+                            }));
                         }
                     };
                     reader.readAsText(file);

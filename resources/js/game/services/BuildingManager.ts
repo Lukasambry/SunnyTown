@@ -97,6 +97,7 @@ export class BuildingManager {
             return currentDist < closestDist ? current : closest;
         });
     }
+    // Dans BuildingManager.ts, remplacez ces méthodes :
 
     private saveState(): void {
         try {
@@ -109,62 +110,72 @@ export class BuildingManager {
                 };
             });
 
-            // Stocker temporairement dans sessionStorage pour la cohérence
-            sessionStorage.setItem('BUILDINGS_STORAGE', JSON.stringify(state));
+            console.log('[BuildingManager] Bâtiments modifiés:', state);
 
-            console.log('[BuildingManager] Bâtiments sauvegardés:', state);
-
-            // Émettre l'événement pour notifier le système unifié
+            // SEULEMENT émettre l'événement, ne plus utiliser sessionStorage
             window.dispatchEvent(new CustomEvent('game:buildingsChanged', {
                 detail: { buildings: state }
             }));
+
+            // Déclencher une sauvegarde unifiée
+            window.dispatchEvent(new CustomEvent('game:requestSave', {
+                detail: { source: 'buildings', saveName: 'auto' }
+            }));
         } catch (error) {
-            console.error('Erreur lors de la sauvegarde des bâtiments:', error);
+            console.error('Erreur lors de la notification des changements de bâtiments:', error);
         }
     }
 
-
-
     public loadState(): void {
+        // Cette méthode ne fait plus rien car le chargement se fait via game:loadBuildings
+        console.log('🏠 BuildingManager.loadState() - Chargement géré par le système unifié');
+    }
+
+    public loadFromData(buildingsData: Array<{type: string, x: number, y: number}>): void {
         try {
-            console.log('🏠 Chargement bâtiments depuis sessionStorage...');
+            console.log(`🏠 Chargement de ${buildingsData.length} bâtiments depuis données externes`);
 
-            // Lire depuis sessionStorage (utilisé par le système unifié)
-            const storedData = sessionStorage.getItem('BUILDINGS_STORAGE');
-            let buildings: StoredBuilding[] = [];
-
-            if (storedData) {
-                try {
-                    buildings = JSON.parse(storedData);
-                    console.log(`✅ ${buildings.length} bâtiments trouvés dans sessionStorage`);
-                } catch (error) {
-                    console.warn('Erreur lecture sessionStorage bâtiments:', error);
-                }
-            }
-
-            // Valider et placer les bâtiments
-            const validBuildings = buildings.filter(data =>
-                typeof data.type === 'string' &&
-                typeof data.x === 'number' &&
-                typeof data.y === 'number' &&
-                !isNaN(data.x) &&
-                !isNaN(data.y)
-            );
-
-            // Nettoyer les anciens bâtiments avant de placer les nouveaux
+            // Nettoyer les anciens bâtiments
             this.buildings.forEach(building => building.destroy());
             this.buildings = [];
 
-            validBuildings.forEach(data => {
-                // Appeler directement la logique de placement sans sauvegarder à nouveau
-                this.placeInternal(data.type, data.x, data.y);
+            // Placer les nouveaux bâtiments SANS déclencher de sauvegarde
+            buildingsData.forEach(data => {
+                if (data.type && typeof data.x === 'number' && typeof data.y === 'number') {
+                    this.placeInternal(data.type, data.x, data.y);
+                }
             });
 
-            console.log(`✅ ${validBuildings.length} bâtiments chargés`);
+            this.rebuildPathfindingGrid();
 
+            console.log(`✅ ${buildingsData.length} bâtiments chargés sans sauvegarde`);
         } catch (error) {
-            console.error('❌ Erreur chargement bâtiments:', error);
+            console.error('Erreur lors du chargement des bâtiments:', error);
         }
+    }
+    public clearAll(): void {
+        const buildingsToDestroy = [...this.buildings];
+
+        buildingsToDestroy.forEach(building => {
+            try {
+                building.destroy();
+            } catch (error) {
+                console.error('Erreur lors de la destruction du bâtiment:', error);
+            }
+        });
+
+        this.buildings.length = 0;
+
+        // NE PLUS utiliser sessionStorage
+        console.log('[BuildingManager] Tous les bâtiments supprimés');
+
+        this.rebuildPathfindingGrid();
+        this.emit('allBuildingsCleared');
+
+        // Notifier le système unifié
+        window.dispatchEvent(new CustomEvent('game:buildingsChanged', {
+            detail: { buildings: [] }
+        }));
     }
 
     // AJOUTER cette nouvelle méthode pour le placement sans sauvegarde
@@ -184,22 +195,22 @@ export class BuildingManager {
         return building;
     }
 
-    public loadFromData(buildingsData: Array<{type: string, x: number, y: number}>): void {
-        try {
-            this.buildings.forEach(building => building.destroy());
-            this.buildings = [];
-
-            buildingsData.forEach(data => {
-                if (data.type && typeof data.x === 'number' && typeof data.y === 'number') {
-                    this.placeBuilding(data.type, data.x, data.y);
-                }
-            });
-
-            console.log(`Chargés ${buildingsData.length} b��timents depuis les données externes`);
-        } catch (error) {
-            console.error('Erreur lors du chargement des bâtiments:', error);
-        }
-    }
+    // public loadFromData(buildingsData: Array<{type: string, x: number, y: number}>): void {
+    //     try {
+    //         this.buildings.forEach(building => building.destroy());
+    //         this.buildings = [];
+    //
+    //         buildingsData.forEach(data => {
+    //             if (data.type && typeof data.x === 'number' && typeof data.y === 'number') {
+    //                 this.placeBuilding(data.type, data.x, data.y);
+    //             }
+    //         });
+    //
+    //         console.log(`Chargés ${buildingsData.length} b��timents depuis les données externes`);
+    //     } catch (error) {
+    //         console.error('Erreur lors du chargement des bâtiments:', error);
+    //     }
+    // }
 
     public updateBuildings(player: Phaser.Physics.Arcade.Sprite): void {
         this.buildings.forEach(building => {
@@ -226,29 +237,6 @@ export class BuildingManager {
         });
     }
 
-    public clearAll(): void {
-        const buildingsToDestroy = [...this.buildings];
-
-        buildingsToDestroy.forEach(building => {
-            try {
-                building.destroy();
-            } catch (error) {
-                console.error('Erreur lors de la destruction du bâtiment:', error);
-            }
-        });
-
-        this.buildings.length = 0;
-
-        try {
-            // Nettoyer sessionStorage utilisé par le système unifié
-            sessionStorage.removeItem('BUILDINGS_STORAGE');
-        } catch (error) {
-            console.error('Erreur lors du nettoyage du storage:', error);
-        }
-
-        this.rebuildPathfindingGrid();
-        this.emit('allBuildingsCleared');
-    }
 
     private rebuildPathfindingGrid(): void {
         try {

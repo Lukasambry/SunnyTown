@@ -211,6 +211,7 @@ const exportSave = () => {
 
 const importSave = () => {
     try {
+        // Utiliser la méthode gameStore qui gère le rechargement
         gameStore.importSave();
         showStatus('info', 'Import en cours...');
     } catch (error) {
@@ -219,17 +220,19 @@ const importSave = () => {
     }
 };
 
-const resetGame = () => {
+
+const resetGame = async () => {
     try {
-        gameSaveService.resetGame();
-        showStatus('success', 'Nouveau jeu commencé');
+        // Utiliser la nouvelle méthode resetGame qui inclut la confirmation
+        await gameSaveService.resetGame();
+
+        showStatus('success', 'Nouvelle partie commencée');
         serverSaves.value = [];
     } catch (error) {
         showStatus('error', 'Erreur reset');
         console.error('Erreur reset:', error);
     }
 };
-
 const refreshSaves = async () => {
     isLoadingSaves.value = true;
     try {
@@ -248,25 +251,8 @@ const loadSave = async (saveName: string) => {
     try {
         showStatus('info', `Chargement de ${saveName}...`);
 
-        // Utiliser l'API directement pour charger une sauvegarde spécifique
-        const response = await fetch(`/api/game-save/load?player_id=${playerId.value}&save_name=${saveName}`);
-        const result = await response.json();
+        await gameSaveService.loadSaveWithReload(saveName);
 
-        if (result.success && result.data) {
-            // Émettre l'événement pour appliquer les données
-            window.dispatchEvent(new CustomEvent('game:loadGameState', {
-                detail: {
-                    gameState: gameSaveService.convertDbToGameState(result.data.game_state)
-                }
-            }));
-
-            showStatus('success', 'Sauvegarde chargée !');
-            setTimeout(() => {
-                window.location.reload(); // Recharger pour appliquer complètement
-            }, 1000);
-        } else {
-            showStatus('error', 'Erreur chargement');
-        }
     } catch (error) {
         showStatus('error', 'Erreur chargement');
         console.error('Erreur chargement save:', error);
