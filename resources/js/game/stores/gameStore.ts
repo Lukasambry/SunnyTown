@@ -283,7 +283,7 @@ export const useGameStore = defineStore('game', () => {
             if (initializeManagers()) {
                 initializeResourceSync();
 
-                // Initialiser le système de sauvegarde unifié
+                // Initialiser le système de sauvegarde
                 setTimeout(() => {
                     gameSaveService.initializeGame();
                     setupGameSaveEvents();
@@ -435,9 +435,8 @@ export const useGameStore = defineStore('game', () => {
     const setupGameSaveEvents = (): void => {
         window.addEventListener('game:loadGameState', (event: CustomEvent) => {
             const { gameState } = event.detail;
-            console.log('📥 Chargement état depuis système unifié:', gameState);
+            console.log('📥 Chargement état :', gameState);
 
-            // Appliquer les données du joueur
             if (gameState.player) {
                 updatePlayerLevel(gameState.player.level);
                 updatePlayerGold(gameState.player.gold);
@@ -446,7 +445,6 @@ export const useGameStore = defineStore('game', () => {
                 updatePlayerAvatar(gameState.player.avatar || 'default');
             }
 
-            // Appliquer les ressources
             if (gameState.resources) {
                 Object.entries(gameState.resources).forEach(([type, amount]) => {
                     updateResource(type.toUpperCase() as ResourceType, amount as number);
@@ -454,7 +452,6 @@ export const useGameStore = defineStore('game', () => {
                 forceResourceUpdate();
             }
 
-            // Appliquer les bâtiments
             if (gameState.buildings && gameState.buildings.length > 0) {
                 clearBuildings();
                 setTimeout(() => {
@@ -464,7 +461,6 @@ export const useGameStore = defineStore('game', () => {
                 }, 100);
             }
 
-            // Appliquer les zones débloquées
             if (gameState.unlockedZones && gameState.unlockedZones.length > 0) {
                 state.value.unlockedZones = [...gameState.unlockedZones];
                 gameState.unlockedZones.forEach((zoneName: string) => {
@@ -479,7 +475,6 @@ export const useGameStore = defineStore('game', () => {
             window.addEventListener('game:clearAllBuildings', () => {
                 console.log('🏠 Nettoyage forcé des bâtiments');
                 clearBuildings();
-                // Nettoyer aussi via le building manager si disponible
                 const buildingManager = (window as any).__BUILDING_MANAGER__;
                 if (buildingManager) {
                     buildingManager.clearAll();
@@ -506,7 +501,6 @@ export const useGameStore = defineStore('game', () => {
         });
     };
 
-    // Save/Load methods (unified)
     const saveProgress = async (saveName: string = 'manual'): Promise<boolean> => {
         try {
             const result = await gameSaveService.save(saveName);
@@ -632,89 +626,23 @@ export const useGameStore = defineStore('game', () => {
         addWorker,
         removeWorker,
 
-        // Save system (unified)
+        // Save system
         saveProgress,
         loadProgress,
         setAutoSave,
         getPlayerId,
         setupGameSaveEvents,
-
-        // UI methods
         manualSave: () => gameSaveService.manualSave(),
         resetGame: () => gameSaveService.resetGame(),
-
-        exportSave: () => {
-            const gameState = gameSaveService.getCurrentGameState();
-            if (gameState) {
-                const blob = new Blob([JSON.stringify(gameState, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `sunnytown-save-${Date.now()}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-            }
-        },
         resetGameState: (): void => {
             gameSaveService.resetGame();
         },
-
-        // Nouvelle méthode pour nouvelle partie rapide (sans confirmation)
         startNewGame: async (): Promise<void> => {
             try {
                 await gameSaveService.startNewGame();
             } catch (error) {
                 console.error('Erreur nouvelle partie:', error);
             }
-        },
-
-        // Méthode import modifiée pour recharger la page
-        importSave: () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = async (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        try {
-                            const gameState = JSON.parse(e.target?.result as string);
-
-                            // 1. Nettoyer AVANT d'importer
-                            localStorage.clear();
-                            sessionStorage.clear();
-
-                            // 2. Appliquer l'état immédiatement
-                            localStorage.setItem('sunnytown_save_data', JSON.stringify(gameState));
-
-                            // 3. Notifier et recharger IMMÉDIATEMENT
-                            window.dispatchEvent(new CustomEvent('game:notification', {
-                                detail: {
-                                    type: 'success',
-                                    message: 'Import réussi, rechargement...'
-                                }
-                            }));
-
-                            // Rechargement plus rapide
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 300);
-
-                        } catch (error) {
-                            console.error('Erreur import:', error);
-                            window.dispatchEvent(new CustomEvent('game:notification', {
-                                detail: {
-                                    type: 'error',
-                                    message: 'Fichier de sauvegarde invalide'
-                                }
-                            }));
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
         },
     };
 });

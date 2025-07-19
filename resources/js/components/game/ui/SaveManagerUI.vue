@@ -5,7 +5,6 @@
                 @click.self="onClose">
                 <div class="modal-content relative w-full max-w-2xl mx-auto" @click.stop>
                     <div class="bg-gray-900/95 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-2xl">
-                        <!-- Header -->
                         <div class="flex items-center justify-between p-6 border-b border-gray-700/50">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-lg bg-green-600/20 flex items-center justify-center">
@@ -29,9 +28,7 @@
                                 ✕
                             </button>
                         </div>
-                        <!-- Body -->
                         <div class="p-6 space-y-6">
-                            <!-- Informations -->
                             <div class="space-y-3">
                                 <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
                                     Informations
@@ -55,7 +52,6 @@
                                     </div>
                                 </div>
                             </div>
-                            <!-- Actions principales -->
                             <div class="space-y-3">
                                 <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
                                     Actions
@@ -64,18 +60,11 @@
                                     <button @click="manualSave" class="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition" :disabled="isSaving">
                                         💾 {{ isSaving ? 'Sauvegarde...' : 'Sauvegarder' }}
                                     </button>
-                                    <button @click="exportSave" class="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
-                                        📤 Exporter
-                                    </button>
-                                    <button @click="importSave" class="px-4 py-2 rounded bg-purple-600 text-white font-semibold hover:bg-purple-700 transition">
-                                        📥 Importer
-                                    </button>
                                     <button @click="resetGame" class="px-4 py-2 rounded bg-red-600 text-white font-semibold hover:bg-red-700 transition">
                                         🔄 Nouveau jeu
                                     </button>
                                 </div>
                             </div>
-                            <!-- Sauvegardes BDD -->
                             <div class="space-y-3">
                                 <h3 class="text-sm font-semibold text-blue-300 uppercase tracking-wide">
                                     Sauvegardes serveur
@@ -102,7 +91,6 @@
                                     Aucune sauvegarde serveur
                                 </div>
                             </div>
-                            <!-- Paramètres -->
                             <div class="space-y-3">
                                 <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
                                     Paramètres
@@ -119,7 +107,6 @@
                                     </label>
                                 </div>
                             </div>
-                            <!-- Status -->
                             <div class="mt-4">
                                 <div class="rounded px-4 py-2 text-center font-semibold"
                                     :class="{
@@ -160,15 +147,12 @@ const saveStatus = ref({
     message: 'Prêt'
 });
 
-// Store
 const gameStore = useGameStore();
 
-// Computed
 const playerId = computed(() => gameSaveService.getPlayerId());
 const playerLevel = computed(() => gameStore.getPlayerLevel);
 const totalResources = computed(() => gameStore.totalResources);
 
-// Methods
 const showStatus = (type: string, message: string) => {
     saveStatus.value = { type, message };
     setTimeout(() => {
@@ -199,26 +183,6 @@ const manualSave = async () => {
     }
 };
 
-const exportSave = () => {
-    try {
-        gameStore.exportSave();
-        showStatus('success', 'Export réussi');
-    } catch (error) {
-        showStatus('error', 'Erreur export');
-        console.error('Erreur export:', error);
-    }
-};
-
-const importSave = () => {
-    try {
-        // Utiliser la méthode gameStore qui gère le rechargement
-        gameStore.importSave();
-        showStatus('info', 'Import en cours...');
-    } catch (error) {
-        showStatus('error', 'Erreur import');
-        console.error('Erreur import:', error);
-    }
-};
 
 
 const resetGame = async () => {
@@ -274,7 +238,6 @@ const formatDate = (dateString: string | null) => {
     });
 };
 
-// Event listeners
 const handleGameSaved = () => {
     updateLastSaveTime();
     showStatus('success', 'Sauvegarde automatique');
@@ -312,7 +275,6 @@ onUnmounted(() => {
     backdrop-filter: blur(8px);
 }
 
-/* Modal transitions */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
     transition: all 0.3s ease;

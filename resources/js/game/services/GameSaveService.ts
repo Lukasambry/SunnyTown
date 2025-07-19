@@ -1,5 +1,3 @@
-// resources/js/services/GameSaveService.ts
-
 interface GameState {
     player: {
         level: number;
@@ -50,7 +48,6 @@ export class GameSaveService {
     private autoSaveEnabled: boolean = true;
     private isLoading: boolean = false;
 
-    // Clés localStorage
     private readonly PLAYER_ID_KEY = 'sunnytown_player_id';
     private readonly SAVE_DATA_KEY = 'sunnytown_save_data';
 
@@ -66,10 +63,6 @@ export class GameSaveService {
         }
         return GameSaveService.instance;
     }
-
-    // ===========================================
-    // INITIALISATION
-    // ===========================================
 
     private initializePlayerId(): void {
         this.playerId = localStorage.getItem(this.PLAYER_ID_KEY);
@@ -116,10 +109,6 @@ export class GameSaveService {
         return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     }
 
-    // ===========================================
-    // COLLECTE DE DONNÉES
-    // ===========================================
-
     private collectGameState(): GameState {
         console.log('📊 Collecte de l\'état du jeu...');
 
@@ -130,7 +119,6 @@ export class GameSaveService {
             return this.getDefaultGameState();
         }
 
-        // Collecter les données du joueur
         const player = {
             level: gameStore.playerLevel || 1,
             gold: gameStore.playerGold || 0,
@@ -145,7 +133,6 @@ export class GameSaveService {
             avatar: gameStore.playerAvatar || 'default',
         };
 
-        // NOUVELLE MÉTHODE DE COLLECTE DES RESSOURCES
         const resources: Record<string, number> = {};
 
         console.log('🔍 Collecte des ressources...');
@@ -206,24 +193,20 @@ export class GameSaveService {
             }
         }
 
-        // Collecter les bâtiments depuis sessionStorage (sera nettoyé plus tard)
         const buildings: any[] = [];
         try {
-            // Récupérer les bâtiments via l'événement
             const buildingManager = (window as any).__BUILDING_MANAGER__;
             if (buildingManager && typeof buildingManager.getAllBuildings === 'function') {
                 const currentBuildings = buildingManager.getAllBuildings();
                 buildings.push(...currentBuildings);
                 console.log('📦 Bâtiments collectés depuis BuildingManager:', buildings.length);
             } else {
-                // Fallback : écouter l'événement buildingsChanged
                 console.log('📦 Pas de BuildingManager disponible, bâtiments collectés via événements');
             }
         } catch (error) {
             console.warn('Erreur collecte bâtiments:', error);
         }
 
-        // Collecter les zones débloquées (via votre gameStore)
         const unlockedZones: string[] = [];
         try {
             if (gameStore.state?.unlockedZones) {
@@ -233,7 +216,6 @@ export class GameSaveService {
             console.warn('Erreur collecte zones:', error);
         }
 
-        // Paramètres du jeu
         const gameSettings = {
             musicEnabled: true,
             soundEnabled: true,
@@ -285,10 +267,6 @@ export class GameSaveService {
         };
     }
 
-    // ===========================================
-    // SAUVEGARDE
-    // ===========================================
-
     public async save(saveName: string = 'auto'): Promise<SaveResponse> {
         if (!this.playerId) {
             await this.generatePlayerId();
@@ -299,7 +277,7 @@ export class GameSaveService {
         try {
             const gameState = this.collectGameState();
 
-            // 1. Sauvegarder dans localStorage (toujours)
+            // 1. Sauvegarder dans localStorage
             this.saveToLocalStorage(gameState);
 
             // 2. Sauvegarder en BDD
@@ -373,10 +351,6 @@ export class GameSaveService {
         }
     }
 
-    // ===========================================
-    // CHARGEMENT
-    // ===========================================
-
     public async initializeGame(): Promise<void> {
         if (this.isLoading) return;
         this.isLoading = true;
@@ -384,7 +358,7 @@ export class GameSaveService {
         console.log('🎮 Initialisation du jeu...');
 
         try {
-            // 1. Essayer de charger depuis la BDD
+            // 1. Charger depuis la BDD
             const dbResult = await this.loadFromDatabase();
 
             if (dbResult.success) {
@@ -425,7 +399,6 @@ export class GameSaveService {
     }
 
     convertDbToGameState(dbData: any): GameState {
-        // Convertir le format BDD vers le format unifié
         return {
             player: {
                 level: dbData.player?.level || 1,
@@ -457,10 +430,8 @@ export class GameSaveService {
     private applyGameState(gameState: GameState): void {
         console.log('🔄 Application de l\'état du jeu...');
 
-        // Sauvegarder dans localStorage pour la cohérence
         this.saveToLocalStorage(gameState);
 
-        // Émettre un événement pour que le jeu applique les données
         window.dispatchEvent(new CustomEvent('game:loadGameState', {
             detail: { gameState }
         }));
@@ -472,10 +443,6 @@ export class GameSaveService {
             buildings: gameState.buildings.length,
         });
     }
-
-    // ===========================================
-    // SAUVEGARDE AUTOMATIQUE
-    // ===========================================
 
     private setupAutoSave(): void {
         if (this.autoSaveInterval) {
@@ -490,7 +457,6 @@ export class GameSaveService {
             }
         }, 30000); // 30 secondes
 
-        // Sauvegarder avant fermeture
         window.addEventListener('beforeunload', () => {
             if (this.autoSaveEnabled) {
                 try {
@@ -516,18 +482,12 @@ export class GameSaveService {
         console.log(`🔄 Sauvegarde automatique: ${enabled ? 'ON' : 'OFF'}`);
     }
 
-    // ===========================================
-    // UTILITAIRES
-    // ===========================================
-
     private setupEventListeners(): void {
-        // Écouter les demandes de sauvegarde manuelle
         window.addEventListener('game:requestSave', (event: CustomEvent) => {
             const saveName = event.detail?.saveName || 'manual';
             this.save(saveName);
         });
 
-        // Écouter les demandes de reset
         window.addEventListener('game:requestReset', () => {
             this.resetGame();
         });
@@ -557,7 +517,6 @@ export class GameSaveService {
         try {
             await this.startNewGame();
 
-            // Recharger la page après un court délai
             setTimeout(() => {
                 console.log('🔄 Rechargement de la page...');
                 window.location.reload();
@@ -569,9 +528,6 @@ export class GameSaveService {
         }
     }
 
-    // ===========================================
-    // API PUBLIQUE
-    // ===========================================
 
     public getPlayerId(): string | null {
         return this.playerId;
@@ -603,25 +559,21 @@ export class GameSaveService {
         console.log('🆕 Démarrage d\'une nouvelle partie...');
 
         try {
-            // 1. Nettoyage complet AVANT tout
             this.clearAllData();
 
-            // 2. Purger BDD
             await this.clearAllDatabaseSaves();
 
-            // 3. Attendre un peu pour que les événements se propagent
+            // Attendre pour s'assurer que les données sont bien nettoyées
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // 4. Appliquer l'état par défaut
             const defaultState = this.getDefaultGameState();
+
             this.applyGameState(defaultState);
 
-            // 5. Sauvegarder l'état initial
             await this.save('auto');
 
             this.notifyUI('success', 'Nouvelle partie créée !');
 
-            // 6. Recharger la page
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
@@ -652,7 +604,6 @@ export class GameSaveService {
             }
         });
 
-        // Nettoyer aussi sessionStorage
         try {
             sessionStorage.clear();
             console.log('🗑️ SessionStorage nettoyé');
@@ -661,13 +612,9 @@ export class GameSaveService {
         }
     }
 
-    /**
-     * Nettoyer COMPLÈTEMENT tout pour une nouvelle partie
-     */
     private clearAllData(): void {
         console.log('🧹 Nettoyage COMPLET...');
 
-        // 1. Nettoyer localStorage
         const keysToRemove = [
             this.SAVE_DATA_KEY,
             'sunnytown_savegame',
@@ -681,13 +628,10 @@ export class GameSaveService {
             localStorage.removeItem(key);
         });
 
-        // 2. Nettoyer sessionStorage
         sessionStorage.clear();
 
-        // 3. Forcer le nettoyage des bâtiments via événement
         window.dispatchEvent(new CustomEvent('game:clearAllBuildings'));
 
-        // 4. Forcer le reset du gameStore
         window.dispatchEvent(new CustomEvent('game:forceReset'));
     }
 
@@ -700,7 +644,6 @@ export class GameSaveService {
         try {
             console.log('🗑️ Suppression des sauvegardes BDD...');
 
-            // Récupérer toutes les sauvegardes
             const saves = await this.listSaves();
 
             if (saves.length === 0) {
@@ -708,7 +651,6 @@ export class GameSaveService {
                 return;
             }
 
-            // Supprimer chaque sauvegarde
             const deletePromises = saves.map(save =>
                 fetch(`${this.baseUrl}/delete`, {
                     method: 'DELETE',
@@ -736,7 +678,6 @@ export class GameSaveService {
         try {
             console.log(`📥 Chargement de la sauvegarde "${saveName}" avec rechargement...`);
 
-            // 1. Charger la sauvegarde depuis la BDD
             const result = await this.loadFromDatabase(saveName);
 
             if (!result.success) {
@@ -744,13 +685,10 @@ export class GameSaveService {
                 return;
             }
 
-            // 2. Nettoyer le localStorage actuel (sauf player_id)
             this.clearGameDataLocalStorage();
 
-            // 3. La sauvegarde est déjà appliquée par loadFromDatabase
             this.notifyUI('success', 'Sauvegarde chargée, rechargement...');
 
-            // 4. Recharger la page après un court délai
             setTimeout(() => {
                 console.log('🔄 Rechargement de la page pour appliquer la sauvegarde...');
                 window.location.reload();
@@ -809,7 +747,6 @@ export class GameSaveService {
             }
         });
 
-        // Nettoyer sessionStorage
         try {
             sessionStorage.clear();
         } catch (error) {
@@ -820,5 +757,4 @@ export class GameSaveService {
 
 }
 
-// Instance globale
 export const gameSaveService = GameSaveService.getInstance();
