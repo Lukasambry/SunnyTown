@@ -23,9 +23,7 @@ import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 import { ZoneBlockerService } from '../services/ZoneBlockerService';
-import { saveIntegrationService } from '@/game/services/SaveIntegrationService';
 import { useGameStore } from '@/game/stores/gameStore';
-import { SaveGameManager } from '@/game/services/SaveGameManager';
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -34,7 +32,6 @@ interface LayerConfig {
 }
 
 export class MainScene extends Scene {
-    private STORAGE_KEY = 'BUILDINGS_STORAGE';
     private player!: Player;
     private map!: Phaser.Tilemaps.Tilemap;
     private mapLayers: Map<string, LayerConfig> = new Map();
@@ -163,25 +160,7 @@ export class MainScene extends Scene {
         this.setupAnimations();
         this.setupVueResourceSync();
 
-        try {
-            saveIntegrationService.initialize();
-            console.log('Système de sauvegarde initialisé dans MainScene');
-        } catch (error) {
-            console.error('Erreur initialisation sauvegarde dans MainScene:', error);
-        }
 
-        const gameStore = useGameStore();
-        const saveManager = SaveGameManager.getInstance();
-
-        // Charger les données de sauvegarde depuis le localStorage
-        const savedData = localStorage.getItem(saveManager.STORAGE_KEY);
-        if (savedData) {
-            // Appliquer les données si elles existent
-            const success = saveManager.importSave(savedData);
-            if (success) {
-                gameStore.applyLoadedData(JSON.parse(savedData));
-            }
-        }
 
         // Create map
         this.map = this.make.tilemap({ key: 'map' });
@@ -382,6 +361,28 @@ export class MainScene extends Scene {
         }*/
 
         this.buildingManager = new BuildingManager(this);
+
+        window.addEventListener('game:loadBuildings', (event: CustomEvent) => {
+            const { buildings, source } = event.detail;
+            console.log(`Loading ${buildings.length} buildings from ${source}`);
+
+            // Nettoyer les bâtiments existants
+            this.buildingManager.clearAll();
+
+            // Charger les nouveaux bâtiments
+            buildings.forEach((buildingData: any) => {
+                try {
+                    this.buildingManager.placeBuilding(buildingData.type, buildingData.x, buildingData.y);
+                } catch (error) {
+                    console.warn('Erreur lors du placement de bâtiment:', buildingData, error);
+                }
+            });
+
+            // Reconstruire la grille de pathfinding
+            this.rebuildPathfindingGrid();
+
+            console.log('Buildings loaded successfully');
+        });
 
         this.workerManager = new WorkerManager(this);
         this.setupWorkerAssignmentListeners();

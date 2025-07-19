@@ -15,6 +15,9 @@
         <!-- Building UI -->
         <BuildingUI />
 
+        <!-- Save Game Button -->
+        <SaveGameButton />
+
         <!-- Building FAB Button -->
         <BuildingFabButton />
 
@@ -62,6 +65,7 @@ import NotificationSystem from './NotificationSystem.vue'
 import DebugPanel from './DebugPanel.vue'
 import ActionButton from './ActionButton.vue'
 import Level from '@/components/game/ui/Level.vue';
+import SaveGameButton from '@/components/game/ui/SaveGameButton.vue';
 
 const gameStore = useGameStore();
 

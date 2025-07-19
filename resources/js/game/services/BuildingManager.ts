@@ -17,26 +17,18 @@ export class BuildingManager {
     private readonly scene: Scene;
     private buildings: TiledBuilding[] = [];
     private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<Function>>();
-    private readonly STORAGE_KEY = 'sunnytown_buildings';
 
     constructor(scene: any) {
         this.scene = scene;
     }
 
     public placeBuilding(type: string, x: number, y: number): TiledBuilding {
-        const templateKey = `${type}-template`;
-        const building = new TiledBuilding(this.scene, x, y, templateKey);
+        const building = this.placeInternal(type, x, y);
 
-        const player = (this.scene as any).player;
-        if (player) {
-            building.setupCollisions(player);
-        }
-
-        this.buildings.push(building);
+        // Sauvegarder seulement après placement externe
         this.saveState();
-        this.rebuildPathfindingGrid();
-
         this.emit('buildingPlaced', building);
+
         return building;
     }
 
@@ -117,13 +109,13 @@ export class BuildingManager {
                 };
             });
 
-            // IMPORTANT: Synchroniser avec la sauvegarde principale
-            this.updateMainSaveFile(state);
+            // Stocker temporairement dans sessionStorage pour la cohérence
+            sessionStorage.setItem('BUILDINGS_STORAGE', JSON.stringify(state));
 
             console.log('[BuildingManager] Bâtiments sauvegardés:', state);
 
-            // Émettre l'événement pour notifier les autres systèmes
-            window.dispatchEvent(new CustomEvent('game:buildingChanged', {
+            // Émettre l'événement pour notifier le système unifié
+            window.dispatchEvent(new CustomEvent('game:buildingsChanged', {
                 detail: { buildings: state }
             }));
         } catch (error) {
@@ -132,51 +124,21 @@ export class BuildingManager {
     }
 
 
-    private updateMainSaveFile(buildings: StoredBuilding[]): void {
-        try {
-            // Lire la sauvegarde principale existante
-            const mainSaveRaw = localStorage.getItem('sunnytown_savegame');
-            let mainSave: any = {};
-
-            if (mainSaveRaw) {
-                try {
-                    mainSave = JSON.parse(mainSaveRaw);
-                } catch (e) {
-                    console.warn('Erreur parsing sauvegarde principale, création d\'une nouvelle');
-                    mainSave = {};
-                }
-            }
-
-            // Mettre à jour les bâtiments
-            mainSave.buildings = buildings;
-            mainSave.timestamp = Date.now();
-
-            // Sauvegarder
-            localStorage.setItem('sunnytown_savegame', JSON.stringify(mainSave));
-
-            console.log('[BuildingManager] Sauvegarde principale mise à jour avec', buildings.length, 'bâtiments');
-        } catch (error) {
-            console.error('[BuildingManager] Erreur mise à jour sauvegarde principale:', error);
-        }
-    }
 
     public loadState(): void {
         try {
-            console.log('🏠 Chargement bâtiments depuis sauvegarde principale...');
+            console.log('🏠 Chargement bâtiments depuis sessionStorage...');
 
-            // Lire depuis la sauvegarde principale
-            const mainSave = localStorage.getItem('sunnytown_savegame');
+            // Lire depuis sessionStorage (utilisé par le système unifié)
+            const storedData = sessionStorage.getItem('BUILDINGS_STORAGE');
             let buildings: StoredBuilding[] = [];
 
-            if (mainSave) {
+            if (storedData) {
                 try {
-                    const saveData = JSON.parse(mainSave);
-                    if (saveData.buildings && Array.isArray(saveData.buildings)) {
-                        buildings = saveData.buildings;
-                        console.log(`✅ ${buildings.length} bâtiments trouvés dans sauvegarde principale`);
-                    }
+                    buildings = JSON.parse(storedData);
+                    console.log(`✅ ${buildings.length} bâtiments trouvés dans sessionStorage`);
                 } catch (error) {
-                    console.warn('Erreur lecture sauvegarde principale:', error);
+                    console.warn('Erreur lecture sessionStorage bâtiments:', error);
                 }
             }
 
@@ -194,7 +156,8 @@ export class BuildingManager {
             this.buildings = [];
 
             validBuildings.forEach(data => {
-                this.placeBuilding(data.type, data.x, data.y);
+                // Appeler directement la logique de placement sans sauvegarder à nouveau
+                this.placeInternal(data.type, data.x, data.y);
             });
 
             console.log(`✅ ${validBuildings.length} bâtiments chargés`);
@@ -202,6 +165,23 @@ export class BuildingManager {
         } catch (error) {
             console.error('❌ Erreur chargement bâtiments:', error);
         }
+    }
+
+    // AJOUTER cette nouvelle méthode pour le placement sans sauvegarde
+    private placeInternal(type: string, x: number, y: number): TiledBuilding {
+        const templateKey = `${type}-template`;
+        const building = new TiledBuilding(this.scene, x, y, templateKey);
+
+        const player = (this.scene as any).player;
+        if (player) {
+            building.setupCollisions(player);
+        }
+
+        this.buildings.push(building);
+        // PAS de saveState() ici pour éviter les boucles infinies
+        this.rebuildPathfindingGrid();
+
+        return building;
     }
 
     public loadFromData(buildingsData: Array<{type: string, x: number, y: number}>): void {
@@ -260,7 +240,8 @@ export class BuildingManager {
         this.buildings.length = 0;
 
         try {
-            sessionStorage.removeItem(this.STORAGE_KEY);
+            // Nettoyer sessionStorage utilisé par le système unifié
+            sessionStorage.removeItem('BUILDINGS_STORAGE');
         } catch (error) {
             console.error('Erreur lors du nettoyage du storage:', error);
         }

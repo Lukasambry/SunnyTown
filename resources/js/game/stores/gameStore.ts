@@ -5,6 +5,7 @@ import { ResourceManager } from '@/game/services/ResourceManager';
 import { BuildingRegistry } from '@/game/services/BuildingRegistry';
 import type { TiledBuilding } from '@/game/objects/TiledBuilding';
 import type { Worker } from '@/game/objects/workers/Worker';
+import { gameSaveService } from '@/game/services/GameSaveService';
 
 interface GameState {
     isGameLoaded: boolean;
@@ -15,7 +16,7 @@ interface GameState {
     showBuildingPreview: boolean;
     showBuildingInfo: boolean;
     currentBuildingInfo: TiledBuilding | null;
-    unlockedZones: string[]; // AJOUT pour la sauvegarde
+    unlockedZones: string[];
 }
 
 export const useGameStore = defineStore('game', () => {
@@ -29,7 +30,7 @@ export const useGameStore = defineStore('game', () => {
         showBuildingPreview: false,
         showBuildingInfo: false,
         currentBuildingInfo: null,
-        unlockedZones: [], // AJOUT pour la sauvegarde
+        unlockedZones: [],
     });
 
     // Player data
@@ -39,7 +40,7 @@ export const useGameStore = defineStore('game', () => {
     const playerHealth = ref<{ current: number, max: number }>({ current: 100, max: 100 });
     const playerExperience = ref<{ current: number, nextLevel: number }>({ current: 0, nextLevel: 100 });
 
-    // Player data
+    // Player data getters
     const getPlayerAvatar = computed(() => playerAvatar.value);
     const getPlayerLevel = computed(() => playerLevel.value);
     const getPlayerGold = computed(() => playerGold.value);
@@ -80,6 +81,7 @@ export const useGameStore = defineStore('game', () => {
         playerExperience.value = {...experience};
     };
 
+    // Resources
     const resourcesMap = ref<Map<ResourceType, number>>(new Map());
     const resourceUpdateTrigger = ref(0);
 
@@ -101,7 +103,6 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
-    // AMÉLIORATION: Synchronisation bidirectionnelle avec ResourceManager
     const initializeResourceSync = () => {
         if (!initializeManagers() || !resourceManager) {
             console.error('ResourceManager not available for sync');
@@ -109,7 +110,6 @@ export const useGameStore = defineStore('game', () => {
         }
 
         try {
-            // NOUVEAU: Setup listener pour les changements ResourceManager
             resourceManager.getGlobalInventory().on('change', (event: any) => {
                 resourcesMap.value.set(event.type, event.newAmount);
                 resourcesMap.value = new Map(resourcesMap.value);
@@ -120,7 +120,6 @@ export const useGameStore = defineStore('game', () => {
                 });
             });
 
-            // Sync initial depuis ResourceManager vers Vue
             Object.values(ResourceType).forEach((resourceType) => {
                 try {
                     const amount = resourceManager?.getResource(resourceType);
@@ -161,6 +160,7 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
+    // Computed properties
     const isGameReady = computed(() => state.value.isGameLoaded);
 
     const resourceList = computed((): ResourceStack[] => {
@@ -230,13 +230,21 @@ export const useGameStore = defineStore('game', () => {
         }
     });
 
-    // Getters robustes
+    // Resource Manager getters
     const getResourceManager = () => {
         if (!initializeManagers() || !resourceManager) {
             console.error('ResourceManager not available');
             return null;
         }
         return resourceManager;
+    };
+
+    const getBuildingRegistry = () => {
+        if (!initializeManagers() || !buildingRegistry) {
+            console.error('BuildingRegistry not available');
+            return null;
+        }
+        return buildingRegistry;
     };
 
     const getPlayerInventorySpace = (resourceType: ResourceType): number => {
@@ -267,15 +275,7 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
-    const getBuildingRegistry = () => {
-        if (!initializeManagers() || !buildingRegistry) {
-            console.error('BuildingRegistry not available');
-            return null;
-        }
-        return buildingRegistry;
-    };
-
-    // Actions
+    // Main initialization action
     const setGameLoaded = (loaded: boolean) => {
         state.value.isGameLoaded = loaded;
 
@@ -283,18 +283,18 @@ export const useGameStore = defineStore('game', () => {
             if (initializeManagers()) {
                 initializeResourceSync();
 
+                // Initialiser le système de sauvegarde unifié
                 setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent('game:initializeSaveSystem'));
-                }, 100);
+                    gameSaveService.initializeGame();
+                    setupGameSaveEvents();
+                }, 500);
 
-                // SUPPRIMER l'ajout automatique de ressources ici
-                // (maintenant géré par le système unifié qui vérifie s'il y a déjà des données)
                 console.log('GameStore chargé - système unifié actif');
             }
         }
     };
 
-    // AMÉLIORÉ: Actions avec vérifications de réactivité
+    // Resource actions
     const updateResource = (type: ResourceType, amount: number) => {
         if (!resourceManager) {
             console.error('ResourceManager not available for updateResource');
@@ -311,7 +311,6 @@ export const useGameStore = defineStore('game', () => {
                 }
             }
 
-            // Force la mise à jour de la réactivité Vue
             resourcesMap.value.set(type, amount);
             resourcesMap.value = new Map(resourcesMap.value);
             resourceUpdateTrigger.value++;
@@ -353,7 +352,7 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
-    // Actions pour les bâtiments
+    // Building actions
     const purchaseBuilding = (buildingType: string): boolean => {
         if (!initializeManagers() || !buildingRegistry) {
             console.error('BuildingRegistry not available for purchase');
@@ -391,7 +390,6 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
-    // Actions existantes...
     const selectBuilding = (buildingType: string | null) => {
         state.value.selectedBuilding = buildingType;
         state.value.showBuildingPreview = buildingType !== null;
@@ -433,171 +431,89 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
-    const resetGameState = () => {
-        state.value = {
-            isGameLoaded: false,
-            selectedBuilding: null,
-            hoveredBuilding: null,
-            buildings: [],
-            workers: [],
-            showBuildingPreview: false,
-            showBuildingInfo: false,
-            currentBuildingInfo: null,
-            unlockedZones: [] // Réinitialisation des zones débloquées
-        };
+    // Save system integration
+    const setupGameSaveEvents = (): void => {
+        window.addEventListener('game:loadGameState', (event: CustomEvent) => {
+            const { gameState } = event.detail;
+            console.log('📥 Chargement état depuis système unifié:', gameState);
 
-        if (resourceManager) {
-            try {
-                resourceManager.getGlobalInventory().clear();
-            } catch (error) {
-                console.error('Error clearing resource manager:', error);
+            // Appliquer les données du joueur
+            if (gameState.player) {
+                updatePlayerLevel(gameState.player.level);
+                updatePlayerGold(gameState.player.gold);
+                updatePlayerExperience(gameState.player.experience);
+                updatePlayerHealth(gameState.player.health);
+                updatePlayerAvatar(gameState.player.avatar || 'default');
             }
-        }
 
-        resourcesMap.value.clear();
-        resourceUpdateTrigger.value++;
-    };
-
-    const manualSave = () => {
-        try {
-            window.dispatchEvent(new CustomEvent('game:requestManualSave'));
-        } catch (error) {
-            console.error('Erreur sauvegarde manuelle:', error);
-        }
-    };
-
-    const resetGame = () => {
-        try {
-            if (confirm('Êtes-vous sûr de vouloir recommencer une nouvelle partie ? Toutes vos données seront perdues.')) {
-                window.dispatchEvent(new CustomEvent('game:requestGameReset'));
+            // Appliquer les ressources
+            if (gameState.resources) {
+                Object.entries(gameState.resources).forEach(([type, amount]) => {
+                    updateResource(type.toUpperCase() as ResourceType, amount as number);
+                });
+                forceResourceUpdate();
             }
-        } catch (error) {
-            console.error('Erreur réinitialisation:', error);
-        }
-    };
 
-    const exportSave = () => {
-        try {
-            window.dispatchEvent(new CustomEvent('game:requestExportSave'));
-        } catch (error) {
-            console.error('Erreur export:', error);
-        }
-    };
-
-    const importSave = () => {
-        try {
-            window.dispatchEvent(new CustomEvent('game:requestImportSave'));
-        } catch (error) {
-            console.error('Erreur import:', error);
-        }
-    };
-
-    // Méthode pour appliquer toutes les données d'une sauvegarde
-    const applySaveData = (saveData: any) => {
-        if (!saveData) return;
-
-        console.log('[GameStore] Application des données de sauvegarde:', saveData);
-
-        // Player data (fonctionne déjà)
-        if (saveData.player) {
-            updatePlayerLevel(saveData.player.level ?? 1);
-            updatePlayerGold(saveData.player.gold ?? 0);
-            updatePlayerHealth(saveData.player.health ?? { current: 100, max: 100 });
-            updatePlayerExperience({
-                current: saveData.player.currentExperience ?? 0,
-                nextLevel: saveData.player.nextLevelExperience ?? 100
-            });
-            updatePlayerAvatar(saveData.player.avatar ?? 'default');
-        }
-
-        // Resources (fonctionne déjà)
-        if (saveData.resources) {
-            Object.entries(saveData.resources).forEach(([type, amount]) => {
-                updateResource(type as ResourceType, amount as number);
-            });
-            forceResourceUpdate();
-            console.log('[GameStore] Ressources appliquées:', saveData.resources);
-        }
-
-        // CORRECTION: Bâtiments
-        if (Array.isArray(saveData.buildings)) {
-            console.log('[GameStore] Application de', saveData.buildings.length, 'bâtiments');
-
-            // Nettoyer les bâtiments existants
-            clearBuildings();
-
-            // Dispatcher l'événement pour que MainScene.buildingManager les charge
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('game:loadBuildings', {
-                    detail: { buildings: saveData.buildings, source: 'saveData' }
-                }));
-            }, 100);
-        }
-
-        // CORRECTION: Zones débloquées
-        if (Array.isArray(saveData.unlockedZones)) {
-            console.log('[GameStore] Application de', saveData.unlockedZones.length, 'zones débloquées');
-
-            // Mettre à jour l'état local
-            state.value.unlockedZones = [...saveData.unlockedZones];
-
-            // Dispatcher les événements pour que ZoneBlockerService les applique
-            saveData.unlockedZones.forEach((zoneName: string) => {
+            // Appliquer les bâtiments
+            if (gameState.buildings && gameState.buildings.length > 0) {
+                clearBuildings();
                 setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent('game:unlockZone', {
-                        detail: { zoneName, fromLoad: true }
+                    window.dispatchEvent(new CustomEvent('game:loadBuildings', {
+                        detail: { buildings: gameState.buildings, source: 'gameSave' }
                     }));
-                }, 200);
-            });
+                }, 100);
+            }
 
-            console.log('[GameStore] Zones débloquées appliquées:', state.value.unlockedZones);
-        }
-    };
+            // Appliquer les zones débloquées
+            if (gameState.unlockedZones && gameState.unlockedZones.length > 0) {
+                state.value.unlockedZones = [...gameState.unlockedZones];
+                gameState.unlockedZones.forEach((zoneName: string) => {
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('game:unlockZone', {
+                            detail: { zoneName, fromLoad: true }
+                        }));
+                    }, 200);
+                });
+            }
 
-    /*
-    if (process.env.NODE_ENV === 'development') {
-      watch(resourceUpdateTrigger, (newVal) => {
-        console.log('Resource update trigger changed:', newVal);
-      });
-
-      watch(resourcesMap, (newMap) => {
-        console.log('Resources map updated:', Object.fromEntries(newMap));
-      }, { deep: true });
-    }
-    */
-
-    const applyLoadedData = (loadedData: any) => {
-        if (!loadedData) {
-            console.warn('[GameStore] Aucune donnée à appliquer');
-            return;
-        }
-
-        playerLevel.value = loadedData.player.level ?? playerLevel.value;
-        playerExperience.value.current = loadedData.player.currentExperience ?? playerExperience.value.current;
-        playerExperience.value.nextLevel = loadedData.player.nextLevelExperience ?? playerExperience.value.nextLevel;
-        playerGold.value = loadedData.player.gold ?? playerGold.value;
-        playerHealth.value = loadedData.player.health ?? playerHealth.value;
-        playerAvatar.value = loadedData.player.avatar ?? playerAvatar.value;
-
-
-        resourcesMap.value = new Map(
-            Object.entries(loadedData.resources ?? {}).map(([key, value]) => [key as ResourceType, value as number])
-        );
-        state.value.buildings = loadedData.buildings ?? [];
-        state.value.unlockedZones = loadedData.unlockedZones ?? [];
-
-        console.log('[GameStore] Données appliquées:', {
-            playerLevel: playerLevel.value,
-            playerGold: playerGold.value,
-            playerHealth: playerHealth.value,
-            playerAvatar: playerAvatar.value,
-            resources: resourcesMap.value,
-            buildings: state.value.buildings,
-            unlockedZones: state.value.unlockedZones
+            console.log('✅ État du jeu appliqué depuis système unifié');
         });
     };
 
+    // Save/Load methods (unified)
+    const saveProgress = async (saveName: string = 'manual'): Promise<boolean> => {
+        try {
+            const result = await gameSaveService.save(saveName);
+            return result.success;
+        } catch (error) {
+            console.error('Erreur sauvegarde:', error);
+            return false;
+        }
+    };
 
+    const loadProgress = async (): Promise<boolean> => {
+        try {
+            await gameSaveService.initializeGame();
+            return true;
+        } catch (error) {
+            console.error('Erreur chargement:', error);
+            return false;
+        }
+    };
+
+    const resetGameState = (): void => {
+        gameSaveService.resetGame();
+    };
+
+    const setAutoSave = (enabled: boolean): void => {
+        gameSaveService.setAutoSave(enabled);
+    };
+
+    const getPlayerId = (): string | null => {
+        return gameSaveService.getPlayerId();
+    };
+
+    // Window exposure for external access
     if (typeof window !== 'undefined') {
         (window as any).gameStore = {
             get playerLevel() { return playerLevel.value; },
@@ -605,6 +521,7 @@ export const useGameStore = defineStore('game', () => {
             get playerHealth() { return { ...playerHealth.value }; },
             get playerExperience() { return { ...playerExperience.value }; },
             get playerAvatar() { return playerAvatar.value; },
+            get state() { return state.value; },
 
             updatePlayerLevel,
             updatePlayerGold,
@@ -615,7 +532,7 @@ export const useGameStore = defineStore('game', () => {
             addResource,
             removeResource,
 
-           getResourceAmount: (type: ResourceType): number => {
+            getResourceAmount: (type: ResourceType): number => {
                 try {
                     if (!initializeManagers() || !resourceManager) {
                         return 0;
@@ -626,14 +543,9 @@ export const useGameStore = defineStore('game', () => {
                     return 0;
                 }
             },
-
-           manualSave,
-            resetGame,
-            exportSave,
-            importSave,
-            applySaveData,
-            applyLoadedData,
         };
+
+        console.log('✅ GameStore exposé sur window.gameStore');
     }
 
     return {
@@ -661,15 +573,27 @@ export const useGameStore = defineStore('game', () => {
         getPlayerNextLevelExperience,
         getPlayerCurrentHealth,
         getPlayerMaxHealth,
+        getResourceManager,
+        getBuildingRegistry,
+        getPlayerInventorySpace,
+        getStackSize,
 
         // Actions
         setGameLoaded,
         updateResource,
         addResource,
         removeResource,
+        updatePlayerAvatar,
+        updatePlayerLevel,
+        updatePlayerGold,
+        updatePlayerHealth,
+        updatePlayerExperience,
+        forceResourceUpdate,
+        syncResourcesFromManager,
+
+        // Building actions
         purchaseBuilding,
         getBuildingAffordability,
-        forceResourceUpdate, // NOUVEAU
         selectBuilding,
         showBuildingInfo,
         hideBuildingInfo,
@@ -678,23 +602,54 @@ export const useGameStore = defineStore('game', () => {
         clearBuildings,
         addWorker,
         removeWorker,
+
+        // Save system (unified)
+        saveProgress,
+        loadProgress,
         resetGameState,
-        syncResourcesFromManager,
-        updatePlayerAvatar,
-        updatePlayerLevel,
-        updatePlayerGold,
-        updatePlayerHealth,
-        updatePlayerExperience,
-        manualSave,
-        resetGame,
-        exportSave,
-        importSave,
+        setAutoSave,
+        getPlayerId,
+        setupGameSaveEvents,
 
+        // UI methods
+        manualSave: () => gameSaveService.manualSave(),
+        resetGame: () => gameSaveService.resetGame(),
 
-        // Resource Manager access
-        getResourceManager,
-        getBuildingRegistry,
-        applySaveData,
-        applyLoadedData,
+        exportSave: () => {
+            const gameState = gameSaveService.getCurrentGameState();
+            if (gameState) {
+                const blob = new Blob([JSON.stringify(gameState, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sunnytown-save-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        },
+
+        importSave: () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const gameState = JSON.parse(e.target?.result as string);
+                            window.dispatchEvent(new CustomEvent('game:loadGameState', {
+                                detail: { gameState }
+                            }));
+                        } catch (error) {
+                            console.error('Erreur import:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        },
     };
 });
