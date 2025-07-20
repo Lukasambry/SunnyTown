@@ -70,7 +70,7 @@
     --color-main-app: #0a0a0a;
 
     /* Pixel Border Configuration */
-    --pixel-border-size: 2px;
+    --pixel-border-size: 3px;
 
     /* Color Palette for Pixel Borders */
     --color-pixel-primary: #63c74d;
@@ -93,6 +93,18 @@
     /* Stone Theme Colors */
     --color-stone-primary: #c0cbdc;
     --color-stone-secondary: #ffffff;
+
+    /* Success Theme Colors */
+    --color-success-primary: #63C74D;
+    --color-success-secondary: #84D972;
+
+    /* Danger Theme Colors */
+    --color-danger-primary: #FF7171;
+    --color-danger-secondary: #FF9494;
+
+    /* Info Theme Colors */
+    --color-info-primary: #2CE8F5;
+    --color-info-secondary: #0099DB;
 
     /* Progress Bar Colors */
     --color-progress-bg: #515179;
@@ -215,7 +227,8 @@
 }
 
 @layer utilities {
-    .font-pixel {
+    .font-pixel,
+    .pixel-font {
         font-family: '04B03', monospace;
     }
     .font-sans {
@@ -224,6 +237,11 @@
 }
 
 @layer components {
+    .pixelated {
+        image-rendering: pixelated;
+    }
+
+    /* Base Pixel Border Component */
     .pixel-border {
         --border-size: var(--pixel-border-size);
         --btn-color-primary: var(--color-pixel-primary);
@@ -288,6 +306,22 @@
         --btn-color-secondary: var(--color-stone-secondary);
     }
 
+    .pixel-border-success {
+        --btn-color-primary: var(--color-success-primary);
+        --btn-color-secondary: var(--color-success-secondary);
+    }
+
+    .pixel-border-danger {
+        --btn-color-primary: var(--color-danger-primary);
+        --btn-color-secondary: var(--color-danger-secondary);
+    }
+
+    .pixel-border-info {
+        --btn-color-primary: var(--color-info-primary);
+        --btn-color-secondary: var(--color-info-secondary);
+    }
+
+    /* Border Side Controls */
     .pixel-no-top {
         --show-top: 0;
     }
@@ -362,7 +396,8 @@
         left: calc(var(--border-size) * -1);
     }
 
-    .pixel-progress::after {
+    .pixel-progress::after,
+    .pixel-progress > .pixel-progress-bar {
         content: '';
         position: absolute;
         top: 0;
