@@ -1,8 +1,5 @@
 <template>
     <Head :title="`Créer un thread dans ${category.name}`" />
-    <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">
-        <Navbar />
-    </header>
 
     <SiteLayout :auth="$page.props.auth">
         <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">

@@ -1,8 +1,5 @@
 <template>
     <Head title="Créer un article" />
-    <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">
-        <Navbar />
-    </header>
 
     <SiteLayout :auth="$page.props.auth">
         <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">
@@ -331,7 +328,6 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import SiteLayout from '@/layouts/SiteLayout.vue';
-import Navbar from '@/components/home/Navbar.vue';
 
 const isSubmitting = ref(false);
 
@@ -475,7 +471,3 @@ textarea:hover {
     box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
 }
 </style>
-<script setup lang="ts">
-import Navbar from '@/components/home/Navbar.vue';
-import SiteLayout from '@/layouts/SiteLayout.vue';
-</script>

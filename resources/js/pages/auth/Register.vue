@@ -7,7 +7,7 @@
     <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">
         <div class="absolute inset-0 before:absolute before:inset-0 before:bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20600%22%3E%3Cfilter%20id%3D%22a%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%221.6%22%20numOctaves%3D%226%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23a%29%22%2F%3E%3C%2Fsvg%3E')] before:bg-repeat before:bg-[length:80px] before:opacity-[0.03] before:mix-blend-overlay before:content-['']"></div>
 
-        <div class="relative z-10 flex min-h-screen items-center justify-center px-4 py-8">
+        <div class="relative z-10 flex min-h-screen items-center justify-center px-4 py-8 mt-20">
             <div class="w-full max-w-lg">
                 <div class="relative rounded-2xl overflow-hidden backdrop-blur-md border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] shadow-2xl">
                     <div class="absolute inset-0 bg-gradient-to-br from-black/5 via-transparent to-black/5 dark:from-white/5 dark:to-white/5"></div>
@@ -311,6 +311,7 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import Navbar from '@/components/home/Navbar.vue';
 
 const showPassword = ref(false);
 const showPasswordConfirm = ref(false);

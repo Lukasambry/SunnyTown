@@ -47,7 +47,7 @@
     </nav>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { router, usePage } from '@inertiajs/vue3';
 

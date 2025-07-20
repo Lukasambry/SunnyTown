@@ -1,8 +1,5 @@
 <template>
     <Head title="Blog" />
-    <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">
-        <Navbar />
-    </header>
 
     <SiteLayout :auth="$page.props.auth">
         <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">
@@ -367,6 +364,3 @@ const getWordCount = (content: string) => {
     background: rgba(255, 255, 255, 0.2);
 }
 </style>
-<script setup lang="ts">
-import Navbar from '@/components/home/Navbar.vue';
-</script>
