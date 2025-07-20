@@ -316,38 +316,34 @@
                         >
                             SunnyTown.
                         </Link>
-                        <p class="mt-2 text-sm text-black/60 dark:text-white/60">The future of AI-powered Sunnytown.</p>
+                        <p class="mt-2 text-sm text-black/60 dark:text-white/60">Une expérience de construction de ville révolutionnaire.</p>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-8 md:gap-12 lg:gap-16">
                         <div class="space-y-3">
-                            <h3 class="text-sm font-medium text-black dark:text-white">Product</h3>
+                            <h3 class="text-sm font-medium text-black dark:text-white">Communité</h3>
                             <ul class="space-y-2">
-                                <li><a href="#features" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Features</a></li>
-                                <li><a href="#pricing" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Pricing</a></li>
                                 <li><Link :href="route('forums.index')" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Forum</Link></li>
                                 <li><Link :href="route('blog.index')" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Blog</Link></li>
                             </ul>
                         </div>
                         <div class="space-y-3">
-                            <h3 class="text-sm font-medium text-black dark:text-white">Company</h3>
+                            <h3 class="text-sm font-medium text-black dark:text-white">Concept</h3>
                             <ul class="space-y-2">
-                                <li><a href="#about" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">About</a></li>
-                                <li><a href="#careers" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Careers</a></li>
-                                <li><a href="#contact" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Contact</a></li>
-                                <li><a href="#privacy" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Privacy</a></li>
+                                <li><a :href="route('game.index')" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Le jeu</a></li>
+                                <li><a :href="route('landing')" class="text-sm text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors">Landing</a></li>
                             </ul>
                         </div>
                     </div>
 
                     <div class="flex-shrink-0 space-y-3 max-w-xs">
-                        <h3 class="text-sm font-medium text-black dark:text-white">Stay updated</h3>
-                        <p class="text-sm text-black/60 dark:text-white/60">Subscribe to our newsletter for the latest updates and features.</p>
+                        <h3 class="text-sm font-medium text-black dark:text-white">Restez à jour</h3>
+                        <p class="text-sm text-black/60 dark:text-white/60">Abonnez-vous à notre newsletter pour les dernières mises à jour et fonctionnalités.</p>
                         <div class="mt-3 flex items-center gap-2">
                             <input
                                 v-model="newsletterEmail"
                                 type="email"
-                                placeholder="Enter your email"
+                                placeholder="Entrez votre email"
                                 class="flex-1 px-3 py-2 text-sm rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-black dark:text-white focus:outline-none focus:ring-1 focus:ring-black/20 dark:focus:ring-white/20 placeholder:text-black/40 dark:placeholder:text-white/40"
                             >
                             <button

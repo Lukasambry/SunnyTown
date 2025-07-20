@@ -10,8 +10,9 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BlogPostController;
 use App\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', [LandingController::class, 'index'])->name('home'); // Créer une home à la place
+Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/landing', [LandingController::class, 'index'])->name('landing');
 
 Route::get('dashboard', function () {
