@@ -18,15 +18,6 @@
                 </a>
             </div>
             <div class="flex items-center space-x-4">
-                <div class="flex items-center space-x-3">
-                    <template v-if="!isAuthenticated">
-                        <a href="/login" class="text-gray-300 border p-2 uppercase transition-all duration-300 hover:scale-105 hover:text-white">Login</a>
-                        <a href="/register" class="text-gray-300 border p-2 uppercase transition-all duration-300 hover:scale-105 hover:text-white">Register</a>
-                    </template>
-                    <template v-else >
-                        <a @click="logout" class="text-gray-300 border p-2 uppercase transition-all duration-300 hover:scale-105 hover:text-white">Logout</a>
-                    </template>
-                </div>
                 <a href="#" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700/50 bg-gray-700/50 transition-all duration-300 hover:scale-110 hover:border-blue-500/50 hover:bg-blue-600/20">
                         <svg class="h-5 w-5 text-gray-400 hover:text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53A4.48 4.48 0 0012.07 7.1V8c-4.09-.07-7.72-2.17-10.13-5.1A4.48 4.48 0 002 9.5a4.65 4.65 0 01-2-.54v.05A4.48 4.48 0 004.5 13a4.49 4.49 0 01-2 .08A4.51 4.51 0 006 15c-3.54 2.8-7.6 1.6-7.6 1.6" /></svg>
