@@ -50,5 +50,5 @@ prod: ## Prepare the application for production
     chmod 777 -R storage/ && \
     echo "Production environment is ready."
 
-
-
+test: ## Run tests
+	php artisan test
