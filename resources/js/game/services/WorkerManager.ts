@@ -238,7 +238,7 @@ export class WorkerManager {
         const buildingId = this.getBuildingId(building);
 
         if (building.assignWorker(workerId) && worker.convertToSpecializedWorker) {
-            worker.convertToSpecializedWorker(newConfig, buildingId);
+            worker.convertToSpecializedWorker(newConfig);
 
             const pos = building.getPosition();
             worker.setDepositPoint({ x: pos.x, y: pos.y });

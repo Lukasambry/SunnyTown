@@ -406,7 +406,7 @@ export class MainScene extends Phaser.Scene {
                 setCustomCursor('default');
             }
         });
-        this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
+        this.input.on('pointerup', (/*pointer: Phaser.Input.Pointer*/) => {
             if (!this.isCameraFollowingPlayer) {
                 this.isDraggingCamera = false;
                 this.lastPointerPosition = null;
@@ -514,7 +514,7 @@ export class MainScene extends Phaser.Scene {
                 return;
             }
 
-            const building = this.buildingManager.placeBuilding(
+            this.buildingManager.placeBuilding(
                 this.selectedBuildingType,
                 position.x,
                 position.y
@@ -666,10 +666,6 @@ export class MainScene extends Phaser.Scene {
             this.onBuildingSelectedFromVue(buildingType);
         };
 
-        const handleBuildingDeselection = () => {
-            this.onBuildingDeselectedFromVue();
-        };
-
         const handleWorkerCreation = (event: CustomEvent) => {
             const { type, positionHint } = event.detail;
             this.onWorkerCreationFromVue(type, positionHint);
@@ -793,7 +789,7 @@ export class MainScene extends Phaser.Scene {
             console.log('=== STEP 4: Converting worker ===');
 
             try {
-                worker.convertToSpecializedWorker(newConfig, buildingId);
+                worker.convertToSpecializedWorker(newConfig);
                 console.log(`Worker converted to ${targetWorkerType}`);
 
                 if (worker.getConfig().id !== targetWorkerType) {
@@ -1123,16 +1119,8 @@ export class MainScene extends Phaser.Scene {
             return false;
         }
 
-        const buildingId = building.getBuildingId();
-        console.log(`Building ID: ${buildingId}`);
-        console.log(`Assigning worker ${workerId} to building...`);
-
-        // Assigner le worker au bâtiment AVANT la conversion
         if (building.assignWorker(workerId)) {
-            console.log('Worker assigned to building successfully');
-
-            // Convertir le worker après l'assignment
-            worker.convertToSpecializedWorker(newConfig, buildingId);
+            worker.convertToSpecializedWorker(newConfig);
             const pos = building.getPosition();
             worker.setDepositPoint({ x: pos.x, y: pos.y });
 
@@ -1365,14 +1353,14 @@ export class MainScene extends Phaser.Scene {
         },
     ): any {
         if (workerType === 'lumberjack') {
-            return this.createLumberjack(x, y, depositPoint);
+            return this.createLumberjack(x, y/*, depositPoint*/);
         }
 
         console.warn(`Worker type ${workerType} not implemented yet`);
         return null;
     }
 
-    public createLumberjack(x?: number, y?: number, depositPoint?: WorkerPosition): Worker | null {
+    public createLumberjack(x?: number, y?: number/*, depositPoint?: WorkerPosition*/): Worker | null {
         return this.createWorker(WorkerType.LUMBERJACK, x, y);
     }
 
@@ -1409,7 +1397,7 @@ export class MainScene extends Phaser.Scene {
 
         this.buildingManager.getBuildings().forEach((building) => {
             const { x, y } = building.getPosition();
-            const { tilesWidth, tilesHeight } = building.getDimensions();
+            //const { tilesWidth, tilesHeight } = building.getDimensions();
 
             const tileX = Math.floor(x / this.tileWidth);
             const tileY = Math.floor(y / this.tileHeight);
@@ -1620,7 +1608,7 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
-    private checkPlacementValidity(worldPoint: Phaser.Math.Vector2): void {
+    private checkPlacementValidity(/*worldPoint: Phaser.Math.Vector2*/): void {
         if (!this.buildingPreview || !this.map) return;
 
         const isValid = this.buildingPreview.checkPlacementValidity(this.map, this.mapLayers);
@@ -1644,7 +1632,7 @@ export class MainScene extends Phaser.Scene {
 
         this.buildingPreview.setInitialPosition(playerPosition.x, playerPosition.y);
 
-        this.checkPlacementValidity(playerPosition);
+        this.checkPlacementValidity(/*playerPosition*/);
 
         //this.showFloatingMessage('Déplacez le bâtiment avec la souris, appuyez sur ENTRÉE pour confirmer ou ESC pour annuler');
 
@@ -1852,8 +1840,8 @@ export class MainScene extends Phaser.Scene {
             this.debugResourceSync();
         }
         if (this.buildingPreview) {
-            const worldPoint = new Phaser.Math.Vector2(this.buildingPreview.getPosition().x, this.buildingPreview.getPosition().y);
-            this.checkPlacementValidity(worldPoint);
+            //const worldPoint = new Phaser.Math.Vector2(this.buildingPreview.getPosition().x, this.buildingPreview.getPosition().y);
+            this.checkPlacementValidity(/*worldPoint*/);
         }
     }
 

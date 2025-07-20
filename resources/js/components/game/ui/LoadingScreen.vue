@@ -75,7 +75,7 @@ const isGameReady = ref(false);
 const showDots = ref(true);
 const dots = ref('');
 
-let stepInterval: NodeJS.Timeout | null = null;
+const stepInterval: NodeJS.Timeout | null = null;
 let progressInterval: NodeJS.Timeout | null = null;
 let dotsInterval: NodeJS.Timeout | null = null;
 

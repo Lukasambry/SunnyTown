@@ -119,7 +119,7 @@ export class Worker extends Sprite {
                 default:
                     break;
             }
-        } catch (error) {
+        } catch {
             this.setWorkerState(WorkerState.IDLE);
         }
     }
@@ -404,39 +404,39 @@ export class Worker extends Sprite {
             this.onPathCompleted();
             return;
         }
-    
+
         this.startItemUpdateTimer();
-    
+
         let currentWaypointIndex = 0;
         const moveToNextWaypoint = () => {
             if (currentWaypointIndex >= path.length) {
                 this.onPathCompleted();
                 return;
             }
-    
+
             const waypoint = path[currentWaypointIndex];
             const dx = waypoint.x - this.x;
             if (Math.abs(dx) > 1) {
                 this.flipX = dx < 0;
             }
-    
+
             this.scene.physics.moveTo(this.getThisGameObject(), waypoint.x, waypoint.y, this.config.moveSpeed);
-    
+
             const distance = Phaser.Math.Distance.Between(this.x, this.y, waypoint.x, waypoint.y);
             const travelTime = (distance / this.config.moveSpeed) * 1000;
-    
+
             this.scene.time.delayedCall(Math.max(travelTime, 100), () => {
                 currentWaypointIndex++;
                 moveToNextWaypoint();
             });
         };
-    
+
         moveToNextWaypoint();
     }
 
     private startItemUpdateTimer(): void {
         this.stopItemUpdateTimer();
-    
+
         this.itemUpdateTimer = this.scene.time.addEvent({
             delay: 16, // ~60 FPS
             callback: () => {
@@ -448,7 +448,7 @@ export class Worker extends Sprite {
             loop: true
         });
     }
-    
+
     private stopItemUpdateTimer(): void {
         if (this.itemUpdateTimer) {
             this.itemUpdateTimer.destroy();
@@ -463,10 +463,10 @@ export class Worker extends Sprite {
     private onPathCompleted(): void {
         this.isMoving = false;
         (this.body as Phaser.Physics.Arcade.Body)?.stop();
-    
+
         this.stopItemUpdateTimer();
         this.updateItemDisplay();
-        
+
         if (this.state === WorkerState.MOVING_TO_HARVEST) {
             this.startHarvesting();
         } else if (this.state === WorkerState.MOVING_TO_DEPOSIT) {
@@ -493,7 +493,7 @@ export class Worker extends Sprite {
         try {
             this.play(this.config.animations.working.type);
             this.once('animationcomplete', this.onHarvestAnimationComplete, this);
-        } catch (error) {
+        } catch {
             this.actionTimer = this.scene.time.delayedCall(this.config.harvestSpeed, () => {
                 this.onHarvestAnimationComplete();
             });
@@ -584,7 +584,7 @@ export class Worker extends Sprite {
                     this.harvestAnimationCycle();
                 }
             });
-        } catch (error) {
+        } catch {
             if (this.currentTarget) {
                 this.blacklistTarget(this.currentTarget);
                 if (this.currentTarget instanceof ResourceEntity) {
@@ -785,7 +785,7 @@ export class Worker extends Sprite {
     private updateAnimation(): void {
         try {
             let animationKey: string;
-            
+
             switch (this.state) {
                 case WorkerState.IDLE:
                 case WorkerState.WAITING:
@@ -794,8 +794,8 @@ export class Worker extends Sprite {
                 case WorkerState.MOVING_TO_HARVEST:
                 case WorkerState.MOVING_TO_DEPOSIT:
                     // Choisir entre walking et carrying selon l'inventaire
-                    animationKey = this.getTotalInventory() > 0 
-                        ? this.config.animations.carrying.type 
+                    animationKey = this.getTotalInventory() > 0
+                        ? this.config.animations.carrying.type
                         : this.config.animations.walking.type;
                     break;
                 case WorkerState.HARVESTING:
@@ -867,7 +867,7 @@ export class Worker extends Sprite {
             this.idleTimer.destroy();
             this.idleTimer = null;
         }
-        
+
         this.stopItemUpdateTimer();
     }
 
@@ -914,7 +914,7 @@ export class Worker extends Sprite {
         return GlobalWorkerStorage.getBuildingForWorker(this.workerId);
     }
 
-    public setAssignedBuilding(buildingId: string | null): void {
+    public setAssignedBuilding(/*buildingId: string | null*/): void {
         console.warn('setAssignedBuilding is deprecated, use GlobalWorkerStorage instead');
     }
 
@@ -931,7 +931,7 @@ export class Worker extends Sprite {
         this.clearTint();
     }
 
-    public convertToSpecializedWorker(newConfig: WorkerConfig, buildingId: string): void {
+    public convertToSpecializedWorker(newConfig: WorkerConfig): void {
         this.config = newConfig;
 
         if (newConfig.tint) {
@@ -952,20 +952,20 @@ export class Worker extends Sprite {
 
     public destroy(): void {
         this.clearTimers();
-    
+
         if (this.itemDisplayManager) {
             this.itemDisplayManager.destroy();
         }
-    
+
         if (this.currentTarget instanceof ResourceEntity) {
             this.currentTarget.releaseHarvester();
         }
-    
+
         if (this.mainLoopTimer) {
             this.mainLoopTimer.destroy();
             this.mainLoopTimer = null;
         }
-    
+
         super.destroy();
     }
 }

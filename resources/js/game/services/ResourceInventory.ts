@@ -105,6 +105,7 @@ export class ResourceInventory {
 
     public getNonZeroResources(): readonly ResourceStack[] {
         return Array.from(this.resources.entries())
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .filter(([_, amount]) => amount > 0)
             .map(([type, amount]) => createResourceStack(type, amount));
     }

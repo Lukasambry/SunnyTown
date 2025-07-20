@@ -404,7 +404,7 @@ export class TiledBuilding {
                 const buildingZone = this.createBuildingZone(obj, zone);
 
                 this.interactiveZones.push(buildingZone);
-                this.setupZoneDebugVisual(zone, obj);
+                this.setupZoneDebugVisual(zone);
             }
         });
     }
@@ -459,7 +459,7 @@ export class TiledBuilding {
         return obj.properties?.find(p => p.name === 'hideLayerNames')?.value?.split(',')?.map((name: string) => name.trim()) || [];
     }
 
-    private setupZoneDebugVisual(zone: Phaser.GameObjects.Zone, obj: any): void {
+    private setupZoneDebugVisual(zone: Phaser.GameObjects.Zone): void {
         if (process.env.NODE_ENV === 'development') {
             this.scene.add.rectangle(
                 zone.x,
@@ -711,10 +711,12 @@ export class TiledBuilding {
         });
     }
 
+    /*
     public setupCollisions(player: Phaser.Physics.Arcade.Sprite): void {
         this.collisionBodies.forEach(body => {
         });
     }
+    */
 
     private loadCornerPoints(): void {
         const cornersLayer = this.map.getObjectLayer('Corners');

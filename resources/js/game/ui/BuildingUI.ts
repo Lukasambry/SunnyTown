@@ -30,44 +30,44 @@ export class BuildingUI extends Phaser.Scene {
             this.game.canvas.width - 200,
             this.game.canvas.height - 40
         );
-    
+
         const background = this.add.rectangle(0, 0, 80, 30, 0x3498db)
             .setInteractive()
             .setOrigin(0.5);
-    
+
         const text = this.add.text(0, 0, 'Bûcheron', {
             color: '#ffffff',
             fontSize: '14px'
         }).setOrigin(0.5);
-    
+
         lumberjackButton.add([background, text]);
         lumberjackButton.setScrollFactor(0);
-    
+
         background
             .on('pointerover', () => background.setFillStyle(0x2980b9))
             .on('pointerout', () => background.setFillStyle(0x3498db))
             .on('pointerdown', () => {
                 const mainScene = this.scene.get('MainScene') as any;
                 const player = mainScene.player;
-                
+
                 // Chercher le dépôt le plus proche (scierie en priorité)
                 let depositPoint = null;
                 const buildings = mainScene.buildingManager.getBuildings();
                 const sawmills = buildings.filter((building: any) => building.getType() === 'sawmill');
-                
+
                 if (sawmills.length > 0) {
                     // Utiliser la scierie la plus proche du joueur
                     let closestSawmill = sawmills[0];
                     let closestDistance = Phaser.Math.Distance.Between(
-                        player.x, player.y, 
-                        closestSawmill.getPosition().x, 
+                        player.x, player.y,
+                        closestSawmill.getPosition().x,
                         closestSawmill.getPosition().y
                     );
-                    
+
                     for (let i = 1; i < sawmills.length; i++) {
                         const distance = Phaser.Math.Distance.Between(
-                            player.x, player.y, 
-                            sawmills[i].getPosition().x, 
+                            player.x, player.y,
+                            sawmills[i].getPosition().x,
                             sawmills[i].getPosition().y
                         );
                         if (distance < closestDistance) {
@@ -75,16 +75,16 @@ export class BuildingUI extends Phaser.Scene {
                             closestDistance = distance;
                         }
                     }
-                    
+
                     const pos = closestSawmill.getPosition();
                     const dim = closestSawmill.getDimensions();
-                    
+
                     // Calculer un point de dépôt devant la scierie
                     depositPoint = {
                         x: pos.x + (dim.tilesWidth * 16) / 2, // Milieu de la largeur
                         y: pos.y + dim.tilesHeight * 16 + 16  // En dessous du bâtiment
                     };
-                    
+
                     console.log('Dépôt configuré devant la scierie à:', depositPoint);
                 } else {
                     // Pas de scierie, utiliser un point près du joueur comme fallback
@@ -94,7 +94,7 @@ export class BuildingUI extends Phaser.Scene {
                     };
                     console.log('Aucune scierie trouvée, dépôt par défaut à:', depositPoint);
                 }
-                
+
                 // Créer le bûcheron avec le point de dépôt
                 mainScene.createLumberjack(player.x + 32, player.y, depositPoint);
             });
@@ -109,6 +109,7 @@ export class BuildingUI extends Phaser.Scene {
     }
 
     create(): void {
+        /*
         const uiBackground = this.add.rectangle(
             0,
             this.game.canvas.height - 80,
@@ -116,9 +117,8 @@ export class BuildingUI extends Phaser.Scene {
             80,
             0x000000,
             0.7
-        )
-            .setOrigin(0)
-            .setScrollFactor(0);
+        ).setOrigin(0).setScrollFactor(0);
+        */
 
         this.buildings.forEach((building, index) => {
             const x = 20 + (index * 90);

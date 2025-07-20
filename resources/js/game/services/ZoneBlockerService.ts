@@ -3,13 +3,14 @@ import type { Position } from '../types';
 import { CameraService } from './CameraService';
 import { ZoneBlockerRegistry } from './ZoneBlockerRegistry';
 
+/*
 interface BlockerObject {
     x: number;
     y: number;
     width?: number;
     height?: number;
     type?: string;
-}
+}*/
 
 interface BlockerCenterPoint {
     readonly x: number;
@@ -230,14 +231,9 @@ export class ZoneBlockerService {
         const interactionZone = this.createInteractionZone(objectLayer);
         if (!interactionZone) return null;
 
-        // Récupérer le point centre
         const centerPoint = this.findCenterPoint(objectLayer);
-
-        // Récupérer les points de coin
         const cornerPoints = this.findCornerPoints(objectLayer);
-
-        // Récupérer les layers du groupe (pour le moment, nous ne les utilisons pas mais ils sont disponibles)
-        const layers = this.findBlockerLayers(map, blockerName);
+        const layers = this.findBlockerLayers(/*map, blockerName*/);
 
         return {
             name: blockerName,
@@ -304,9 +300,7 @@ export class ZoneBlockerService {
         }));
     }
 
-    private findBlockerLayers(map: Phaser.Tilemaps.Tilemap, blockerName: string): Phaser.Tilemaps.TilemapLayer[] {
-        // Pour le moment, retourner un tableau vide
-        // Dans une implémentation complète, on chercherait les layers du groupe
+    private findBlockerLayers(/*map: Phaser.Tilemaps.Tilemap, blockerName: string*/): Phaser.Tilemaps.TilemapLayer[] {
         return [];
     }
 
@@ -540,7 +534,7 @@ export class ZoneBlockerService {
             const layerProperties = this.extractLayerProperties(layerData);
 
             if (layerProperties.blockerId === blockerId) {
-                console.log(`Found layer with matching blockerId: ${layerData.name}`);
+                console.log(`Found layer with matching blockerId: ${layerData.name} - ${index}`);
                 layersToDestroy.push(layerData.name);
             }
         });

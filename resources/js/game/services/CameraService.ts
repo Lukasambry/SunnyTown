@@ -1,12 +1,12 @@
 import { Scene } from 'phaser';
-import { CameraMode, type CameraConfig, type CameraTransition } from '../types/CameraTypes';
+import { CameraMode, type CameraConfig } from '../types/CameraTypes';
 import type { Position } from '../types';
 
 export class CameraService {
     private readonly scene: Scene;
     private readonly camera: Phaser.Cameras.Scene2D.Camera;
     private readonly config: CameraConfig;
-    
+
     private currentMode: CameraMode = CameraMode.FOLLOW_PLAYER;
     private player: Phaser.GameObjects.GameObject | null = null;
     private currentTransition: Phaser.Tweens.Tween | null = null;
@@ -43,7 +43,7 @@ export class CameraService {
 
     public focusOnPosition(position: Position, onComplete?: () => void): void {
         this.stopCurrentTransition();
-        
+
         if (this.currentMode === CameraMode.FOLLOW_PLAYER) {
             this.camera.stopFollow();
         }
@@ -70,7 +70,7 @@ export class CameraService {
 
     public returnToPlayer(): void {
         if (!this.player) return;
-        
+
         this.setMode(CameraMode.FOLLOW_PLAYER);
     }
 
@@ -87,11 +87,11 @@ export class CameraService {
                     this.camera.startFollow(this.player);
                 }
                 break;
-            
+
             case CameraMode.FREE_CAMERA:
                 this.camera.stopFollow();
                 break;
-            
+
             case CameraMode.FOCUSED_BUILDING:
                 this.camera.stopFollow();
                 break;
@@ -101,7 +101,7 @@ export class CameraService {
     private calculateBuildingCenter(building: { getPosition(): Position; getDimensions(): { tilesWidth: number; tilesHeight: number } }): Position {
         const position = building.getPosition();
         const dimensions = building.getDimensions();
-        
+
         return {
             x: position.x + (dimensions.tilesWidth * 16) / 2,
             y: position.y + (dimensions.tilesHeight * 16) / 2

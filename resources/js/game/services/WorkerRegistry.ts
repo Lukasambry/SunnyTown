@@ -47,7 +47,7 @@ export class WorkerRegistry {
 
     try {
       return definition.createInstance(scene, x, y, depositPoint);
-    } catch (error) {
+    } catch {
       return null;
     }
   }

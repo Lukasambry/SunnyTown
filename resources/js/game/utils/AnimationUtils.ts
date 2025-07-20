@@ -122,7 +122,7 @@ export class AnimationUtils {
 
     const currentFrame = sprite.anims.currentFrame?.index || 0
     const totalFrames = sprite.anims.currentAnim.frames.length
-    
+
     return totalFrames > 0 ? currentFrame / totalFrames : 0
   }
 
@@ -186,7 +186,7 @@ export class AnimationUtils {
     const config = this.registry.getAnimationConfig(type)
     const duration = this.registry.getAnimationDuration(type)
     const isLooping = this.registry.isLoopingAnimation(type)
-    
+
     return {
       duration,
       isLooping,
@@ -198,18 +198,18 @@ export class AnimationUtils {
    * Debug helper to log animation stats
    */
   public static logAnimationStats(): void {
-    const stats = this.registry.getAnimationStats()
+    this.registry.getAnimationStats()
   }
 
   /**
    * Preload all animations for a scene based on entity types present
    */
   public static preloadSceneAnimations(
-    scene: Phaser.Scene, 
+    scene: Phaser.Scene,
     entityTypes: Array<'player' | 'worker' | 'tree' | 'effects'>
   ): void {
     const allAnimations = new Set<AnimationType>()
-    
+
     entityTypes.forEach(entityType => {
       const animations = this.registry.getAnimationsForEntityType(entityType)
       animations.forEach(anim => allAnimations.add(anim))

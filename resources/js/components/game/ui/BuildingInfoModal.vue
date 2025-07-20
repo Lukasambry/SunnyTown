@@ -262,7 +262,7 @@ import { ResourceType } from '@/game/types/ResourceSystemTypes'
 
 const gameStore = useGameStore()
 const activeTab = ref<'resources' | 'workers'>('resources')
-let previousResourcesState = ref<Map<any, number>>(new Map())
+const previousResourcesState = ref<Map<any, number>>(new Map())
 const resourceUpdateTrigger = ref(0)
 const availableWorkers = ref(0)
 

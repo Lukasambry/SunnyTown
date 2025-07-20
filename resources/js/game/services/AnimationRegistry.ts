@@ -234,8 +234,9 @@ export class AnimationRegistry {
 
     public getAnimationsByTexture(texture: string): AnimationType[] {
         return Array.from(this.animations.entries())
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             .filter(([_, config]) => config.texture === texture)
-            .map(([type, _]) => type);
+            .map(([type]) => type);
     }
 
     public registerCustomAnimation(config: AnimationConfig): boolean {

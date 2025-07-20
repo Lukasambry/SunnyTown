@@ -14,7 +14,7 @@ export class ResourceEntityManager {
         this.registry = ResourceEntityRegistry.getInstance();
     }
 
-    public spawnFromMap(map: Phaser.Tilemaps.Tilemap): void {
+    public spawnFromMap(map: Phaser.Tilemaps.Tilemap): integer {
         const configs = this.registry.getAllConfigs();
         let totalSpawned = 0;
 
@@ -22,6 +22,8 @@ export class ResourceEntityManager {
             const spawned = this.spawnEntitiesFromLayer(map, config);
             totalSpawned += spawned;
         });
+
+        return totalSpawned;
     }
 
     private spawnEntitiesFromLayer(map: Phaser.Tilemaps.Tilemap, config: ResourceEntityConfig): number {
@@ -114,7 +116,7 @@ export class ResourceEntityManager {
 
     public getEntitiesInArea(bounds: Phaser.Geom.Rectangle): ResourceEntity[] {
         const entitiesInArea: ResourceEntity[] = [];
-        
+
         this.entities.forEach(entities => {
             entities.forEach(entity => {
                 if (!entity.isDestroyed()) {
@@ -125,7 +127,7 @@ export class ResourceEntityManager {
                 }
             });
         });
-        
+
         return entitiesInArea;
     }
 

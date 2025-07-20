@@ -368,7 +368,7 @@ export class TiledBuildingPreview {
 
     for (const building of existingBuildings) {
         const existingBuildingCollisionZones = building.getCollisionZones();
-        
+
         if (this.collisionObjects.length > 0) {
             for (const previewCollisionObj of this.collisionObjects) {
                 const previewCollisionBounds = new Phaser.Geom.Rectangle(
@@ -386,7 +386,7 @@ export class TiledBuildingPreview {
             }
         } else {
             const previewBounds = this.getWorldBounds();
-            
+
             for (const existingCollisionZone of existingBuildingCollisionZones) {
                 if (Phaser.Geom.Intersects.RectangleToRectangle(previewBounds, existingCollisionZone)) {
                     return false;
@@ -401,18 +401,18 @@ export class TiledBuildingPreview {
     private hasNoResourceEntityCollisions(): boolean {
         const resourceEntityManager = (this.scene as any).resourceEntityManager;
         if (!resourceEntityManager || typeof resourceEntityManager.getAllEntities !== 'function') {
-            return true; 
+            return true;
         }
 
         const allEntities = resourceEntityManager.getAllEntities();
 
         for (const entity of allEntities) {
             if (entity.isDestroyed()) {
-                continue; 
+                continue;
             }
 
             const entityBounds = entity.getBounds();
-            
+
             if (this.collisionObjects.length > 0) {
                 for (const collisionObj of this.collisionObjects) {
                     const collisionBounds = new Phaser.Geom.Rectangle(
@@ -508,6 +508,7 @@ export class TiledBuildingPreview {
     }
 
     private hasCollisionAtPosition(mapLayers: Map<string, LayerConfig>, pos: Position): boolean {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         for (const [_, config] of mapLayers.entries()) {
             if (!config.hasCollision) continue;
 

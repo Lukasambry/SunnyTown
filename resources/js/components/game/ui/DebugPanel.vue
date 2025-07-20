@@ -14,7 +14,7 @@ const fps = ref(0)
 const memoryUsage = ref(0)
 
 // Performance monitoring
-let fpsInterval: NodeJS.Timeout | null = null
+const fpsInterval: NodeJS.Timeout | null = null
 let frameCount = 0
 let lastTime = performance.now()
 

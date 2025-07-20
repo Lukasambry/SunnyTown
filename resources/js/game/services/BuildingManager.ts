@@ -38,10 +38,12 @@ export class BuildingManager {
         const templateKey = buildingConfig.template;
         const building = new TiledBuilding(this.scene, x, y, templateKey, type);
 
+        /*
         const player = (this.scene as any).player;
         if (player) {
             building.setupCollisions(player);
         }
+        */
 
         this.buildings.push(building);
         this.saveState();

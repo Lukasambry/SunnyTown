@@ -147,7 +147,6 @@ export class BuildingInfoUI extends Phaser.Scene {
     }
 
     private getResourcesInfo(): string {
-        const type = this.currentBuilding.getType();
         let resourcesInfo = '=== RESSOURCES STOCKÉES ===\n';
 
         const buildingResources = this.currentBuilding.getAllBuildingResources();
