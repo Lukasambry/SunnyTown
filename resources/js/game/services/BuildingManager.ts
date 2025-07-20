@@ -20,18 +20,19 @@ interface BuildingManagerEvents {
 export class BuildingManager {
     private readonly scene: Scene;
     private readonly buildings: TiledBuilding[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<Function>>();
-    private readonly STORAGE_KEY = 'BUILDINGS_STORAGE';
     private readonly buildingRegistry: BuildingRegistry;
 
     constructor(scene: Scene) {
         this.scene = scene;
         this.buildingRegistry = BuildingRegistry.getInstance();
+
+        // SUPPRIMÉ: Plus de STORAGE_KEY car on utilise le système unifié
+        // Exposer globalement pour la collecte de données
+        (window as any).__BUILDING_MANAGER__ = this;
     }
 
     public placeBuilding(type: string, x: number, y: number): TiledBuilding {
-        // Correction : utiliser le template du config
         const buildingConfig = this.buildingRegistry.getBuildingConfig(type);
         if (!buildingConfig) {
             throw new Error(`Aucun config trouvé pour le bâtiment ${type}`);
@@ -39,15 +40,10 @@ export class BuildingManager {
         const templateKey = buildingConfig.template;
         const building = new TiledBuilding(this.scene, x, y, templateKey, type);
 
-        /*
-        const player = (this.scene as any).player;
-        if (player) {
-            building.setupCollisions(player);
-        }
-        */
-
         this.buildings.push(building);
-        this.saveState();
+
+        // NOUVEAU: Notifier le système de sauvegarde unifié
+        this.notifyBuildingChange();
         this.rebuildPathfindingGrid();
 
         this.emit('buildingPlaced', building);
@@ -60,12 +56,76 @@ export class BuildingManager {
 
         this.buildings.splice(index, 1);
         building.destroy();
-        this.saveState();
+
+        // NOUVEAU: Notifier le système de sauvegarde unifié
+        this.notifyBuildingChange();
         this.rebuildPathfindingGrid();
 
         this.emit('buildingDestroyed', building);
-
         return true;
+    }
+
+    // NOUVEAU: Notifier les changements pour le système de sauvegarde unifié
+    private notifyBuildingChange(): void {
+        try {
+            // Déclencher une sauvegarde automatique
+            window.dispatchEvent(new CustomEvent('game:buildingsChanged', {
+                detail: {
+                    buildingCount: this.buildings.length,
+                    buildings: this.getAllBuildings()
+                }
+            }));
+        } catch (error) {
+            console.error('Erreur notification changement bâtiments:', error);
+        }
+    }
+
+    // NOUVEAU: Méthode pour obtenir tous les bâtiments en format de sauvegarde
+    public getAllBuildings(): StoredBuilding[] {
+        return this.buildings.map(building => {
+            const position = building.getPosition();
+            return {
+                type: building.getType(),
+                x: position.x,
+                y: position.y
+            };
+        });
+    }
+
+    // MODIFIÉ: Plus d'utilisation du sessionStorage
+    public loadState(): void {
+        // Cette méthode ne fait plus rien car le chargement se fait via GameSaveService
+        console.log('BuildingManager: loadState() deprecated - using unified save system');
+    }
+
+    // NOUVEAU: Charger depuis les données de sauvegarde unifiée
+    public loadFromSaveData(buildings: StoredBuilding[]): void {
+        console.log(`🏠 Chargement de ${buildings.length} bâtiments depuis sauvegarde unifiée`);
+
+        // Vider les bâtiments existants
+        this.clearAll();
+
+        // Charger les bâtiments
+        buildings.forEach(data => {
+            if (this.isValidBuildingData(data)) {
+                try {
+                    this.placeBuilding(data.type, data.x, data.y);
+                } catch (error) {
+                    console.error(`Erreur chargement bâtiment ${data.type}:`, error);
+                }
+            }
+        });
+
+        console.log(`✅ ${this.buildings.length} bâtiments chargés`);
+    }
+
+    private isValidBuildingData(data: any): data is StoredBuilding {
+        return data &&
+            typeof data.type === 'string' &&
+            typeof data.x === 'number' &&
+            typeof data.y === 'number' &&
+            !isNaN(data.x) &&
+            !isNaN(data.y);
     }
 
     public getBuildingAt(x: number, y: number): TiledBuilding | null {
@@ -120,50 +180,6 @@ export class BuildingManager {
         });
     }
 
-    private saveState(): void {
-        try {
-            const state: StoredBuilding[] = this.buildings.map(building => {
-                const position = building.getPosition();
-                return {
-                    type: building.getType(),
-                    x: position.x,
-                    y: position.y
-                };
-            });
-
-            sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
-        } catch (error) {
-            console.error('Erreur lors de la sauvegarde des bâtiments:', error);
-        }
-    }
-
-    public loadState(): void {
-        try {
-            const stored = sessionStorage.getItem(this.STORAGE_KEY);
-            if (!stored) return;
-
-            const state: StoredBuilding[] = JSON.parse(stored);
-
-            const validBuildings = state.filter(data =>
-                typeof data.type === 'string' &&
-                typeof data.x === 'number' &&
-                typeof data.y === 'number' &&
-                !isNaN(data.x) &&
-                !isNaN(data.y)
-            );
-
-            validBuildings.forEach(data => {
-                this.placeBuilding(data.type, data.x, data.y);
-            });
-
-            console.log(`Chargés ${validBuildings.length} bâtiments`);
-
-        } catch (error) {
-            console.error('Erreur chargement bâtiments:', error);
-            sessionStorage.removeItem(this.STORAGE_KEY);
-        }
-    }
-
     public updateBuildings(player: Phaser.Physics.Arcade.Sprite): void {
         this.buildings.forEach(building => {
             try {
@@ -191,11 +207,12 @@ export class BuildingManager {
 
         this.buildings.length = 0;
 
-        try {
-            sessionStorage.removeItem(this.STORAGE_KEY);
-        } catch (error) {
-            console.error('Erreur lors du nettoyage du storage:', error);
-        }
+        // SUPPRIMÉ: Plus de sessionStorage
+        // try {
+        //     sessionStorage.removeItem(this.STORAGE_KEY);
+        // } catch (error) {
+        //     console.error('Erreur lors du nettoyage du storage:', error);
+        // }
 
         this.rebuildPathfindingGrid();
         this.emit('allBuildingsCleared');
@@ -240,7 +257,6 @@ export class BuildingManager {
         if (callbacks) {
             callbacks.forEach(callback => {
                 try {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
                     (callback as Function)(...args);
                 } catch (error) {
                     console.error(`Erreur dans le callback ${event}:`, error);
@@ -267,14 +283,19 @@ export class BuildingManager {
             const dim = building.getDimensions();
 
             return !(x >= pos.x + (dim.tilesWidth * 16) ||
-                    x + (width * 16) <= pos.x ||
-                    y >= pos.y + (dim.tilesHeight * 16) ||
-                    y + (height * 16) <= pos.y);
+                x + (width * 16) <= pos.x ||
+                y >= pos.y + (dim.tilesHeight * 16) ||
+                y + (height * 16) <= pos.y);
         });
     }
 
     public destroy(): void {
         this.clearAll();
         this.eventCallbacks.clear();
+
+        // Nettoyer la référence globale
+        if ((window as any).__BUILDING_MANAGER__ === this) {
+            delete (window as any).__BUILDING_MANAGER__;
+        }
     }
 }

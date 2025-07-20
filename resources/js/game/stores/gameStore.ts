@@ -452,54 +452,103 @@ export const useGameStore = defineStore('game', () => {
                 forceResourceUpdate();
             }
 
+            // NOUVEAU: Chargement des bâtiments via BuildingManager
             if (gameState.buildings && gameState.buildings.length > 0) {
+                console.log(`🏠 Chargement de ${gameState.buildings.length} bâtiments...`);
                 clearBuildings();
+
                 setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent('game:loadBuildings', {
-                        detail: { buildings: gameState.buildings, source: 'gameSave' }
-                    }));
+                    const buildingManager = (window as any).__BUILDING_MANAGER__;
+                    if (buildingManager && typeof buildingManager.loadFromSaveData === 'function') {
+                        buildingManager.loadFromSaveData(gameState.buildings);
+                        console.log('✅ Bâtiments chargés via BuildingManager');
+                    } else {
+                        console.warn('⚠️ BuildingManager non disponible pour le chargement');
+                        // Fallback: émettre l'événement ancien système
+                        window.dispatchEvent(new CustomEvent('game:loadBuildings', {
+                            detail: { buildings: gameState.buildings, source: 'gameSave' }
+                        }));
+                    }
                 }, 100);
             }
 
+            // NOUVEAU: Chargement des zones débloquées
             if (gameState.unlockedZones && gameState.unlockedZones.length > 0) {
+                console.log(`🗺️ Chargement de ${gameState.unlockedZones.length} zones débloquées...`);
                 state.value.unlockedZones = [...gameState.unlockedZones];
-                gameState.unlockedZones.forEach((zoneName: string) => {
+
+                // Déclencher le déblocage de chaque zone avec un délai
+                gameState.unlockedZones.forEach((zoneName: string, index: number) => {
                     setTimeout(() => {
-                        window.dispatchEvent(new CustomEvent('game:unlockZone', {
-                            detail: { zoneName, fromLoad: true }
+                        console.log(`🔓 Déblocage zone: ${zoneName}`);
+                        window.dispatchEvent(new CustomEvent('game:unlockZoneBlocker', {
+                            detail: { blockerName: zoneName, fromLoad: true }
                         }));
-                    }, 200);
+                    }, 200 + (index * 100)); // Délai progressif pour éviter les conflits
                 });
             }
 
-            window.addEventListener('game:clearAllBuildings', () => {
-                console.log('🏠 Nettoyage forcé des bâtiments');
-                clearBuildings();
-                const buildingManager = (window as any).__BUILDING_MANAGER__;
-                if (buildingManager) {
-                    buildingManager.clearAll();
-                }
-            });
-
-            window.addEventListener('game:forceReset', () => {
-                console.log('🔄 Reset forcé du gameStore');
-                // Reset toutes les données
-                updatePlayerLevel(1);
-                updatePlayerGold(0);
-                updatePlayerExperience({ current: 0, nextLevel: 100 });
-                updatePlayerHealth({ current: 100, max: 100 });
-                updatePlayerAvatar('default');
-
-                // Vider les ressources
-                resourcesMap.value.clear();
-                resourceUpdateTrigger.value++;
-
-                state.value.unlockedZones = [];
-            });
-
             console.log('✅ État du jeu appliqué depuis système unifié');
         });
-    };
+
+        // NOUVEAU: Écouter les changements de bâtiments pour sauvegarder
+        window.addEventListener('game:buildingsChanged', () => {
+            // Déclencher une sauvegarde automatique avec un délai pour éviter le spam
+            clearTimeout((window as any).__BUILDING_SAVE_TIMEOUT__);
+            (window as any).__BUILDING_SAVE_TIMEOUT__ = setTimeout(() => {
+                if (autoSaveEnabled) {
+                    gameSaveService.save('auto').catch(error => {
+                        console.warn('Échec sauvegarde auto après changement bâtiments:', error);
+                    });
+                }
+            }, 2000); // 2 secondes de délai
+        });
+
+        // NOUVEAU: Écouter les déblocages de zones pour sauvegarder
+        window.addEventListener('game:zoneUnlocked', (event: CustomEvent) => {
+            const { blockerName } = event.detail;
+            if (blockerName && !state.value.unlockedZones.includes(blockerName)) {
+                state.value.unlockedZones.push(blockerName);
+                console.log(`🗺️ Zone ajoutée aux zones débloquées: ${blockerName}`);
+
+                // Sauvegarder immédiatement
+                setTimeout(() => {
+                    gameSaveService.save('auto').catch(error => {
+                        console.warn('Échec sauvegarde auto après déblocage zone:', error);
+                    });
+                }, 1000);
+            }
+        });
+
+        // Gestion du nettoyage forcé
+        window.addEventListener('game:clearAllBuildings', () => {
+            console.log('🏠 Nettoyage forcé des bâtiments');
+            clearBuildings();
+            const buildingManager = (window as any).__BUILDING_MANAGER__;
+            if (buildingManager) {
+                buildingManager.clearAll();
+            }
+        });
+
+        window.addEventListener('game:forceReset', () => {
+            console.log('🔄 Reset forcé du gameStore');
+            // Reset toutes les données
+            updatePlayerLevel(1);
+            updatePlayerGold(0);
+            updatePlayerExperience({ current: 0, nextLevel: 100 });
+            updatePlayerHealth({ current: 100, max: 100 });
+            updatePlayerAvatar('default');
+
+            // Vider les ressources
+            resourcesMap.value.clear();
+            resourceUpdateTrigger.value++;
+
+            // NOUVEAU: Vider les zones débloquées
+            state.value.unlockedZones = [];
+
+            clearBuildings();
+        });
+    };;
 
     const saveProgress = async (saveName: string = 'manual'): Promise<boolean> => {
         try {

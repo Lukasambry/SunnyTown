@@ -31,6 +31,38 @@ export class ZoneBlockerRegistry {
         return this.getAllBlockers().filter(blocker => blocker.unlocked);
     }
 
+    // NOUVEAU: Marquer une zone comme débloquée
+    public unlockBlocker(blockerName: string): boolean {
+        const blocker = this.blockers.get(blockerName);
+        if (!blocker) {
+            console.warn(`ZoneBlockerRegistry: Blocker ${blockerName} not found`);
+            return false;
+        }
+
+        if (blocker.unlocked) {
+            console.log(`ZoneBlockerRegistry: Blocker ${blockerName} already unlocked`);
+            return false;
+        }
+
+        blocker.unlocked = true;
+        console.log(`ZoneBlockerRegistry: Blocker ${blockerName} marked as unlocked`);
+        return true;
+    }
+
+    // NOUVEAU: Vérifier si une zone est débloquée
+    public isBlockerUnlocked(blockerName: string): boolean {
+        const blocker = this.blockers.get(blockerName);
+        return blocker ? blocker.unlocked : false;
+    }
+
+    // NOUVEAU: Réinitialiser toutes les zones (pour nouvelle partie)
+    public resetAllBlockers(): void {
+        this.blockers.forEach(blocker => {
+            blocker.unlocked = false;
+        });
+        console.log('ZoneBlockerRegistry: All blockers reset to locked state');
+    }
+
     private initializeDefaultBlockers(): void {
         console.log('ZoneBlockerRegistry initialized - blockers will be loaded from Tiled properties');
     }

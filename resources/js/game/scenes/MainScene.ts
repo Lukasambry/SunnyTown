@@ -278,7 +278,7 @@ export class MainScene extends Phaser.Scene {
         this.workerManager = new WorkerManager(this);
         this.setupWorkerAssignmentListeners();
 
-        this.buildingManager.loadState();
+        //this.buildingManager.loadState();
         this.rebuildPathfindingGrid();
 
         this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));

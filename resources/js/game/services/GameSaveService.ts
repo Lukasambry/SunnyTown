@@ -153,42 +153,7 @@ export class GameSaveService {
             console.warn('⚠️ Erreur ResourceManager:', error);
         }
 
-        // Méthode 2 : Via gameStore.getResourceAmount (fallback)
-        if (Object.keys(resources).length === 0) {
-            console.log('🔄 Fallback vers getResourceAmount...');
-            const resourceTypes = ['WOOD', 'STONE', 'FOOD', 'IRON', 'COAL', 'GOLD', 'METAL', 'TOOLS', 'ENERGY', 'PLANKS', 'POPULATION'];
-
-            resourceTypes.forEach(type => {
-                try {
-                    const amount = gameStore.getResourceAmount?.(type) || 0;
-                    if (amount > 0) {
-                        resources[type.toLowerCase()] = amount;
-                    }
-                } catch (error) {
-                    console.warn(`Erreur ressource ${type}:`, error);
-                }
-            });
-
-            console.log('📦 Ressources via getResourceAmount:', resources);
-        }
-
-        // Méthode 3 : Via resourcesMap (dernier recours)
-        if (Object.keys(resources).length === 0) {
-            console.log('🔄 Dernier recours via resourcesMap...');
-            try {
-                if (gameStore.resourcesMap && typeof gameStore.resourcesMap.forEach === 'function') {
-                    gameStore.resourcesMap.forEach((amount: number, type: string) => {
-                        if (amount > 0) {
-                            resources[type.toLowerCase()] = amount;
-                        }
-                    });
-                    console.log('📦 Ressources via resourcesMap:', resources);
-                }
-            } catch (error) {
-                console.warn('⚠️ Erreur resourcesMap:', error);
-            }
-        }
-
+        // NOUVEAU: Collecte des bâtiments via BuildingManager
         const buildings: any[] = [];
         try {
             const buildingManager = (window as any).__BUILDING_MANAGER__;
@@ -197,16 +162,33 @@ export class GameSaveService {
                 buildings.push(...currentBuildings);
                 console.log('📦 Bâtiments collectés depuis BuildingManager:', buildings.length);
             } else {
-                console.log('📦 Pas de BuildingManager disponible, bâtiments collectés via événements');
+                console.log('📦 Pas de BuildingManager disponible');
             }
         } catch (error) {
             console.warn('Erreur collecte bâtiments:', error);
         }
 
+        // NOUVEAU: Collecte des zones débloquées
         const unlockedZones: string[] = [];
         try {
+            // Méthode 1: Via gameStore
             if (gameStore.state?.unlockedZones) {
                 unlockedZones.push(...gameStore.state.unlockedZones);
+                console.log('📦 Zones débloquées via gameStore:', unlockedZones.length);
+            }
+
+            // Méthode 2: Via ZoneBlockerRegistry (fallback)
+            if (unlockedZones.length === 0) {
+                try {
+                    const registry = (window as any).__ZONE_BLOCKER_REGISTRY__;
+                    if (registry && typeof registry.getUnlockedBlockers === 'function') {
+                        const unlockedBlockers = registry.getUnlockedBlockers();
+                        unlockedZones.push(...unlockedBlockers.map((b: any) => b.name));
+                        console.log('📦 Zones débloquées via registry:', unlockedZones.length);
+                    }
+                } catch (registryError) {
+                    console.warn('⚠️ Erreur ZoneBlockerRegistry:', registryError);
+                }
             }
         } catch (error) {
             console.warn('Erreur collecte zones:', error);
@@ -235,6 +217,7 @@ export class GameSaveService {
             resourcesDetail: resources,
             buildings: buildings.length,
             zones: unlockedZones.length,
+            zonesDetail: unlockedZones,
         });
 
         return gameState;
@@ -449,9 +432,9 @@ export class GameSaveService {
             gold: gameState.player.gold,
             resources: Object.keys(gameState.resources).length,
             buildings: gameState.buildings.length,
+            unlockedZones: gameState.unlockedZones.length,
         });
     }
-
     private setupAutoSave(): void {
         if (this.autoSaveInterval) {
             clearInterval(this.autoSaveInterval);

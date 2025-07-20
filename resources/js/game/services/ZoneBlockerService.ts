@@ -42,16 +42,68 @@ export class ZoneBlockerService {
     private hoverCornerSprites: Phaser.GameObjects.Sprite[] = [];
     private currentMap: Phaser.Tilemaps.Tilemap | null = null;
 
+
     constructor(scene: Scene, cameraService: CameraService) {
         this.scene = scene;
         this.cameraService = cameraService;
         this.registry = ZoneBlockerRegistry.getInstance();
         this.setupInputHandlers();
+
+        // NOUVEAU: Exposer globalement pour la sauvegarde
+        (window as any).__ZONE_BLOCKER_REGISTRY__ = this.registry;
     }
 
     public initialize(map: Phaser.Tilemaps.Tilemap): void {
         this.loadBlockersFromMap(map);
         this.currentMap = map;
+
+        // NOUVEAU: Charger les zones débloquées depuis la sauvegarde
+        this.loadUnlockedZonesFromSave();
+    }
+
+    private loadUnlockedZonesFromSave(): void {
+        try {
+            const gameStore = (window as any).gameStore;
+            if (gameStore?.state?.unlockedZones) {
+                const unlockedZones = gameStore.state.unlockedZones;
+                console.log(`🗺️ Chargement ${unlockedZones.length} zones sauvegardées:`, unlockedZones);
+
+                unlockedZones.forEach((zoneName: string) => {
+                    this.unlockBlockerSilently(zoneName);
+                });
+            }
+        } catch (error) {
+            console.error('Erreur chargement zones débloquées:', error);
+        }
+    }
+
+    private unlockBlockerSilently(blockerName: string): void {
+        const blocker = this.blockers.get(blockerName);
+        const blockerConfig = this.registry.getBlocker(blockerName);
+
+        if (!blocker || !blockerConfig) {
+            console.warn(`Blocker ${blockerName} non trouvé pour déblocage silencieux`);
+            return;
+        }
+
+        if (blockerConfig.unlocked) {
+            return; // Déjà débloqué
+        }
+
+        // Marquer comme débloqué
+        blockerConfig.unlocked = true;
+
+        // Supprimer le groupe de layers de la map
+        this.removeBlockerFromMap(blockerName);
+
+        // Nettoyer les références locales
+        this.cleanupBlocker(blocker);
+        this.blockers.delete(blockerName);
+
+        // Reconstruire la grid du pathfinder après suppression des layers
+        this.rebuildPathfindingGrid();
+
+        console.log(`🔓 Zone ${blockerName} débloquée silencieusement`);
     }
 
     public selectBlocker(blockerName: string): void {
@@ -485,13 +537,17 @@ export class ZoneBlockerService {
         // Reconstruire la grid du pathfinder après suppression des layers
         this.rebuildPathfindingGrid();
 
+        // NOUVEAU: Notifier le système de sauvegarde
+        window.dispatchEvent(new CustomEvent('game:zoneUnlocked', {
+            detail: { blockerName }
+        }));
+
         console.log(`Zone blocker ${blockerName} unlocked and removed from map!`);
     }
-
     private removeBlockerFromMap(blockerName: string): void {
         if (!this.currentMap) return;
 
-        console.log(`Removing blocker: ${blockerName}`);
+        console.log(`🗑️ Suppression blocker: ${blockerName}`);
 
         // Trouver le layer d'objets du groupe et récupérer son blockerId
         const groupName = `Blocker_${blockerName}`;
@@ -506,16 +562,16 @@ export class ZoneBlockerService {
             const layerProperties = this.extractLayerProperties(objectLayer);
             if (layerProperties.blockerId) {
                 blockerId = layerProperties.blockerId;
-                console.log(`Found blockerId from object layer: ${blockerId}`);
+                console.log(`✅ BlockerId trouvé: ${blockerId}`);
             } else {
-                console.warn(`No blockerId found in object layer ${groupName}, using fallback: ${blockerId}`);
+                console.warn(`⚠️ Pas de blockerId trouvé pour ${groupName}, utilisation fallback: ${blockerId}`);
             }
 
             // Supprimer le layer d'objets
             this.currentMap.objects.splice(objectLayerIndex, 1);
-            console.log(`Removed object layer: ${groupName}`);
+            console.log(`🗑️ Layer d'objets supprimé: ${groupName}`);
         } else {
-            console.warn(`Object layer not found: ${groupName}`);
+            console.warn(`⚠️ Layer d'objets non trouvé: ${groupName}`);
         }
 
         // Maintenant utiliser le blockerId pour trouver et masquer tous les layers associés
@@ -525,7 +581,7 @@ export class ZoneBlockerService {
     private hideLayersByBlockerId(blockerId: string): void {
         if (!this.currentMap) return;
 
-        console.log(`Looking for layers with blockerId: ${blockerId}`);
+        console.log(`🔍 Recherche layers avec blockerId: ${blockerId}`);
 
         const layersToDestroy: string[] = [];
 
@@ -534,7 +590,7 @@ export class ZoneBlockerService {
             const layerProperties = this.extractLayerProperties(layerData);
 
             if (layerProperties.blockerId === blockerId) {
-                console.log(`Found layer with matching blockerId: ${layerData.name} - ${index}`);
+                console.log(`✅ Layer trouvé avec blockerId correspondant: ${layerData.name} - ${index}`);
                 layersToDestroy.push(layerData.name);
             }
         });
@@ -544,16 +600,15 @@ export class ZoneBlockerService {
             this.destroyLayer(layerName);
         });
 
-        console.log(`Destroyed ${layersToDestroy.length} layers with blockerId: ${blockerId}`);
+        console.log(`🗑️ ${layersToDestroy.length} layers supprimés avec blockerId: ${blockerId}`);
     }
-
     private destroyLayer(layerName: string): void {
         if (!this.currentMap) return;
 
         // Récupérer le layer Phaser correspondant
         const tilemapLayer = this.currentMap.getLayer(layerName);
         if (tilemapLayer?.tilemapLayer) {
-            console.log(`Destroying layer: ${layerName}`);
+            console.log(`🗑️ Destruction layer: ${layerName}`);
 
             // Supprimer les collisions de ce layer de la baseGrid AVANT de détruire le layer
             this.removeLayerCollisionsFromBaseGrid(tilemapLayer.tilemapLayer);
@@ -565,13 +620,12 @@ export class ZoneBlockerService {
             const layerIndex = this.currentMap.layers.findIndex(layer => layer.name === layerName);
             if (layerIndex !== -1) {
                 this.currentMap.layers.splice(layerIndex, 1);
-                console.log(`Removed layer from map layers array: ${layerName}`);
+                console.log(`✅ Layer retiré de la map: ${layerName}`);
             }
         } else {
-            console.warn(`Could not find tilemap layer for: ${layerName}`);
+            console.warn(`⚠️ Layer tilemap non trouvé: ${layerName}`);
         }
     }
-
     private removeLayerCollisionsFromBaseGrid(layer: Phaser.Tilemaps.TilemapLayer): void {
         const mainScene = this.scene as any;
         if (!mainScene.baseGrid) {
@@ -604,24 +658,22 @@ export class ZoneBlockerService {
             }
         }
     }
-
     private rebuildPathfindingGrid(): void {
         try {
             const mainScene = this.scene as any;
             if (mainScene.rebuildPathfindingGrid && typeof mainScene.rebuildPathfindingGrid === 'function') {
-                console.log('Rebuilding pathfinding grid after zone unlock...');
+                console.log('🔄 Reconstruction grille pathfinding après déblocage zone...');
                 console.log('BaseGrid state before rebuild:', this.getBaseGridSummary());
                 mainScene.rebuildPathfindingGrid();
-                console.log('Pathfinding grid rebuilt successfully');
+                console.log('✅ Grille pathfinding reconstruite');
                 console.log('BaseGrid state after rebuild:', this.getBaseGridSummary());
             } else {
-                console.warn('rebuildPathfindingGrid method not found on scene');
+                console.warn('⚠️ rebuildPathfindingGrid non trouvée sur la scène');
             }
         } catch (error) {
-            console.error('Error rebuilding pathfinding grid:', error);
+            console.error('Erreur reconstruction grille pathfinding:', error);
         }
     }
-
     private getBaseGridSummary(): string {
         const mainScene = this.scene as any;
         if (!mainScene.baseGrid) return 'BaseGrid not found';
@@ -640,7 +692,6 @@ export class ZoneBlockerService {
 
         return `Total: ${totalCells}, Blocked: ${blockedCells}, Free: ${totalCells - blockedCells}`;
     }
-
     private cleanupBlocker(blocker: ZoneBlocker): void {
         if (blocker.interactionZone) {
             blocker.interactionZone.destroy();
@@ -662,7 +713,6 @@ export class ZoneBlockerService {
             }
         }));
     }
-
     private hideBlockerUI(): void {
         window.dispatchEvent(new CustomEvent('game:zoneBlockerDeselected'));
     }
@@ -705,5 +755,9 @@ export class ZoneBlockerService {
             }
         }
         return null;
+    }
+
+    public getUnlockedZones(): string[] {
+        return this.registry.getUnlockedBlockers().map(blocker => blocker.name);
     }
 }
