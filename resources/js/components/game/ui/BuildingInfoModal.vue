@@ -1,6 +1,4 @@
-<!-- src/components/ui/BuildingInfoModal.vue -->
 <template>
-    <!-- Modal Overlay -->
     <Teleport to="body">
         <Transition name="modal-fade">
             <div v-if="isVisible" class="modal-overlay fixed inset-0 flex items-center justify-center p-4 !z-[9999]"
@@ -20,9 +18,7 @@
                                         <img :src="`/assets/game/buildings/icons/${buildingType}.png`" class="h-15 max-w-14 pixelated" :alt="buildingType">
                                     </p>
                                 </div>
-                                <h2 class="text-xl font-bold text-white">
-                                    {{ buildingDisplayName }}
-                                </h2>
+                                <h2 class="!text-slate-800 !text-3xl" v-text="buildingDisplayName"/>
                             </div>
 
                             <div class="pixel-border pixel-border-stone w-full p-2 h-full flex flex-col gap-6">
@@ -231,34 +227,24 @@
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Description -->
-                                <p class="text-gray-300 text-sm leading-relaxed">
-                                    {{ buildingDescription }}
-                                </p>
                             </div>
 
-                            <!-- Resources -->
-                            <div v-if="hasResources" class="space-y-3">
-                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Ressources stockées
-                                </h3>
-                                <div class="space-y-2">
-                                    <ResourceBar v-for="[resourceType, amount] in storedResources" :key="resourceType"
-                                        :resource-type="resourceType" :current="amount"
-                                        :max="getResourceCapacity(resourceType)" :width="280" />
+                            <!-- Tab Navigation -->
+                            <div class="flex gap-5">
+                                <div
+                                    class="w-fit no-bottom py-1 pb-2 px-3 flex gap-3 items-center !text-slate-900 cursor-pointer pixel-no-bottom"
+                                    :class="{ 'pixel-border pixel-border-dirt': activeTab === 'resources' }"
+                                    @click="activeTab = 'resources'">
+                                    <img src="/assets/game/ui/basket.png" class="h-10 pixelated" alt="Resources">
+                                    <h3 class="!text-slate-800 text-3xl">Ressources</h3>
                                 </div>
-                            </div>
 
-                            <!-- Actions -->
-                            <div v-if="availableActions.length > 0" class="space-y-3">
-                                <h3 class="text-sm font-semibold text-gray-300 uppercase tracking-wide">
-                                    Actions
-                                </h3>
-                                <div class="flex gap-2">
-                                    <ActionButton v-for="action in availableActions" :key="action.key"
-                                        :icon="action.icon" :label="action.label" :variant="action.variant"
-                                        :disabled="action.disabled" @click="handleAction(action.key)" />
+                                <div
+                                    class="w-fit no-bottom py-1 pb-2 px-3 flex gap-3 items-center !text-slate-900 cursor-pointer pixel-no-bottom"
+                                    :class="{ 'pixel-border pixel-border-dirt': activeTab === 'workers' }"
+                                    @click="activeTab = 'workers'">
+                                    <img src="/assets/game/ui/playercount.png" class="h-10 pixelated" alt="Workers">
+                                    <h3 class="!text-slate-800 text-3xl">Ouvriers</h3>
                                 </div>
                             </div>
                         </div>
@@ -281,20 +267,22 @@ const resourceUpdateTrigger = ref(0)
 const availableWorkers = ref(0)
 
 const isVisible = computed(() => gameStore.state?.showBuildingInfo || false)
-
 const buildingData = computed(() => gameStore.state?.currentBuildingInfo || null)
 
 const buildingDisplayName = computed(() => {
     return buildingData.value?.getBuildingName()
 })
 
+const buildingType = computed(() => {
+    return buildingData.value?.getType() ?? "default"
+})
+
 const positionText = computed(() => {
     if (!buildingData.value) return 'Inconnue'
-
     const pos = buildingData.value.getPosition()
     const tileX = Math.floor(pos.x / 16)
     const tileY = Math.floor(pos.y / 16)
-    return `(${tileX}, ${tileY})`
+    return `${tileX}, ${tileY}`
 })
 
 const buildingDescription = computed(() => {
@@ -500,8 +488,18 @@ const storedResources = computed(() => {
     resourceUpdateTrigger.value
     if (!buildingData.value) return []
 
-    const resources = buildingData.value.getAllBuildingResources()
-    return Array.from(resources.entries()).filter(([_, amount]) => amount > 0)
+    const capacities = buildingData.value.getAllBuildingResourceCapacities()
+    const stored = buildingData.value.getAllBuildingResources()
+
+    return Array.from(capacities.entries())
+        .filter(([_, capacity]) => capacity > 0)
+        .map(([resourceType, capacity]) => ({
+            resourceType,
+            current: stored.get(resourceType) || 0,
+            capacity,
+            percentage: capacity > 0 ? ((stored.get(resourceType) || 0) / capacity) * 100 : 0,
+            productionRate: getProductionRate(resourceType)
+        }))
 })
 
 const hasResources = computed(() => storedResources.value.length > 0)
@@ -519,19 +517,19 @@ const assignedWorkerCount = computed(() => {
     return building.getAssignedWorkerCount() || 0
 })
 
-    // Collect resources action for storage buildings
-    if (type === 'sawmill' && hasResources.value) {
-        const hasAnyResources = storedResources.value.some(([_, amount]) => amount > 0)
-        actions.push({
-            key: 'collect',
-            label: 'Collecter tout',
-            icon: 'plus',
-            variant: 'success',
-            disabled: !hasAnyResources
-        })
+const workerTypeName = computed(() => {
+    const type = buildingData.value?.getWorkerType()
+    const names: Record<string, string> = {
+        'NEUTRAL': 'Ouvrier généraliste',
+        'LUMBERJACK': 'Bûcheron',
+        'MINER': 'Mineur',
+        'FARMER': 'Fermier'
     }
+    return type ? (names[type] || type) : 'Ouvrier'
+})
 
-    return actions
+const workerProgressPercentage = computed(() => {
+    return maxWorkers.value > 0 ? (assignedWorkerCount.value / maxWorkers.value) * 100 : 0
 })
 
 const canIncrement = computed(() => {
@@ -688,6 +686,7 @@ const collectAllResources = () => {
     const building = toRaw(buildingData.value)
 
     let totalCollected = 0
+    let totalSkipped = 0
 
     storedResources.value.forEach(({ resourceType, current }) => {
         if (current > 0) {
@@ -721,9 +720,24 @@ const collectAllResources = () => {
     })
 
     if (totalCollected > 0) {
-        // Emit event to update the main scene
+        window.dispatchEvent(new CustomEvent('game:notification', {
+            detail: {
+                type: 'success',
+                title: 'Ressources récoltées',
+                message: `${totalCollected} ressource${totalCollected > 1 ? 's' : ''} récoltée${totalCollected > 1 ? 's' : ''}${totalSkipped > 0 ? ` (${totalSkipped} ignorée${totalSkipped > 1 ? 's' : ''} - inventaire plein)` : ''}`
+            }
+        }))
+
         window.dispatchEvent(new CustomEvent('game:resourcesCollected', {
             detail: { building: buildingData.value, totalCollected, totalSkipped }
+        }))
+    } else if (totalSkipped > 0) {
+        window.dispatchEvent(new CustomEvent('game:notification', {
+            detail: {
+                type: 'warning',
+                title: 'Inventaire plein',
+                message: 'Impossible de récolter les ressources, votre inventaire est plein.'
+            }
         }))
     }
 }
@@ -939,17 +953,6 @@ const fixBuildingStorage = () => {
 .modal-overlay {
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-}
-
-/* Modal transitions */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-    transition: all 0.3s ease;
-}
-
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-    opacity: 0;
 }
 
 .modal-fade-enter-from .modal-content,
