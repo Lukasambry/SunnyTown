@@ -2,16 +2,16 @@ name: Check Merge Source
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-    branches: [preprod, prod]
+    branches: [prod]
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if PR is from main
+      - name: Check if PR is from preprod
         run: |
-          if [ "$(gh pr view $PR_NUMBER --json baseRefName -q '.baseRefName')" != "main" ]; then
-            echo "PR must be from main branch!"
+          if [ "$(gh pr view $PR_NUMBER --json headRefName -q '.headRefName')" != "preprod" ]; then
+            echo "PR must be from preprd branch!"
             exit 1
           fi
         env:

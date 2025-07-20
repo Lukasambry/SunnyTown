@@ -1,0 +1,19 @@
+name: Check Merge Source
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [preprod]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR is from main
+        run: |
+          if [ "$(gh pr view $PR_NUMBER --json headRefName -q '.headRefName')" != "main" ]; then
+            echo "PR must be from main branch!"
+            exit 1
+          fi
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
