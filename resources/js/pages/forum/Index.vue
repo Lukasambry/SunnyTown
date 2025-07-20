@@ -69,12 +69,6 @@ const matomo = useMatomo();
 let startTime: number;
 let categoryViewTimes: Record<string, number> = {};
 
-const trackCategoryView = (category: Category) => {
-    matomo.trackEvent('Forum', 'Category_View', category.name);
-    matomo.trackUserAction('View', 'forum_category', category.name);
-    categoryViewTimes[category.name] = Date.now();
-};
-
 const trackThreadClick = (thread: Thread, category: Category) => {
     matomo.trackEvent('Forum', 'Thread_Click', thread.title);
     matomo.trackNavigation(`thread_${thread.id}`);
@@ -116,22 +110,6 @@ const trackTimeSpent = () => {
     }
 };
 
-const trackScrollDepth = () => {
-    const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
-    
-    if (scrollPercent >= 25) {
-        matomo.trackEvent('Forum', 'Scroll_Depth', '25%');
-    }
-    if (scrollPercent >= 50) {
-        matomo.trackEvent('Forum', 'Scroll_Depth', '50%');
-    }
-    if (scrollPercent >= 75) {
-        matomo.trackEvent('Forum', 'Scroll_Depth', '75%');
-    }
-    if (scrollPercent >= 100) {
-        matomo.trackEvent('Forum', 'Scroll_Depth', '100%');
-    }
-};
 
 let scrollDepthTracked = { 25: false, 50: false, 75: false, 100: false };
 const handleScroll = () => {

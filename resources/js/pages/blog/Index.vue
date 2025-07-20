@@ -61,23 +61,6 @@ const trackReadingProgress = (postId: number) => {
     }
 };
 
-const trackScrollBehavior = () => {
-    const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
-    
-    if (scrollPercent >= 25) {
-        matomo.trackEvent('Blog', 'Scroll_Depth', '25%');
-    }
-    if (scrollPercent >= 50) {
-        matomo.trackEvent('Blog', 'Scroll_Depth', '50%');
-    }
-    if (scrollPercent >= 75) {
-        matomo.trackEvent('Blog', 'Scroll_Depth', '75%');
-    }
-    if (scrollPercent >= 100) {
-        matomo.trackEvent('Blog', 'Scroll_Depth', '100%');
-    }
-};
-
 let scrollDepthTracked = { 25: false, 50: false, 75: false, 100: false };
 const handleScroll = () => {
     const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);

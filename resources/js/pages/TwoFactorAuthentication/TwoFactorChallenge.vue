@@ -174,12 +174,6 @@ const handleInputBlur = () => {
     trackInputTime();
 };
 
-const handlePaste = (event: ClipboardEvent) => {
-    const mode = recoveryCodeMode.value ? 'recovery' : 'authenticator';
-    trackUserAction('code_pasted', mode);
-    trackEngagement('input_method', 'paste');
-};
-
 const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Enter') {
         trackUserAction('enter_key_submit', recoveryCodeMode.value ? 'recovery' : 'authenticator');

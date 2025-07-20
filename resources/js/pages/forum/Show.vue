@@ -130,15 +130,12 @@ const setupEngagementTracking = () => {
         matomo.trackEvent('Engagement', 'Mouse_Activity', 'forum_category');
     };
     
-    let isPageFocused = true;
     const handleVisibilityChange = () => {
-        if (document.hidden) {
-            isPageFocused = false;
-            matomo.trackEvent('Engagement', 'Page_Blur', 'forum_category');
-        } else {
-            isPageFocused = true;
-            matomo.trackEvent('Engagement', 'Page_Focus', 'forum_category');
-        }
+    if (document.hidden) {
+        matomo.trackEvent('Engagement', 'Page_Blur', 'forum_category');
+    } else {
+        matomo.trackEvent('Engagement', 'Page_Focus', 'forum_category');
+    }
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });

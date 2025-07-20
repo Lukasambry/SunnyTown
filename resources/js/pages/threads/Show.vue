@@ -25,24 +25,23 @@
         </div>
 
         <!-- Messages with tracking -->
-        <div class="space-y-4">
-            <div 
-                v-for="(msg, index) in thread.messages" 
-                :key="msg.id"
-                @click="trackMessageClick(msg, index)"
-                @mouseenter="trackMessageHover(msg, index, 'enter')"
-                @mouseleave="trackMessageHover(msg, index, 'leave')"
-                :data-message-id="msg.id"
-                :data-message-index="index"
-                class="pixel-border pixel-border-stone dark:pixel-border-dark-dirt p-4 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors duration-200 cursor-pointer message-item"
-            >
+        <div 
+    v-for="(msg, msgIndex) in thread.messages" 
+    :key="msg.id"
+    @click="trackMessageClick(msg, msgIndex)"
+    @mouseenter="trackMessageHover(msg, msgIndex, 'enter')"
+    @mouseleave="trackMessageHover(msg, msgIndex, 'leave')"
+    :data-message-id="msg.id"
+    :data-message-index="msgIndex"
+    class="pixel-border pixel-border-stone dark:pixel-border-dark-dirt p-4 hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors duration-200 cursor-pointer message-item"
+>
                 <div class="mb-2 flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <span class="font-mono text-black font-bold">{{ msg.user.name }}</span>
                         <span class="font-mono text-xs text-gray-500">
                             {{ formatMessageDate(msg.created_at) }}
                         </span>
-                        <span v-if="index === 0" class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono">
+                        <span  v-if="msgIndex === 0" class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-mono">
                             OP
                         </span>
                         <span v-if="isRecentMessage(msg.created_at)" class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-mono animate-pulse">
@@ -63,7 +62,7 @@
                         >
                             💬 Citer
                         </button>
-                        <span class="font-mono text-xs text-gray-400">#{{ index + 1 }}</span>
+                        <span class="font-mono text-xs text-gray-400">#{{ msgIndex + 1 }}</span>
                     </div>
                 </div>
                 <div class="font-mono text-black" :class="{ 'opacity-75': readMessages.includes(msg.id) }">
