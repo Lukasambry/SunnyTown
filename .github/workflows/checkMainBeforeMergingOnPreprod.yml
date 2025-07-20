@@ -1,0 +1,16 @@
+name: Check Merge Source Main to Preprod
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [preprod]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR is from main
+        run: |
+          if [ "${{ github.head_ref }}" != "main" ]; then
+            echo "PR must be from main branch! Current source: ${{ github.head_ref }}"
+            exit 1
+          fi

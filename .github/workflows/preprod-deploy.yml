@@ -21,28 +21,51 @@ jobs:
             echo "🔄 Déploiement Préprod..."
             cd /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr/
 
+            # Configuration Git et permissions
             git config --global --add safe.directory /home/florddev-preprod-sunnytown/htdocs/preprod.sunnytown.florddev.fr
-            sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .git
-            sudo chmod -R 755 .git
+            sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .
+            sudo chmod -R 755 .
 
+            # Reset et pull
             git reset --hard HEAD
             git clean -fd
             git pull origin preprod
 
-            sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown .
-            sudo chmod -R 755 .
+            # Créer et configurer les dossiers de logs AVANT tout
+            sudo rm -rf storage/logs
+            mkdir -p storage/logs
+            touch storage/logs/laravel.log
+
+            # Permissions pour storage et bootstrap/cache
             sudo chmod -R 777 storage bootstrap/cache
+            sudo chown -R ${{ secrets.SSH_PREPROD_USER }}:florddev-preprod-sunnytown storage bootstrap/cache
 
-            composer install --no-dev --optimize-autoloader
+            # Installation Composer avec suppression du cache
+            php artisan config:clear || true
+            php artisan cache:clear || true
+            php artisan view:clear || true
+            php artisan route:clear || true
 
+            composer install --no-dev --optimize-autoloader --no-scripts
+
+            # Post-install Composer scripts
+            php artisan package:discover --ansi
+            php artisan filament:upgrade
+
+            # NPM
             sudo rm -rf node_modules package-lock.json
-            npm install --production
+            npm install --omit=dev
             npm run build
 
+            # Permissions finales
             sudo chown -R florddev-preprod-sunnytown:www-data storage bootstrap/cache public/build
             sudo chmod -R 775 storage bootstrap/cache public/build
+            chmod 666 storage/logs/laravel.log
 
+            # Cache Laravel
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
             php artisan migrate --force
+
+            echo "✅ Déploiement terminé avec succès!"

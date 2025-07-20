@@ -37,6 +37,7 @@ serve: ## Start the development server
 	php artisan serve
 
 clear: ## Clear application cache
+	php artisan optimize:clear
 	php artisan cache:clear
 	php artisan config:clear
 	php artisan route:clear
