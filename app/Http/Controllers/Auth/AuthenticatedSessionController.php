@@ -36,10 +36,10 @@ class AuthenticatedSessionController extends Controller
         $user = auth()->user();
 
         if ($user->hasRole('admin')) {
-            return redirect()->route('admin');
+            return to_route('admin');
         }
 
-        return redirect('/');
+        return to_route('/');
     }
 
     /**
