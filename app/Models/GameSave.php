@@ -115,7 +115,6 @@ class GameSave extends Model
             $save = new self(['player_id' => $playerId, 'save_name' => $saveName]);
         }
 
-        // Mise à jour des données du joueur
         if (isset($gameState['player'])) {
             $playerData = $gameState['player'];
             $save->player_level = $playerData['level'] ?? 1;
@@ -127,17 +126,14 @@ class GameSave extends Model
             $save->player_avatar = $playerData['avatar'] ?? null;
         }
 
-        // Mise à jour des autres données
         $save->resources = $gameState['resources'] ?? [];
         $save->buildings = $gameState['buildings'] ?? [];
         $save->workers = $gameState['workers'] ?? [];
         $save->game_data = $gameState['gameData'] ?? [];
 
-        // Métadonnées
         $save->last_played_at = now();
         $save->game_version = $gameState['metadata']['gameVersion'] ?? '1.0.0';
 
-        // Mise à jour du temps de jeu si fourni
         if (isset($gameState['metadata']['additionalPlayTime'])) {
             $save->play_time_seconds += $gameState['metadata']['additionalPlayTime'];
         }
