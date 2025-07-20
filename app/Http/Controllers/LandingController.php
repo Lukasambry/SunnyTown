@@ -8,9 +8,6 @@ use Inertia\Response;
 
 class LandingController extends Controller
 {
-    /**
-     * Affiche la landing page de SunnyTown
-     */
     public function index(): Response
     {
         return Inertia::render('Landing/SunnyTownLanding', [
@@ -68,10 +65,8 @@ class LandingController extends Controller
             'social_links' => [
                 'discord' => 'https://discord.gg/sunnytown',
                 'twitter' => 'https://twitter.com/sunnytowngame',
-                'reddit' => 'https://reddit.com/r/sunnytown',
                 'youtube' => 'https://youtube.com/c/sunnytowngame'
             ]
         ]);
     }
-    
 }
