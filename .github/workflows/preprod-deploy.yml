@@ -30,9 +30,9 @@ jobs:
             git pull origin preprod
 
             sudo chmod -R 777 storage bootstrap/cache
-            sudo mkdir -p storage/logs
-            sudo touch storage/logs/laravel.log
-            sudo chmod 777 storage/logs/laravel.log
+            mkdir -p storage/logs
+            touch storage/logs/laravel.log
+            chmod 777 storage/logs/laravel.log
 
             composer install --no-dev --optimize-autoloader
 
