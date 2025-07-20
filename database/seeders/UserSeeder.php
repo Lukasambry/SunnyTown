@@ -11,40 +11,68 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'name' => 'Florian de SunnyTown',
+            'email' => 'admin@sunnytown.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
 
         User::create([
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
+            'name' => 'Pierre Bûcheron',
+            'email' => 'pierre.bucheron@sunnytown.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
 
         User::create([
-            'name' => 'Jane Smith',
-            'email' => 'jane@example.com',
+            'name' => 'Marie Fermière',
+            'email' => 'marie.fermiere@sunnytown.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
 
         User::create([
-            'name' => 'Alice Johnson',
-            'email' => 'alice@example.com',
+            'name' => 'Lucas Mineur',
+            'email' => 'lucas.mineur@sunnytown.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
 
         User::create([
-            'name' => 'Bob Wilson',
-            'email' => 'bob@example.com',
+            'name' => 'Sophie Architecte',
+            'email' => 'sophie.architecte@sunnytown.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
         ]);
 
-        User::factory(10)->create();
+        User::create([
+            'name' => 'Thomas Marchand',
+            'email' => 'thomas.marchand@sunnytown.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+        ]);
+
+        User::create([
+            'name' => 'Emma Écologiste',
+            'email' => 'emma.ecologiste@sunnytown.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+        ]);
+
+        User::create([
+            'name' => 'Max Industriel',
+            'email' => 'max.industriel@sunnytown.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+        ]);
+
+        User::create([
+            'name' => 'Clara Décoratrice',
+            'email' => 'clara.decoratrice@sunnytown.com',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+        ]);
+
+        User::factory(15)->create();
     }
 }

@@ -6,7 +6,6 @@ use App\Models\Thread;
 use App\Models\ForumCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class ThreadSeeder extends Seeder
 {
@@ -17,100 +16,187 @@ class ThreadSeeder extends Seeder
 
         $threads = [
             [
-                'title' => 'Bienvenue sur notre forum !',
-                'category_name' => 'Général',
-                'content' => 'Bienvenue à tous sur notre nouveau forum de discussion. N\'hésitez pas à vous présenter et à partager vos expériences !'
+                'title' => '🎉 Bienvenue dans SunnyTown !',
+                'category_name' => 'Annonces Officielles',
+                'content' => 'Bienvenue dans votre nouvelle aventure à SunnyTown ! Commencez par abattre quelques arbres, plantez vos premières cultures et regardez votre petite ville grandir. N\'hésitez pas à partager vos questions et découvertes !'
             ],
             [
-                'title' => 'Règles du forum',
-                'category_name' => 'Général',
-                'content' => 'Voici les règles à respecter sur notre forum pour maintenir un environnement respectueux et constructif.'
-            ],
-
-            [
-                'title' => 'Meilleures pratiques en développement web 2025',
-                'category_name' => 'Développement Web',
-                'content' => 'Quelles sont selon vous les meilleures pratiques à adopter en développement web en 2025 ?'
+                'title' => '📋 Règles de la communauté SunnyTown',
+                'category_name' => 'Annonces Officielles',
+                'content' => 'Pour maintenir une communauté accueillante : respectez les autres joueurs, partagez vos astuces, aidez les nouveaux arrivants et gardez l\'esprit positif de SunnyTown !'
             ],
             [
-                'title' => 'Comparaison des frameworks CSS modernes',
-                'category_name' => 'Développement Web',
-                'content' => 'Tailwind vs Bootstrap vs Bulma : quel framework CSS choisir pour son projet ?'
+                'title' => '🆕 Mise à jour v2.1 : Nouvelles cultures saisonnières !',
+                'category_name' => 'Annonces Officielles',
+                'content' => 'La mise à jour v2.1 apporte des cultures saisonnières, de nouveaux bâtiments décoratifs et des événements météorologiques ! Découvrez les citrouilles d\'automne et les sapins de Noël.'
             ],
 
             [
-                'title' => 'Laravel 11 : les nouveautés',
-                'category_name' => 'Laravel',
-                'content' => 'Découvrons ensemble les nouvelles fonctionnalités de Laravel 11 et comment les utiliser dans nos projets.'
+                'title' => '🌱 Guide débutant : Vos premiers pas',
+                'category_name' => 'Aide & Tutoriels',
+                'content' => 'Nouveau à SunnyTown ? Commencez par ces étapes essentielles : collectez du bois, plantez du blé, construisez votre première scierie et n\'oubliez pas de vendre vos produits !'
             ],
             [
-                'title' => 'Optimisation des performances avec Eloquent',
-                'category_name' => 'Laravel',
-                'content' => 'Comment optimiser les requêtes Eloquent pour améliorer les performances de votre application Laravel ?'
+                'title' => '💡 10 astuces pour optimiser votre production',
+                'category_name' => 'Aide & Tutoriels',
+                'content' => 'Voici mes meilleures astuces pour maximiser vos profits : placez vos bâtiments stratégiquement, diversifiez vos ressources, investissez dans l\'automatisation et surveillez les prix du marché.'
             ],
             [
-                'title' => 'Middleware personnalisé : bonnes pratiques',
-                'category_name' => 'Laravel',
-                'content' => 'Partageons nos expériences sur la création de middleware personnalisé dans Laravel.'
-            ],
-
-            [
-                'title' => 'Vue 3 vs React : avantages et inconvénients',
-                'category_name' => 'JavaScript',
-                'content' => 'Débat : Vue 3 ou React pour un nouveau projet ? Quels sont vos arguments ?'
-            ],
-            [
-                'title' => 'Gestion d\'état avec Pinia',
-                'category_name' => 'JavaScript',
-                'content' => 'Comment bien structurer la gestion d\'état dans une application Vue.js avec Pinia ?'
+                'title' => '🎯 Objectifs à court et long terme',
+                'category_name' => 'Aide & Tutoriels',
+                'content' => 'Comment bien planifier votre développement ? Fixez-vous des objectifs réalisables : 1000 pièces d\'or, 10 bâtiments, débloquer toutes les cultures...'
             ],
 
             [
-                'title' => 'Optimisation des requêtes MySQL',
-                'category_name' => 'Bases de données',
-                'content' => 'Techniques d\'optimisation pour améliorer les performances de vos requêtes MySQL.'
+                'title' => '🏘️ Organisation optimale de votre ville',
+                'category_name' => 'Gestion de Ville',
+                'content' => 'Comment organiser efficacement l\'espace de votre ville ? Groupez les bâtiments par fonction, laissez de la place pour l\'expansion et pensez aux routes !'
             ],
             [
-                'title' => 'Migration de MySQL vers PostgreSQL',
-                'category_name' => 'Bases de données',
-                'content' => 'Retour d\'expérience sur une migration de MySQL vers PostgreSQL.'
-            ],
-
-            [
-                'title' => 'Docker pour les développeurs Laravel',
-                'category_name' => 'DevOps',
-                'content' => 'Configuration Docker optimale pour le développement d\'applications Laravel.'
+                'title' => '💰 Stratégies économiques avancées',
+                'category_name' => 'Gestion de Ville',
+                'content' => 'Partageons nos meilleures stratégies pour maximiser les profits : chaînes de production, spécialisation, investissements prioritaires...'
             ],
             [
-                'title' => 'CI/CD avec GitHub Actions',
-                'category_name' => 'DevOps',
-                'content' => 'Mise en place d\'un pipeline CI/CD efficace avec GitHub Actions.'
+                'title' => '⚡ Gestion de l\'énergie et de l\'eau',
+                'category_name' => 'Gestion de Ville',
+                'content' => 'Comment bien gérer vos ressources énergétiques ? Placement des centrales, distribution efficace, économies d\'énergie...'
             ],
 
             [
-                'title' => 'Tendances design 2025',
-                'category_name' => 'Design & UX',
-                'content' => 'Quelles sont les tendances en matière de design web à surveiller en 2025 ?'
+                'title' => '🌲 Techniques d\'abattage efficaces',
+                'category_name' => 'Exploitation Forestière',
+                'content' => 'Optimisez votre exploitation forestière ! Rotation des zones d\'abattage, replantation stratégique, et maximisation du rendement en bois.'
+            ],
+            [
+                'title' => '🪵 Types de bois et leurs utilisations',
+                'category_name' => 'Exploitation Forestière',
+                'content' => 'Guide complet des différents types de bois dans SunnyTown : chêne robuste, pin rapide, bois exotique rare... Chaque essence a ses avantages !'
+            ],
+            [
+                'title' => '🌳 Replantation et gestion durable',
+                'category_name' => 'Exploitation Forestière',
+                'content' => 'L\'exploitation durable est la clé ! Comment replanter efficacement, gérer la croissance des arbres et maintenir un équilibre écologique.'
             ],
 
             [
-                'title' => 'Problème d\'installation de Laravel',
-                'category_name' => 'Aide & Support',
-                'content' => 'J\'ai des difficultés à installer Laravel sur mon environnement local. Quelqu\'un peut-il m\'aider ?'
+                'title' => '🌾 Cultures les plus rentables par saison',
+                'category_name' => 'Agriculture & Récoltes',
+                'content' => 'Analyse des profits par culture : le blé stable toute l\'année, les tomates juteuses d\'été, les citrouilles d\'automne... Quelle est votre stratégie ?'
+            ],
+            [
+                'title' => '🚜 Automatisation des fermes',
+                'category_name' => 'Agriculture & Récoltes',
+                'content' => 'Comment automatiser vos fermes pour un rendement optimal ? Systèmes d\'irrigation, tracteurs automatiques, silos de stockage...'
+            ],
+            [
+                'title' => '🌱 Nouvelles variétés de cultures',
+                'category_name' => 'Agriculture & Récoltes',
+                'content' => 'Avez-vous testé les nouvelles variétés hybrides ? Rendement supérieur, résistance aux maladies, mais coût de départ plus élevé...'
+            ],
+
+            [
+                'title' => '⛏️ Guide complet des mines',
+                'category_name' => 'Mines & Ressources',
+                'content' => 'Tout savoir sur l\'exploitation minière : localisation des filons, techniques d\'extraction, équipements nécessaires et minerais rares à découvrir !'
+            ],
+            [
+                'title' => '💎 Minerais rares : où les trouver ?',
+                'category_name' => 'Mines & Ressources',
+                'content' => 'Les minerais rares sont la clé de la richesse ! Partagez vos spots secrets et vos techniques pour détecter l\'or, les diamants et les pierres précieuses.'
+            ],
+            [
+                'title' => '🔧 Amélioration des outils de minage',
+                'category_name' => 'Mines & Ressources',
+                'content' => 'Investir dans de meilleurs outils change tout ! Comparaison des pioches, foreuses automatiques et systèmes de transport des minerais.'
+            ],
+
+            [
+                'title' => '📈 Analyse des prix du marché',
+                'category_name' => 'Commerce & Économie',
+                'content' => 'Les prix fluctuent constamment ! Quand vendre vos ressources ? Comment anticiper les tendances ? Partagez vos observations du marché.'
+            ],
+            [
+                'title' => '🏪 Chaînes de magasins vs boutiques spécialisées',
+                'category_name' => 'Commerce & Économie',
+                'content' => 'Quelle stratégie commerciale adoptez-vous ? Plusieurs petites boutiques ou quelques grands magasins ? Avantages et inconvénients...'
+            ],
+            [
+                'title' => '💸 Investissements les plus rentables',
+                'category_name' => 'Commerce & Économie',
+                'content' => 'Où investir en priorité ? Bâtiments de production, amélioration des transports, recherche technologique... Vos retours d\'expérience ?'
+            ],
+
+            [
+                'title' => '🏗️ Planification urbaine efficace',
+                'category_name' => 'Construction & Architecture',
+                'content' => 'Comment planifier l\'expansion de votre ville ? Zonage résidentiel, industriel, commercial... Évitez les erreurs de débutant !'
+            ],
+            [
+                'title' => '🎨 Bâtiments décoratifs : utiles ou pas ?',
+                'category_name' => 'Construction & Architecture',
+                'content' => 'Les bâtiments décoratifs valent-ils l\'investissement ? Bonus de bonheur, attractivité touristique, mais coût élevé... Votre avis ?'
+            ],
+            [
+                'title' => '🛣️ Système de transport optimal',
+                'category_name' => 'Construction & Architecture',
+                'content' => 'Routes, chemins de fer, convoyeurs... Comment optimiser le transport de vos ressources ? Design efficace vs esthétique.'
+            ],
+
+            [
+                'title' => '📸 Ma ville après 100 heures de jeu !',
+                'category_name' => 'Screenshots & Créations',
+                'content' => 'Voici ma fierté ! Une ville de 50 000 habitants avec tous les bâtiments débloqués. Que pensez-vous de l\'aménagement ?'
+            ],
+            [
+                'title' => '🌟 Concours : Plus belle ville de SunnyTown',
+                'category_name' => 'Screenshots & Créations',
+                'content' => 'Participez au concours mensuel ! Postez une capture de votre plus belle réalisation. Prix : pack de ressources premium !'
+            ],
+
+            [
+                'title' => '🎪 Événement : Festival d\'automne',
+                'category_name' => 'Événements Communautaires',
+                'content' => 'Le festival d\'automne commence ! Récoltes bonus de citrouilles, décorations spéciales et défis communautaires. Qui participera ?'
+            ],
+            [
+                'title' => '🏆 Classement des maires les plus riches',
+                'category_name' => 'Événements Communautaires',
+                'content' => 'Compétition amicale : qui a la ville la plus prospère ? Partagez vos scores et vos stratégies pour atteindre le sommet !'
+            ],
+
+            [
+                'title' => '💭 Idée : Mode multijoueur coopératif',
+                'category_name' => 'Suggestions & Idées',
+                'content' => 'Et si on pouvait construire des villes ensemble ? Commerce inter-villes, projets collaboratifs, entraide entre maires... Qu\'en pensez-vous ?'
+            ],
+            [
+                'title' => '🔮 Nouvelles fonctionnalités souhaitées',
+                'category_name' => 'Suggestions & Idées',
+                'content' => 'Quelles fonctionnalités aimeriez-vous voir dans les prochaines mises à jour ? Nouvelles ressources, bâtiments, mécaniques de jeu...'
+            ],
+
+            [
+                'title' => '☕ Discussion libre : votre routine de jeu',
+                'category_name' => 'Discussion Générale',
+                'content' => 'Comment organisez-vous vos sessions de jeu ? Le matin avec le café, le soir pour décompresser ? SunnyTown s\'adapte à tous les rythmes !'
+            ],
+            [
+                'title' => '🎮 Autres jeux similaires que vous recommandez',
+                'category_name' => 'Discussion Générale',
+                'content' => 'Fans de jeux de gestion et de construction, quels autres titres recommandez-vous ? Comparaisons avec SunnyTown bienvenues !'
             ]
         ];
 
         foreach ($threads as $threadData) {
             $category = $categories->where('name', $threadData['category_name'])->first();
-            $user = $users->random();
-
             if ($category) {
                 Thread::create([
                     'title' => $threadData['title'],
                     'forum_category_id' => $category->id,
-                    'user_id' => $user->id,
+                    'user_id' => $users->random()->id,
                     'created_at' => now()->subDays(rand(1, 30)),
-                    'updated_at' => now()->subDays(rand(0, 5))
+                    'updated_at' => now()->subDays(rand(1, 30))
                 ]);
             }
         }
