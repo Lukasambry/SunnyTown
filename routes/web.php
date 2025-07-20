@@ -10,9 +10,8 @@ use App\Http\Controllers\BlogPostController;
 use App\Http\Controllers\TwoFactorAuthenticationController;
 use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
-// Ajoutez cette ligne
-
-Route::get('/', [LandingController::class, 'index'])->name('home');
+Route::get('/', [LandingController::class, 'index'])->name('home'); // Créer une home à la place
+Route::get('/landing', [LandingController::class, 'index'])->name('landing');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
@@ -35,13 +34,12 @@ Route::prefix('forum')->name('forums.')->group(function(){
 });
 Route::post('/messages',[MessageController::class,'store'])->name('messages.store')->middleware('auth');
 
+Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');
 Route::middleware(['auth'])->group(function () {
-    Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');
 //    Route::middleware(['can:create,App\Models\BlogPost'])->group(function () {
     Route::get('/blog/create', [BlogPostController::class, 'create'])->name('blog.create');
     Route::post('/blog', [BlogPostController::class, 'store'])->name('blog.store');
 //    });
-// TODO: Implement authorization for editing and deleting blog posts
 });
 
 // 2FA Fortify routes

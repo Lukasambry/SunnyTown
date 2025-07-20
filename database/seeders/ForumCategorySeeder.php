@@ -2,61 +2,50 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\ForumCategory;
+use Illuminate\Database\Seeder;
 
 class ForumCategorySeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
         $categories = [
             [
-                'name'        => 'Général',
-                'description' => 'Discussions générales sur le jeu, annonces communautaires, présentations.',
+                'name' => 'Général',
+                'description' => 'Discussions générales sur tous les sujets'
             ],
             [
-                'name'        => 'Guides & Stratégies',
-                'description' => 'Tutoriels, conseils et stratégies pour progresser plus vite dans votre idle game.',
+                'name' => 'Développement Web',
+                'description' => 'Discussions sur le développement web, frameworks, langages'
             ],
             [
-                'name'        => 'Ressources',
-                'description' => 'Optimisation de la collecte, échanges de tips sur les ressources du jeu.',
+                'name' => 'Laravel',
+                'description' => 'Tout ce qui concerne le framework Laravel'
             ],
             [
-                'name'        => 'Bâtiments & Infrastructure',
-                'description' => 'Tout ce qui concerne l’achat, l’amélioration et la gestion des bâtiments.',
+                'name' => 'JavaScript',
+                'description' => 'Discussions sur JavaScript, Vue.js, React, Node.js'
             ],
             [
-                'name'        => 'Mécanismes de Jeu',
-                'description' => 'Discussions sur les mécaniques idle, automations, scripts, optimisations.',
+                'name' => 'Bases de données',
+                'description' => 'MySQL, PostgreSQL, MongoDB et autres SGBD'
             ],
             [
-                'name'        => 'Bugs & Support',
-                'description' => 'Signaler un bug, demander de l’aide ou des précisions techniques.',
+                'name' => 'DevOps',
+                'description' => 'Déploiement, Docker, CI/CD, serveurs'
             ],
             [
-                'name'        => 'Suggestions & Feedback',
-                'description' => 'Proposez des améliorations, votez pour de nouvelles fonctionnalités.',
+                'name' => 'Design & UX',
+                'description' => 'Interface utilisateur, expérience utilisateur, design'
             ],
             [
-                'name'        => 'Annonces & Mises à Jour',
-                'description' => 'Toutes les news officielles, patch notes et événements à venir.',
-            ],
-            [
-                'name'        => 'Événements',
-                'description' => 'Discussions dédiées aux events spéciaux, concours et challenges temporaires.',
-            ],
-            [
-                'name'        => 'Communauté & Guildes',
-                'description' => 'Recrutement, organisation de guildes et entraide entre joueurs.',
-            ],
+                'name' => 'Aide & Support',
+                'description' => 'Demandes d\'aide et support technique'
+            ]
         ];
 
-        foreach ($categories as $data) {
-            ForumCategory::updateOrCreate(
-                ['name' => $data['name']],
-                ['description' => $data['description']]
-            );
+        foreach ($categories as $category) {
+            ForumCategory::create($category);
         }
     }
 }
