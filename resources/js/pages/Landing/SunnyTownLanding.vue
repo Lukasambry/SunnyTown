@@ -2,43 +2,7 @@
     <SmoothScroll>
         <div class="min-h-screen overflow-x-hidden bg-[#00161A] font-sans text-white antialiased" @mousemove="handleMouseMove">
             <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">
-                <nav class="container mx-auto px-6 py-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-8">
-                            <a href="#home" class="text-lg font-bold text-white transition-all duration-300 hover:scale-105 hover:text-blue-400">
-                                ACCUEIL
-                            </a>
-                            <a href="#features" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> JEU </a>
-                            <a href="#community" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> COMMUNAUTÉ </a>
-                            <a href="/forum" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> FORUM </a>
-                            <a href="/blog" class="text-gray-300 transition-all duration-300 hover:scale-105 hover:text-white"> BLOG </a>
-                        </div>
-
-                        <div class="flex items-center space-x-4">
-                            <a :href="props.social_links?.twitter || '#'" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-                                <div
-                                    class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700/50 bg-gray-700/50 transition-all duration-300 hover:scale-110 hover:border-blue-500/50 hover:bg-blue-600/20"
-                                >
-                                    <Twitter class="h-5 w-5 text-gray-400 hover:text-blue-400" />
-                                </div>
-                            </a>
-                            <a :href="props.social_links?.facebook || '#'" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-                                <div
-                                    class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700/50 bg-gray-700/50 transition-all duration-300 hover:scale-110 hover:border-blue-500/50 hover:bg-blue-600/20"
-                                >
-                                    <Facebook class="h-5 w-5 text-gray-400 hover:text-blue-400" />
-                                </div>
-                            </a>
-                            <a :href="props.social_links?.discord || '#'" target="_blank" rel="noopener noreferrer" aria-label="Discord">
-                                <div
-                                    class="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-700/50 bg-gray-700/50 transition-all duration-300 hover:scale-110 hover:border-indigo-500/50 hover:bg-indigo-600/20"
-                                >
-                                    <MessageCircle class="h-5 w-5 text-gray-400 hover:text-indigo-400" />
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </nav>
+                <Navbar />
             </header>
 
             <main>
@@ -453,6 +417,7 @@
  import { ArrowUp, Facebook, MessageCircle, Twitter } from 'lucide-vue-next';
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import SmoothScroll from '../../components/SmoothScroll.vue';
+ import Navbar from '@/components/home/Navbar.vue';
 
 const props = defineProps({
     meta: Object,
