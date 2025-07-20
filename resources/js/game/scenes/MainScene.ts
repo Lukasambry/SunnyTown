@@ -365,11 +365,7 @@ export class MainScene extends Phaser.Scene {
         window.addEventListener('game:confirmBuildingPlacement', this.onConfirmBuildingPlacement.bind(this));
         window.addEventListener('game:cancelBuildingPlacement', this.onCancelBuildingPlacement.bind(this));
 
-        /* TODO: Test a supprimer: */
-        this.time.delayedCall(2000, () => {
-            this.testWorkerSystem();
-        });
-        /* ----------------------- */
+        this.testWorkerSystem();
 
         // Ajout d'un listener global pour pointerdown sur les ResourceEntity
         this.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: any) => {

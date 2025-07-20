@@ -13,14 +13,20 @@ export const useGameState = () => {
     const isUpdatingFromPhaser = ref(false)
     const isUpdatingFromVue = ref(false)
 
-    const initializeGameIntegration = (game: Phaser.Game) => {
+    const initializeGameIntegration = async (game: Phaser.Game) => {
         gameInstance.value = game
-        isInitialized.value = true
 
+        // Attendre que la scène principale soit prête avant de marquer comme initialisé
+        await waitForMainScene(game)
+
+        isInitialized.value = true
         setupGameEventListeners()
+
         const resourceManager = ResourceManager.getInstance()
         gameStore.setGameLoaded(true)
 
+        // Émettre l'événement game:ready seulement quand tout est vraiment prêt
+        console.log('Game fully ready, emitting game:ready event')
         window.dispatchEvent(new CustomEvent('game:ready', {
             detail: {
                 resourceManager,
@@ -29,17 +35,46 @@ export const useGameState = () => {
         }))
     }
 
+    const waitForMainScene = (game: Phaser.Game): Promise<void> => {
+        return new Promise((resolve) => {
+            const checkMainScene = () => {
+                const mainScene = game.scene?.getScene('MainScene')
+                if (!mainScene) {
+                    console.log('MainScene not ready, retrying...')
+                    setTimeout(checkMainScene, 100)
+                    return
+                }
+
+                // Vérifier que la scène est vraiment active et initialisée
+                if (!mainScene.scene.isActive() || !mainScene.scene.isVisible()) {
+                    console.log('MainScene not fully active, retrying...')
+                    setTimeout(checkMainScene, 100)
+                    return
+                }
+
+                console.log('MainScene is ready and active')
+
+                // Attendre un petit délai supplémentaire pour s'assurer que tout est bien initialisé
+                setTimeout(() => {
+                    resolve()
+                }, 200)
+            }
+
+            checkMainScene()
+        })
+    }
+
     const setupGameEventListeners = () => {
         if (!gameInstance.value) {
             console.warn('Game instance not available for event setup')
             return
         }
 
-        const waitForMainScene = () => {
+        const waitForMainSceneEvents = () => {
             const mainScene = gameInstance.value?.scene?.getScene('MainScene')
             if (!mainScene) {
-                console.log('MainScene not ready, retrying...')
-                setTimeout(waitForMainScene, 100)
+                console.log('MainScene not ready for event listeners, retrying...')
+                setTimeout(waitForMainSceneEvents, 100)
                 return
             }
 
@@ -134,7 +169,7 @@ export const useGameState = () => {
             }
         }
 
-        waitForMainScene()
+        waitForMainSceneEvents()
     }
 
     const emitGameCommand = (command: string, data?: any) => {
@@ -150,7 +185,6 @@ export const useGameState = () => {
                 detail: data
             }))
         } finally {
-            // Délai pour éviter les collisions
             setTimeout(() => {
                 isUpdatingFromVue.value = false
             }, 50)
@@ -163,7 +197,6 @@ export const useGameState = () => {
         try {
             gameStore.selectBuilding(buildingType)
 
-            // N'émettre l'événement que si on vient de Vue, pas de Phaser
             if (buildingType) {
                 emitGameCommand('selectBuilding', buildingType)
             }
