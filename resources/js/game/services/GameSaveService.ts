@@ -1,5 +1,3 @@
-import { Scene } from 'phaser';
-
 interface GameState {
     player: {
         level: number;
@@ -80,7 +78,7 @@ export class GameSaveService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
+                    'Accept': 'application/json',
                 },
             });
 
@@ -105,10 +103,6 @@ export class GameSaveService {
             const v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
-    }
-
-    private getCsrfToken(): string {
-        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     }
 
     private collectGameState(): GameState {
@@ -312,11 +306,13 @@ export class GameSaveService {
 
     private async saveToDatabase(gameState: GameState, saveName: string): Promise<SaveResponse> {
         try {
+            console.log('🚀 Tentative de sauvegarde BDD...');
+
             const response = await fetch(`${this.baseUrl}/save`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
+                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({
                     player_id: this.playerId,
@@ -338,13 +334,24 @@ export class GameSaveService {
                 }),
             });
 
+            console.log('📡 Réponse serveur:', response.status, response.statusText);
+
             if (response.ok) {
+                const contentType = response.headers.get('content-type');
+                console.log('📄 Content-Type:', contentType);
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ Réponse non-JSON:', text.substring(0, 200));
+                    return { success: false, message: 'Réponse serveur invalide' };
+                }
+
                 const result = await response.json();
                 console.log('✅ Sauvegarde BDD réussie');
                 return result;
             } else {
-                const error = await response.text();
-                console.error('❌ Erreur sauvegarde BDD:', error);
+                const errorText = await response.text();
+                console.error('❌ Erreur sauvegarde BDD:', response.status, errorText);
                 return { success: false, message: 'Erreur serveur' };
             }
         } catch (error) {
@@ -352,7 +359,6 @@ export class GameSaveService {
             return { success: false, message: 'Erreur réseau' };
         }
     }
-
     public async initializeGame(): Promise<void> {
         if (this.isLoading) return;
         this.isLoading = true;
@@ -545,7 +551,11 @@ export class GameSaveService {
 
     public async listSaves(): Promise<any[]> {
         try {
-            const response = await fetch(`${this.baseUrl}/list?player_id=${this.playerId}`);
+            const response = await fetch(`${this.baseUrl}/list?player_id=${this.playerId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
             if (response.ok) {
                 const result = await response.json();
                 return result.success ? result.data : [];
@@ -658,7 +668,7 @@ export class GameSaveService {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.getCsrfToken(),
+                        'Accept': 'application/json',
                     },
                     body: JSON.stringify({
                         player_id: this.playerId,
@@ -675,7 +685,6 @@ export class GameSaveService {
             // Ne pas bloquer la nouvelle partie si la BDD est inaccessible
         }
     }
-
     public async loadSaveWithReload(saveName: string): Promise<void> {
         try {
             console.log(`📥 Chargement de la sauvegarde "${saveName}" avec rechargement...`);
@@ -709,26 +718,49 @@ export class GameSaveService {
         }
 
         try {
-            // Essayez d'abord de charger la sauvegarde spécifique
-            let response = await fetch(`${this.baseUrl}/load?player_id=${this.playerId}&save_name=${saveName}`, {
+            console.log('🔍 Test de connexion serveur...');
+
+            const healthResponse = await fetch('/api/health-check', {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': this.getCsrfToken(),
+                    'Accept': 'application/json',
                 }
             });
 
-            // Si échec, essayez de charger la dernière sauvegarde
+            if (!healthResponse.ok) {
+                console.warn('⚠️ Serveur API non accessible');
+                return { success: false };
+            }
+
+            console.log('✅ Serveur accessible, chargement sauvegarde...');
+
+            // Essayez d'abord de charger la sauvegarde spécifique
+            let response = await fetch(`${this.baseUrl}/load?player_id=${this.playerId}&save_name=${saveName}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            });
+
             if (!response.ok && saveName === 'auto') {
                 console.log('🔄 Tentative de chargement de la dernière sauvegarde...');
                 response = await fetch(`${this.baseUrl}/load-latest?player_id=${this.playerId}`, {
+                    method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': this.getCsrfToken(),
+                        'Accept': 'application/json',
                     }
                 });
             }
 
             if (response.ok) {
+                const contentType = response.headers.get('content-type');
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('❌ Réponse serveur non-JSON:', contentType);
+                    const text = await response.text();
+                    console.error('Contenu reçu:', text.substring(0, 200));
+                    return { success: false };
+                }
+
                 const result = await response.json();
                 if (result.success && result.data) {
                     // Convertir et appliquer l'état
@@ -738,15 +770,22 @@ export class GameSaveService {
                     console.log('✅ Sauvegarde BDD chargée et appliquée');
                     return { success: true, data: result.data };
                 }
+            } else {
+                console.warn(`⚠️ Erreur HTTP ${response.status}: ${response.statusText}`);
             }
 
             return { success: false };
         } catch (error) {
-            console.error('Erreur chargement BDD:', error);
+            console.error('❌ Erreur chargement BDD:', error);
+
+            if (error instanceof SyntaxError && error.message.includes('Unexpected token')) {
+                console.error('❌ Le serveur a renvoyé du HTML au lieu de JSON');
+                console.error('🔧 Vérifiez que les routes API sont bien dans routes/api.php');
+            }
+
             return { success: false };
         }
     }
-
     private clearGameDataLocalStorage(): void {
         console.log('🧹 Nettoyage localStorage (conservation player_id)...');
 
