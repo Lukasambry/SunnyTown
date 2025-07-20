@@ -22,21 +22,19 @@ jobs:
             cd /home/florddev-sunnytown/htdocs/sunnytown.florddev.fr/
 
             git config --global --add safe.directory /home/florddev-sunnytown/htdocs/sunnytown.florddev.fr
-            sudo chown -R ${{ secrets.SSH_PROD_USER }}:florddev-sunnytown .git
-            sudo chmod -R 755 .git
+            sudo chown -R ${{ secrets.SSH_PROD_USER }}:florddev-sunnytown .
+            sudo chmod -R 755 .
 
             git reset --hard HEAD
             git clean -fd
             git pull origin prod
 
-            sudo chown -R ${{ secrets.SSH_PROD_USER }}:florddev-sunnytown .
-            sudo chmod -R 755 .
             sudo chmod -R 777 storage bootstrap/cache
 
             composer install --no-dev --optimize-autoloader
 
             sudo rm -rf node_modules package-lock.json
-            npm install --production
+            npm install --omit=dev
             npm run build
 
             sudo chown -R florddev-sunnytown:www-data storage bootstrap/cache public/build
