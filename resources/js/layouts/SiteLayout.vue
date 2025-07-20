@@ -394,7 +394,7 @@ const showMobileMenu = ref(false);
 const showUserMenu = ref(false);
 const isDark = ref(false);
 const newsletterEmail = ref('');
-const openFaqs = ref(new Set());
+//const openFaqs = ref(new Set());
 
 const page = usePage();
 /*
@@ -435,6 +435,7 @@ const toggleTheme = () => {
     localStorage.setItem('theme', isDark.value ? 'dark' : 'light');
 };
 
+/*
 const toggleFaq = (index: number) => {
     if (openFaqs.value.has(index)) {
         openFaqs.value.delete(index);
@@ -442,6 +443,7 @@ const toggleFaq = (index: number) => {
         openFaqs.value.add(index);
     }
 };
+*/
 
 const scrollToFaq = () => {
     const faqSection = document.getElementById('faq');
