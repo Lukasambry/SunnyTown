@@ -1,7 +1,5 @@
 <template>
-    <Head>
-        <title>Créer un thread dans {{ category.name }}</title>
-    </Head>
+    <Head :title="`Créer un thread dans ${category.name}`" />
 
     <SiteLayout :auth="$page.props.auth">
         <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">

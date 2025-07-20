@@ -11,36 +11,52 @@ class ForumCategorySeeder extends Seeder
     {
         $categories = [
             [
-                'name' => 'Général',
-                'description' => 'Discussions générales sur tous les sujets'
+                'name' => 'Annonces Officielles',
+                'description' => 'Nouvelles du jeu, mises à jour et événements spéciaux'
             ],
             [
-                'name' => 'Développement Web',
-                'description' => 'Discussions sur le développement web, frameworks, langages'
+                'name' => 'Aide & Tutoriels',
+                'description' => 'Guides pour débuter, astuces et stratégies de jeu'
             ],
             [
-                'name' => 'Laravel',
-                'description' => 'Tout ce qui concerne le framework Laravel'
+                'name' => 'Gestion de Ville',
+                'description' => 'Conseils pour optimiser votre ville et vos ressources'
             ],
             [
-                'name' => 'JavaScript',
-                'description' => 'Discussions sur JavaScript, Vue.js, React, Node.js'
+                'name' => 'Exploitation Forestière',
+                'description' => 'Tout sur l\'abattage, la gestion des forêts et le bois'
             ],
             [
-                'name' => 'Bases de données',
-                'description' => 'MySQL, PostgreSQL, MongoDB et autres SGBD'
+                'name' => 'Agriculture & Récoltes',
+                'description' => 'Cultures, fermes et optimisation agricole'
             ],
             [
-                'name' => 'DevOps',
-                'description' => 'Déploiement, Docker, CI/CD, serveurs'
+                'name' => 'Mines & Ressources',
+                'description' => 'Exploitation minière, minerais rares et techniques d\'extraction'
             ],
             [
-                'name' => 'Design & UX',
-                'description' => 'Interface utilisateur, expérience utilisateur, design'
+                'name' => 'Commerce & Économie',
+                'description' => 'Stratégies commerciales, prix du marché et profits'
             ],
             [
-                'name' => 'Aide & Support',
-                'description' => 'Demandes d\'aide et support technique'
+                'name' => 'Construction & Architecture',
+                'description' => 'Planification urbaine, bâtiments et aménagements'
+            ],
+            [
+                'name' => 'Screenshots & Créations',
+                'description' => 'Partagez vos plus belles villes et créations'
+            ],
+            [
+                'name' => 'Événements Communautaires',
+                'description' => 'Concours, défis et événements entre joueurs'
+            ],
+            [
+                'name' => 'Suggestions & Idées',
+                'description' => 'Proposez vos idées pour améliorer SunnyTown'
+            ],
+            [
+                'name' => 'Discussion Générale',
+                'description' => 'Discussions libres sur SunnyTown et autres sujets'
             ]
         ];
 
