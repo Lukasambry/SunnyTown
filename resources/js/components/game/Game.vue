@@ -22,45 +22,36 @@ import { useGameState } from '@/game/ui/composables/useGameState'
 import GameUI from './ui/GameUI.vue'
 import LoadingScreen from './ui/LoadingScreen.vue'
 
-// Refs
 const gameContainer = ref<HTMLElement>()
 const loadingProgress = ref(0)
 
-// Game state composable
-const { initializeGameIntegration, isInitialized } = useGameState()
+const { initializeGameIntegration } = useGameState()
 
-// State
 let game: Phaser.Game | null = null
 const isGameReady = ref(false)
-const isLoadingComplete = ref(false) // Nouveau: état de fin de chargement complet
+const isLoadingComplete = ref(false)
 
-// Methods
 const createGame = async () => {
     try {
         if (!gameContainer.value) {
             throw new Error('Game container not found')
         }
 
-        // Update game config to target our container
         const config = {
             ...gameConfig,
             parent: gameContainer.value
         }
 
-        // Create the game instance
         game = new Phaser.Game(config)
 
-        // Wait for the game to be ready
         game.events.once('ready', () => {
             handleGameReady()
         })
 
-        // Monitor loading progress from Phaser
         game.events.on('preload.progress', (progress: number) => {
             loadingProgress.value = Math.round(progress * 100)
         })
 
-        // Handle resize
         const handleResize = () => {
             if (game) {
                 const width = window.innerWidth
@@ -85,20 +76,13 @@ const handleGameReady = async () => {
     if (!game) return
 
     try {
-        // Initialize game integration
         initializeGameIntegration(game)
 
-        // Mark game as ready (mais pas encore l'écran de chargement)
         isGameReady.value = true
 
         console.log('Game ready and UI integrated')
-
-        // Le LoadingScreen va maintenant écouter l'événement 'game:ready'
-        // et gérer la transition finale
-
     } catch (error) {
         console.error('Error in handleGameReady:', error)
-        // En cas d'erreur, forcer la fin du chargement
         isLoadingComplete.value = true
     }
 }
@@ -117,20 +101,15 @@ const destroyGame = () => {
     isLoadingComplete.value = false
 }
 
-// Lifecycle
 onMounted(async () => {
-    // Wait for DOM to be ready
     await nextTick()
 
-    // Écouter l'événement de fin de chargement complet
     window.addEventListener('loading:complete', handleLoadingComplete)
 
-    // Prevent context menu on right-click in game container
     if (gameContainer.value) {
         gameContainer.value.addEventListener('contextmenu', (e) => {
             e.preventDefault()
         })
-        // Hide default cursor
         gameContainer.value.style.cursor = 'none'
     }
 
@@ -147,7 +126,6 @@ onMounted(async () => {
         })
     } catch (error) {
         console.error('Failed to initialize game:', error)
-        // En cas d'erreur, afficher quand même le jeu
         isLoadingComplete.value = true
     }
 })
@@ -174,7 +152,6 @@ onMounted(async () => {
     left: 0;
 }
 
-/* Ensure Phaser canvas fits properly */
 #game-container canvas {
     display: block;
     margin: 0 auto;

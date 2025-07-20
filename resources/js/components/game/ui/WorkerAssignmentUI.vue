@@ -51,7 +51,6 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
-import { useGameStore } from '@/game/stores/gameStore'
 import { WorkerRegistry } from '@/game/services/WorkerRegistry'
 import { BuildingRegistry } from '@/game/services/BuildingRegistry'
 import { WorkerType } from '@/game/types/WorkerConfigTypes'

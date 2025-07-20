@@ -126,11 +126,11 @@
                                                                 <button
                                                                     class="pixel-border flex gap-1.5 items-center justify-center gold h-full !text-xl w-full cursor-pointer"
                                                                     :class="{
-                                                                        'opacity-90 !cursor-not-allowed': !canCollectResource(resource.resourceType, resource.current),
+                                                                        'opacity-90 !cursor-not-allowed': !canCollectResource(resource.resourceType),
                                                                         'pixel-border-gold': resource.current > 0,
                                                                         'pixel-border-stone': resource.current == 0
                                                                     }"
-                                                                    :disabled="!canCollectResource(resource.resourceType, resource.current)"
+                                                                    :disabled="!canCollectResource(resource.resourceType)"
                                                                     @click="collectSingleResource(resource.resourceType, resource.current)">
                                                                     Collecter
                                                                 </button>
@@ -485,13 +485,16 @@ const depositAllPossibleResources = () => {
 }
 
 const storedResources = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     resourceUpdateTrigger.value
+
     if (!buildingData.value) return []
 
     const capacities = buildingData.value.getAllBuildingResourceCapacities()
     const stored = buildingData.value.getAllBuildingResources()
 
     return Array.from(capacities.entries())
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .filter(([_, capacity]) => capacity > 0)
         .map(([resourceType, capacity]) => ({
             resourceType,
@@ -511,6 +514,7 @@ const maxWorkers = computed(() => {
 })
 
 const assignedWorkerCount = computed(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     resourceUpdateTrigger.value
     const building = buildingData.value
     if (!building) return 0
@@ -533,13 +537,11 @@ const workerProgressPercentage = computed(() => {
 })
 
 const canIncrement = computed(() => {
-    const result = assignedWorkerCount.value < maxWorkers.value && availableWorkers.value > 0
-    return result
+    return assignedWorkerCount.value < maxWorkers.value && availableWorkers.value > 0
 })
 
 const canDecrement = computed(() => {
-    const result = assignedWorkerCount.value > 0
-    return result
+    return assignedWorkerCount.value > 0
 })
 
 const workerEfficiency = computed(() => {
@@ -547,22 +549,6 @@ const workerEfficiency = computed(() => {
     return assignedWorkerCount.value / maxWorkers.value
 })
 
-// Methods
-const getResourceIcon = (resourceType: ResourceType): string => {
-    const icons: Record<ResourceType, string> = {
-        [ResourceType.WOOD]: '🪵',
-        [ResourceType.PLANKS]: '🪵',
-        [ResourceType.STONE]: '🪨',
-        [ResourceType.METAL_ORE]: '⛏️',
-        [ResourceType.COAL_ORE]: '⚫',
-        [ResourceType.METAL]: '🔩',
-        [ResourceType.FOOD]: '🍞',
-        [ResourceType.TOOLS]: '🔨',
-        [ResourceType.ENERGY]: '⚡',
-        [ResourceType.POPULATION]: '👥'
-    }
-    return icons[resourceType] || '📦'
-}
 
 const getResourceName = (resourceType: ResourceType): string => {
     const names: Record<ResourceType, string> = {
@@ -606,7 +592,7 @@ const getPlayerInventorySpace = (resourceType: ResourceType): number => {
     }
 }
 
-const canCollectResource = (resourceType: ResourceType, amount: number): boolean => {
+const canCollectResource = (resourceType: ResourceType): boolean => {
     const availableSpace = getPlayerInventorySpace(resourceType)
     return availableSpace > 0
 }

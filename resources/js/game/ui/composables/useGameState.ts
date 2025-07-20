@@ -3,7 +3,7 @@ import { useGameStore } from '@/game/stores/gameStore'
 import type { ResourceType } from '@/game/types/ResourceSystemTypes'
 import { ResourceManager } from '@/game/services/ResourceManager'
 
-export interface GameInstance extends Phaser.Game {}
+export type GameInstance = Phaser.Game
 
 export const useGameState = () => {
     const gameStore = useGameStore()

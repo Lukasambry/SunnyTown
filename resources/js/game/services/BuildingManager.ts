@@ -20,6 +20,7 @@ interface BuildingManagerEvents {
 export class BuildingManager {
     private readonly scene: Scene;
     private readonly buildings: TiledBuilding[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<Function>>();
     private readonly STORAGE_KEY = 'BUILDINGS_STORAGE';
     private readonly buildingRegistry: BuildingRegistry;
@@ -239,6 +240,7 @@ export class BuildingManager {
         if (callbacks) {
             callbacks.forEach(callback => {
                 try {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
                     (callback as Function)(...args);
                 } catch (error) {
                     console.error(`Erreur dans le callback ${event}:`, error);

@@ -784,6 +784,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
 
     private hideHoverCorners(): void {
         this.cornerSprites.forEach(sprite => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
             this.scene.tweens && this.scene.tweens.killTweensOf(sprite);
             sprite.destroy();
         });
@@ -818,6 +819,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
             case 'bottom-right':
                 xMove = -3; yMove = -3; break;
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         this.scene.tweens && this.scene.tweens.add({
             targets: sprite,
             x: sprite.x + xMove,
