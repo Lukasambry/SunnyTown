@@ -49,3 +49,6 @@ prod: ## Prepare the application for production
     npm run build && \
     chmod 777 -R storage/ && \
     echo "Production environment is ready."
+
+test: ## Run tests
+	php artisan test
