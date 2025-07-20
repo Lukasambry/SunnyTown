@@ -67,6 +67,8 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 
+    --color-main-app: #0a0a0a;
+
     /* Pixel Border Configuration */
     --pixel-border-size: 2px;
 
@@ -98,14 +100,6 @@
     --color-progress-shadow: #51517950;
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
 @layer base {
     *,
     ::after,
@@ -125,12 +119,11 @@
 }
 
 :root {
-    /* Utilisation des couleurs du thème dirt pour le mode clair */
-    --background: var(--color-dirt-primary);
+    --background: var(--color-main-app);
     --foreground: hsl(0 0% 3.9%);
-    --card: var(--color-dirt-primary);
+    --card: var(--color-main-app);
     --card-foreground: hsl(0 0% 3.9%);
-    --popover: var(--color-dirt-primary);
+    --popover: var(--color-main-app);
     --popover-foreground: hsl(0 0% 3.9%);
     --primary: var(--color-dirt-secondary);
     --primary-foreground: hsl(0 0% 9%);
@@ -164,7 +157,6 @@
 }
 
 .dark {
-    /* Utilisation des couleurs du thème dark-dirt pour le mode sombre */
     --background: var(--color-dark-dirt-primary);
     --foreground: hsl(0 0% 98%);
     --card: var(--color-dark-dirt-primary);
@@ -210,10 +202,6 @@
     }
 }
 
-/*
-  ---break---
-*/
-
 @layer base {
     * {
         @apply border-border outline-ring/50;
@@ -236,7 +224,6 @@
 }
 
 @layer components {
-    /* Base Pixel Border Component */
     .pixel-border {
         --border-size: var(--pixel-border-size);
         --btn-color-primary: var(--color-pixel-primary);
@@ -244,7 +231,6 @@
         --btn-color-tertiary: transparent;
         --btn-color-border: var(--color-pixel-border);
 
-        /* Border visibility controls */
         --show-top: 1;
         --show-right: 1;
         --show-bottom: 1;
@@ -277,12 +263,10 @@
             calc(var(--border-size) * -2 * var(--show-left)) 0 var(--btn-color-border);
     }
 
-    /* Nested pixel border padding */
     .pixel-border:has(> .pixel-border) {
         padding: var(--border-size);
     }
 
-    /* Theme Variants */
     .pixel-border-dirt {
         --btn-color-primary: var(--color-dirt-primary);
         --btn-color-secondary: var(--color-dirt-secondary);
@@ -304,7 +288,6 @@
         --btn-color-secondary: var(--color-stone-secondary);
     }
 
-    /* Border Side Controls */
     .pixel-no-top {
         --show-top: 0;
     }
@@ -318,7 +301,6 @@
         --show-left: 0;
     }
 
-    /* Combination Utilities */
     .pixel-no-vertical {
         --show-top: 0;
         --show-bottom: 0;
@@ -353,7 +335,6 @@
         --show-left: 0;
     }
 
-    /* Progress Bar Component */
     .pixel-progress {
         --current-color: black;
         --border-size: var(--pixel-border-size);
