@@ -414,7 +414,7 @@
 </template>
 
 <script setup lang="ts">
- import { ArrowUp, Facebook, MessageCircle, Twitter } from 'lucide-vue-next';
+ import { ArrowUp } from 'lucide-vue-next';
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import SmoothScroll from '../../components/SmoothScroll.vue';
  import Navbar from '@/components/home/Navbar.vue';

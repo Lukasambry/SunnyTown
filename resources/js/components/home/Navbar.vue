@@ -40,21 +40,14 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { router, usePage } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 
 const page = usePage()
 const user = computed(() => page.props.auth.user || {})
 
-const isAuthenticated = computed(() =>
-    user.value && Object.keys(user.value).length > 0
-)
 
 const userHasAdminRole = computed(() =>
     user.value?.roles?.some(role => role.name === 'admin')
 )
-
-function logout() {
-    router.post('/logout')
-}
 
 </script>
