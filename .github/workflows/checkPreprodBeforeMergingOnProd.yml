@@ -1,4 +1,4 @@
-name: Check Merge Source
+name: Check Merge Source Preprod to Prod
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -8,12 +8,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Check if PR is from preprod
+      - name: Check if PR is from main
         run: |
-          if [ "$(gh pr view $PR_NUMBER --json headRefName -q '.headRefName')" != "preprod" ]; then
-            echo "PR must be from preprd branch!"
+          if [ "${{ github.head_ref }}" != "preprod" ]; then
+            echo "PR must be from preprod branch! Current source: ${{ github.head_ref }}"
             exit 1
           fi
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
