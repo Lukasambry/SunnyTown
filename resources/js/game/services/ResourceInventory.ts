@@ -207,15 +207,17 @@ export class ResourceInventory {
 
     // Utility operations
     public clear(): void {
+        console.log('🗑️ ResourceInventory: Vidage complet de l\'inventaire');
         const oldResources = new Map(this.resources);
         this.resources.clear();
 
-        // Emit change events for cleared resources
         oldResources.forEach((amount, type) => {
             if (amount > 0) {
                 this.emitChange(type, amount, 0, -amount);
             }
         });
+        this.clearTransactionHistory();
+        console.log(`✅ ResourceInventory: ${oldResources.size} types de ressources vidés`);
     }
 
     public clone(): ResourceInventory {

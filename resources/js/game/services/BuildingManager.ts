@@ -27,8 +27,6 @@ export class BuildingManager {
         this.scene = scene;
         this.buildingRegistry = BuildingRegistry.getInstance();
 
-        // SUPPRIMÉ: Plus de STORAGE_KEY car on utilise le système unifié
-        // Exposer globalement pour la collecte de données
         (window as any).__BUILDING_MANAGER__ = this;
     }
 
@@ -42,7 +40,6 @@ export class BuildingManager {
 
         this.buildings.push(building);
 
-        // NOUVEAU: Notifier le système de sauvegarde unifié
         this.notifyBuildingChange();
         this.rebuildPathfindingGrid();
 
@@ -57,18 +54,14 @@ export class BuildingManager {
         this.buildings.splice(index, 1);
         building.destroy();
 
-        // NOUVEAU: Notifier le système de sauvegarde unifié
         this.notifyBuildingChange();
         this.rebuildPathfindingGrid();
 
         this.emit('buildingDestroyed', building);
         return true;
     }
-
-    // NOUVEAU: Notifier les changements pour le système de sauvegarde unifié
     private notifyBuildingChange(): void {
         try {
-            // Déclencher une sauvegarde automatique
             window.dispatchEvent(new CustomEvent('game:buildingsChanged', {
                 detail: {
                     buildingCount: this.buildings.length,
@@ -80,7 +73,6 @@ export class BuildingManager {
         }
     }
 
-    // NOUVEAU: Méthode pour obtenir tous les bâtiments en format de sauvegarde
     public getAllBuildings(): StoredBuilding[] {
         return this.buildings.map(building => {
             const position = building.getPosition();
@@ -92,20 +84,15 @@ export class BuildingManager {
         });
     }
 
-    // MODIFIÉ: Plus d'utilisation du sessionStorage
     public loadState(): void {
-        // Cette méthode ne fait plus rien car le chargement se fait via GameSaveService
         console.log('BuildingManager: loadState() deprecated - using unified save system');
     }
 
-    // NOUVEAU: Charger depuis les données de sauvegarde unifiée
     public loadFromSaveData(buildings: StoredBuilding[]): void {
         console.log(`🏠 Chargement de ${buildings.length} bâtiments depuis sauvegarde unifiée`);
 
-        // Vider les bâtiments existants
         this.clearAll();
 
-        // Charger les bâtiments
         buildings.forEach(data => {
             if (this.isValidBuildingData(data)) {
                 try {
@@ -207,12 +194,6 @@ export class BuildingManager {
 
         this.buildings.length = 0;
 
-        // SUPPRIMÉ: Plus de sessionStorage
-        // try {
-        //     sessionStorage.removeItem(this.STORAGE_KEY);
-        // } catch (error) {
-        //     console.error('Erreur lors du nettoyage du storage:', error);
-        // }
 
         this.rebuildPathfindingGrid();
         this.emit('allBuildingsCleared');

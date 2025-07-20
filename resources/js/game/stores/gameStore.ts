@@ -275,7 +275,6 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
-    // CORRECTION: Main initialization action sans ressources automatiques
     const setGameLoaded = (loaded: boolean) => {
         state.value.isGameLoaded = loaded;
 
@@ -283,7 +282,6 @@ export const useGameStore = defineStore('game', () => {
             if (initializeManagers()) {
                 initializeResourceSync();
 
-                // Initialiser le système de sauvegarde
                 setTimeout(() => {
                     gameSaveService.initializeGame();
                     setupGameSaveEvents();
@@ -452,7 +450,6 @@ export const useGameStore = defineStore('game', () => {
                 forceResourceUpdate();
             }
 
-            // NOUVEAU: Chargement des bâtiments via BuildingManager
             if (gameState.buildings && gameState.buildings.length > 0) {
                 console.log(`🏠 Chargement de ${gameState.buildings.length} bâtiments...`);
                 clearBuildings();
@@ -464,7 +461,6 @@ export const useGameStore = defineStore('game', () => {
                         console.log('✅ Bâtiments chargés via BuildingManager');
                     } else {
                         console.warn('⚠️ BuildingManager non disponible pour le chargement');
-                        // Fallback: émettre l'événement ancien système
                         window.dispatchEvent(new CustomEvent('game:loadBuildings', {
                             detail: { buildings: gameState.buildings, source: 'gameSave' }
                         }));
@@ -472,28 +468,24 @@ export const useGameStore = defineStore('game', () => {
                 }, 100);
             }
 
-            // NOUVEAU: Chargement des zones débloquées
             if (gameState.unlockedZones && gameState.unlockedZones.length > 0) {
                 console.log(`🗺️ Chargement de ${gameState.unlockedZones.length} zones débloquées...`);
                 state.value.unlockedZones = [...gameState.unlockedZones];
 
-                // Déclencher le déblocage de chaque zone avec un délai
                 gameState.unlockedZones.forEach((zoneName: string, index: number) => {
                     setTimeout(() => {
                         console.log(`🔓 Déblocage zone: ${zoneName}`);
                         window.dispatchEvent(new CustomEvent('game:unlockZoneBlocker', {
                             detail: { blockerName: zoneName, fromLoad: true }
                         }));
-                    }, 200 + (index * 100)); // Délai progressif pour éviter les conflits
+                    }, 200 + (index * 100));
                 });
             }
 
             console.log('✅ État du jeu appliqué depuis système unifié');
         });
 
-        // NOUVEAU: Écouter les changements de bâtiments pour sauvegarder
         window.addEventListener('game:buildingsChanged', () => {
-            // Déclencher une sauvegarde automatique avec un délai pour éviter le spam
             clearTimeout((window as any).__BUILDING_SAVE_TIMEOUT__);
             (window as any).__BUILDING_SAVE_TIMEOUT__ = setTimeout(() => {
                 if (autoSaveEnabled) {
@@ -501,17 +493,15 @@ export const useGameStore = defineStore('game', () => {
                         console.warn('Échec sauvegarde auto après changement bâtiments:', error);
                     });
                 }
-            }, 2000); // 2 secondes de délai
+            }, 2000);
         });
 
-        // NOUVEAU: Écouter les déblocages de zones pour sauvegarder
         window.addEventListener('game:zoneUnlocked', (event: CustomEvent) => {
             const { blockerName } = event.detail;
             if (blockerName && !state.value.unlockedZones.includes(blockerName)) {
                 state.value.unlockedZones.push(blockerName);
                 console.log(`🗺️ Zone ajoutée aux zones débloquées: ${blockerName}`);
 
-                // Sauvegarder immédiatement
                 setTimeout(() => {
                     gameSaveService.save('auto').catch(error => {
                         console.warn('Échec sauvegarde auto après déblocage zone:', error);
@@ -520,7 +510,6 @@ export const useGameStore = defineStore('game', () => {
             }
         });
 
-        // Gestion du nettoyage forcé
         window.addEventListener('game:clearAllBuildings', () => {
             console.log('🏠 Nettoyage forcé des bâtiments');
             clearBuildings();
@@ -530,25 +519,57 @@ export const useGameStore = defineStore('game', () => {
             }
         });
 
+        window.addEventListener('game:clearAllZones', () => {
+            console.log('🗺️ Nettoyage forcé des zones débloquées');
+            state.value.unlockedZones = [];
+
+            const zoneRegistry = (window as any).__ZONE_BLOCKER_REGISTRY__;
+            if (zoneRegistry && typeof zoneRegistry.resetAllBlockers === 'function') {
+                zoneRegistry.resetAllBlockers();
+                console.log('✅ ZoneBlockerRegistry réinitialisé');
+            }
+        });
+
         window.addEventListener('game:forceReset', () => {
             console.log('🔄 Reset forcé du gameStore');
-            // Reset toutes les données
+
             updatePlayerLevel(1);
             updatePlayerGold(0);
             updatePlayerExperience({ current: 0, nextLevel: 100 });
             updatePlayerHealth({ current: 100, max: 100 });
             updatePlayerAvatar('default');
 
-            // Vider les ressources
+            if (resourceManager) {
+                try {
+                    const inventory = resourceManager.getGlobalInventory();
+                    if (inventory && typeof inventory.clear === 'function') {
+                        inventory.clear();
+                        console.log('🗑️ Inventaire global vidé');
+                    }
+                } catch (error) {
+                    console.error('Erreur vidage inventaire:', error);
+                }
+            }
+
             resourcesMap.value.clear();
             resourceUpdateTrigger.value++;
 
-            // NOUVEAU: Vider les zones débloquées
             state.value.unlockedZones = [];
 
             clearBuildings();
+            console.log('✅ GameStore complètement réinitialisé');
         });
-    };;
+
+        window.addEventListener('game:resetComplete', () => {
+            console.log('🎯 Reset complet terminé');
+
+            nextTick(() => {
+                resourceUpdateTrigger.value++;
+                console.log('🔄 Réactivité Vue mise à jour après reset');
+            });
+        });
+
+    };
 
     const saveProgress = async (saveName: string = 'manual'): Promise<boolean> => {
         try {
@@ -578,7 +599,6 @@ export const useGameStore = defineStore('game', () => {
         return gameSaveService.getPlayerId();
     };
 
-    // Window exposure for external access
     if (typeof window !== 'undefined') {
         (window as any).gameStore = {
             get playerLevel() { return playerLevel.value; },

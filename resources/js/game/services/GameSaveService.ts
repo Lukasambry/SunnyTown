@@ -153,7 +153,6 @@ export class GameSaveService {
             console.warn('⚠️ Erreur ResourceManager:', error);
         }
 
-        // NOUVEAU: Collecte des bâtiments via BuildingManager
         const buildings: any[] = [];
         try {
             const buildingManager = (window as any).__BUILDING_MANAGER__;
@@ -168,7 +167,6 @@ export class GameSaveService {
             console.warn('Erreur collecte bâtiments:', error);
         }
 
-        // NOUVEAU: Collecte des zones débloquées
         const unlockedZones: string[] = [];
         try {
             // Méthode 1: Via gameStore
@@ -232,7 +230,7 @@ export class GameSaveService {
                 health: { current: 100, max: 100 },
                 avatar: 'default',
             },
-            resources: {}, // CORRECTION: Pas de ressources par défaut
+            resources: {},
             buildings: [],
             workers: [],
             unlockedZones: [],
@@ -348,8 +346,18 @@ export class GameSaveService {
 
         console.log('🎮 Initialisation du jeu...');
 
+        const isNewGame = localStorage.getItem('sunnytown_new_game_flag') === 'true';
+
+        if (isNewGame) {
+            console.log('🆕 Flag nouvelle partie détecté - utilisation état par défaut');
+            localStorage.removeItem('sunnytown_new_game_flag');
+            this.applyGameState(this.getDefaultGameState());
+            this.isLoading = false;
+            return;
+        }
+
         try {
-            // 1. Charger depuis la BDD avec la bonne méthode
+            // 1. Charger depuis la BDD
             const dbResult = await this.loadFromDatabase('auto');
 
             if (dbResult.success) {
@@ -446,7 +454,7 @@ export class GameSaveService {
                     console.warn('Échec sauvegarde auto:', error);
                 });
             }
-        }, 30000); // 30 secondes
+        }, 30000);
 
         window.addEventListener('beforeunload', () => {
             if (this.autoSaveEnabled) {
@@ -552,83 +560,143 @@ export class GameSaveService {
     public async startNewGame(): Promise<void> {
         console.log('🆕 Démarrage d\'une nouvelle partie...');
 
+        const confirmed = confirm(
+            'Êtes-vous sûr de vouloir commencer une nouvelle partie ?\n\n' +
+            'Cette action va :\n' +
+            '• Supprimer TOUTES vos sauvegardes locales\n' +
+            '• Supprimer TOUTES vos sauvegardes serveur\n' +
+            '• Redémarrer le jeu à zéro\n\n' +
+            'Cette action est IRRÉVERSIBLE !'
+        );
+
+        if (!confirmed) {
+            console.log('🚫 Nouvelle partie annulée par l\'utilisateur');
+            return;
+        }
+
         try {
-            this.clearAllData();
+            // ÉTAPE 1: Marquer le contexte nouvelle partie et désactiver l'auto-save
+            localStorage.setItem('sunnytown_new_game_flag', 'true');
+            this.setAutoSave(false);
+
+            console.log('🧹 Nettoyage complet des données...');
+
+            this.clearAllDataCompletely();
 
             await this.clearAllDatabaseSaves();
 
-            // Attendre pour s'assurer que les données sont bien nettoyées
-            await new Promise(resolve => setTimeout(resolve, 500));
+            this.forceGameReset();
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             const defaultState = this.getDefaultGameState();
 
-            this.applyGameState(defaultState);
+            await this.saveToDatabase(defaultState, 'auto');
 
-            await this.save('auto');
+            this.saveToLocalStorage(defaultState);
 
             this.notifyUI('success', 'Nouvelle partie créée !');
 
+            console.log('✅ Nouvelle partie créée avec état vide');
+
             setTimeout(() => {
+                localStorage.removeItem('sunnytown_new_game_flag');
+                console.log('🔄 Rechargement de la page...');
                 window.location.reload();
-            }, 1000);
+            }, 1500);
 
         } catch (error) {
             console.error('❌ Erreur nouvelle partie:', error);
+            localStorage.removeItem('sunnytown_new_game_flag');
+            this.setAutoSave(true);
             this.notifyUI('error', 'Erreur lors de la création');
         }
     }
+    private forceGameReset(): void {
+        console.log('🔄 Force reset du jeu en cours...');
 
-    private clearAllLocalStorage(): void {
-        console.log('🧹 Nettoyage complet du localStorage...');
+        try {
+            window.dispatchEvent(new CustomEvent('game:clearAllBuildings'));
+            window.dispatchEvent(new CustomEvent('game:forceReset'));
+            window.dispatchEvent(new CustomEvent('game:clearAllZones'));
+            window.dispatchEvent(new CustomEvent('game:resetComplete'));
+
+            const gameStore = (window as any).gameStore;
+            if (gameStore) {
+                gameStore.updatePlayerLevel(1);
+                gameStore.updatePlayerGold(0);
+                gameStore.updatePlayerExperience({ current: 0, nextLevel: 100 });
+                gameStore.updatePlayerHealth({ current: 100, max: 100 });
+                gameStore.updatePlayerAvatar('default');
+
+                if (gameStore.state) {
+                    gameStore.state.unlockedZones = [];
+                    gameStore.state.buildings = [];
+                    gameStore.state.workers = [];
+                }
+
+                console.log('🗑️ GameStore forcé au reset');
+            }
+
+        } catch (error) {
+            console.warn('⚠️ Erreur force reset:', error);
+        }
+    }
+
+    private clearAllDataCompletely(): void {
+        console.log('🧹 Nettoyage COMPLET et AGRESSIF...');
 
         const keysToRemove = [
             this.SAVE_DATA_KEY,
-            'sunnytown_savegame',
-            'sunnytown_resources',
-            'sunnytown_game_data',
-            'sunnytown_player_data',
-            'sunnytown_buildings'
         ];
 
         keysToRemove.forEach(key => {
             try {
                 localStorage.removeItem(key);
-                console.log(`🗑️ Supprimé: ${key}`);
+                console.log(`🗑️ localStorage supprimé: ${key}`);
             } catch (error) {
-                console.warn(`⚠️ Erreur suppression ${key}:`, error);
+                console.warn(`⚠️ Erreur suppression localStorage ${key}:`, error);
             }
         });
 
         try {
             sessionStorage.clear();
-            console.log('🗑️ SessionStorage nettoyé');
+            console.log('🗑️ SessionStorage complètement nettoyé');
         } catch (error) {
             console.warn('⚠️ Erreur nettoyage sessionStorage:', error);
         }
+
+        try {
+            const buildingManager = (window as any).__BUILDING_MANAGER__;
+            if (buildingManager && typeof buildingManager.clearAll === 'function') {
+                buildingManager.clearAll();
+                console.log('🗑️ BuildingManager nettoyé');
+            }
+
+            const zoneRegistry = (window as any).__ZONE_BLOCKER_REGISTRY__;
+            if (zoneRegistry && typeof zoneRegistry.resetAllBlockers === 'function') {
+                zoneRegistry.resetAllBlockers();
+                console.log('🗑️ ZoneBlockerRegistry nettoyé');
+            }
+
+            const gameStore = (window as any).gameStore;
+            if (gameStore) {
+                const resourceManager = gameStore.getResourceManager?.();
+                if (resourceManager) {
+                    const inventory = resourceManager.getGlobalInventory();
+                    if (inventory && typeof inventory.clear === 'function') {
+                        inventory.clear();
+                        console.log('🗑️ ResourceManager nettoyé');
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.warn('⚠️ Erreur nettoyage données mémoire:', error);
+        }
     }
 
-    private clearAllData(): void {
-        console.log('🧹 Nettoyage COMPLET...');
 
-        const keysToRemove = [
-            this.SAVE_DATA_KEY,
-            'sunnytown_savegame',
-            'sunnytown_resources',
-            'sunnytown_game_data',
-            'sunnytown_player_data',
-            'sunnytown_buildings'
-        ];
-
-        keysToRemove.forEach(key => {
-            localStorage.removeItem(key);
-        });
-
-        sessionStorage.clear();
-
-        window.dispatchEvent(new CustomEvent('game:clearAllBuildings'));
-
-        window.dispatchEvent(new CustomEvent('game:forceReset'));
-    }
 
     private async clearAllDatabaseSaves(): Promise<void> {
         if (!this.playerId) {
@@ -646,28 +714,40 @@ export class GameSaveService {
                 return;
             }
 
-            const deletePromises = saves.map(save =>
-                fetch(`${this.baseUrl}/delete`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        player_id: this.playerId,
-                        save_name: save.save_name,
-                    }),
-                })
-            );
+            for (const save of saves) {
+                try {
+                    const response = await fetch(`${this.baseUrl}/delete`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            player_id: this.playerId,
+                            save_name: save.save_name,
+                        }),
+                    });
 
-            await Promise.all(deletePromises);
-            console.log(`✅ ${saves.length} sauvegardes BDD supprimées`);
+                    if (response.ok) {
+                        console.log(`✅ Sauvegarde BDD supprimée: ${save.save_name}`);
+                    } else {
+                        console.warn(`⚠️ Échec suppression ${save.save_name}:`, response.status);
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ Erreur suppression ${save.save_name}:`, error);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log(`✅ ${saves.length} tentatives de suppression BDD effectuées`);
 
         } catch (error) {
             console.error('❌ Erreur suppression sauvegardes BDD:', error);
             // Ne pas bloquer la nouvelle partie si la BDD est inaccessible
         }
     }
+
     public async loadSaveWithReload(saveName: string): Promise<void> {
         try {
             console.log(`📥 Chargement de la sauvegarde "${saveName}" avec rechargement...`);
@@ -694,7 +774,6 @@ export class GameSaveService {
         }
     }
 
-    // CORRECTION: Méthode loadFromDatabase avec auto-retry
     private async loadFromDatabase(saveName: string = 'auto'): Promise<{ success: boolean, data?: any }> {
         if (!this.playerId) {
             return { success: false };
@@ -716,7 +795,6 @@ export class GameSaveService {
 
             console.log('✅ Serveur accessible, chargement sauvegarde...');
 
-            // Essayez d'abord de charger la sauvegarde spécifique
             let response = await fetch(`${this.baseUrl}/load?player_id=${this.playerId}&save_name=${saveName}`, {
                 method: 'GET',
                 headers: {
@@ -746,7 +824,6 @@ export class GameSaveService {
 
                 const result = await response.json();
                 if (result.success && result.data) {
-                    // Convertir et appliquer l'état
                     const gameState = this.convertDbToGameState(result.data.game_state);
                     this.applyGameState(gameState);
 
@@ -774,11 +851,6 @@ export class GameSaveService {
 
         const keysToRemove = [
             this.SAVE_DATA_KEY,
-            'sunnytown_savegame',
-            'sunnytown_resources',
-            'sunnytown_game_data',
-            'sunnytown_player_data',
-            'sunnytown_buildings'
         ];
 
         keysToRemove.forEach(key => {
