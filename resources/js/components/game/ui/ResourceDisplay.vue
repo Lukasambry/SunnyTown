@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, type PropType } from 'vue'
-import { useGameStore } from '@game/stores/gameStore.ts'
-import type { ResourceType, ResourceStack } from '@game/types/ResourceSystemTypes.ts';
+import { computed } from 'vue'
+import { useGameStore } from '@/game/stores/gameStore'
+import type { ResourceType, ResourceStack } from '@/game/types/ResourceSystemTypes';
 import ResourceItem from './ResourceItem.vue'
 import ResourceBar from './ResourceBar.vue'
 

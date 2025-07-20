@@ -64,7 +64,6 @@ interface Props {
 
 let pollingInterval: number | null = null;
 const props = defineProps<Props>()
-const gameStore = useGameStore()
 
 const assignedWorkerCount = ref(0)
 const maxWorkers = ref(0)

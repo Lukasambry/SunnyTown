@@ -1347,10 +1347,10 @@ export class MainScene extends Phaser.Scene {
         workerType: string,
         x: number,
         y: number,
-        depositPoint?: {
+        /*depositPoint?: {
             x: number;
             y: number;
-        },
+        },*/
     ): any {
         if (workerType === 'lumberjack') {
             return this.createLumberjack(x, y/*, depositPoint*/);

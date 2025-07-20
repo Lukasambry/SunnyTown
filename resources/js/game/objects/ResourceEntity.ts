@@ -5,7 +5,6 @@ import { AnimationUtils } from '@/game/utils/AnimationUtils';
 import { type ResourceEntityConfig, type ResourceEntitySpawnData } from '@/game/types/ResourceEntityTypes';
 import { ResourceType } from '@/game/types/ResourceSystemTypes';
 import { ResourceManager } from '@/game/services/ResourceManager';
-import { useGameStore } from '@/game/stores/gameStore';
 
 interface ResourceEntityState {
     isDestroyed: boolean;
@@ -68,7 +67,7 @@ export class ResourceEntity extends Phaser.Physics.Arcade.Sprite {
             }
 
             return entity;
-        } catch (error) {
+        } catch {
             return null;
         }
     }

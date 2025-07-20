@@ -48,7 +48,7 @@ const isCameraFollowingPlayer = ref(true);
 
 const handleGameEvents = () => {
     const handleResourceUpdate = (event: CustomEvent) => {
-        const { type, amount, change, source } = event.detail;
+        const { type, amount } = event.detail;
 
         try {
             gameStore.updateResource(type as ResourceType, amount);
@@ -60,7 +60,7 @@ const handleGameEvents = () => {
     };
 
     const handleResourceHarvested = (event: CustomEvent) => {
-        const { type, amount, source } = event.detail;
+        const { type, amount } = event.detail;
         gameStore.forceResourceUpdate();
 
         window.dispatchEvent(
@@ -77,14 +77,14 @@ const handleGameEvents = () => {
 
     const handleResourceDebug = (event: CustomEvent) => {
         if (isDevelopment) {
-            const { totalResources: total, snapshot } = event.detail;
+            const { totalResources: total } = event.detail;
             totalResources.value = total;
         }
     };
 
     // Building events
     const handleBuildingPlaced = (event: CustomEvent) => {
-        const { building, cost } = event.detail;
+        const { building } = event.detail;
 
         gameStore.addBuilding(building);
         gameStore.forceResourceUpdate();
@@ -123,7 +123,7 @@ const handleGameEvents = () => {
     };
 
     const handleBuildingPlacementComplete = (event: CustomEvent) => {
-        const { buildingType, resourcesDeducted } = event.detail;
+        const { buildingType } = event.detail;
 
         gameStore.forceResourceUpdate();
 
@@ -174,7 +174,7 @@ const handleGameEvents = () => {
         try {
             const resourceManager = gameStore.getResourceManager();
             return resourceManager?.getName(type as ResourceType) || type;
-        } catch (error) {
+        } catch {
             return type;
         }
     };
@@ -184,7 +184,7 @@ const handleGameEvents = () => {
         try {
             const buildingRegistry = gameStore.getBuildingRegistry();
             return buildingRegistry?.getBuildingName(type) || type;
-        } catch (error) {
+        } catch {
             return type;
         }
     };
@@ -237,7 +237,7 @@ const setupStoreWatchers = () => {
 
     watch(
         () => gameStore.resourceList,
-        (newList) => {
+        () => {
             resourceUpdateCount.value++;
         },
         { deep: true, immediate: true },

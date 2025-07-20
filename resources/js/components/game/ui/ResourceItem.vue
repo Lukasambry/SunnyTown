@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ResourceManager } from '@game/services/ResourceManager.ts';
-import type { ResourceStack } from '@game/types/ResourceSystemTypes.ts';
+import { ResourceManager } from '@/game/services/ResourceManager';
+import type { ResourceStack } from '@/game/types/ResourceSystemTypes';
 import { computed, onMounted, ref } from 'vue';
 
 interface Props {
@@ -25,6 +25,7 @@ onMounted(() => {
     }
 });
 
+/*
 const resourceData = computed(() => {
     if (!resourceManager.value) return null;
     try {
@@ -39,21 +40,13 @@ const resourceName = computed(() => {
     if (!resourceData.value) return 'Unknown';
     return resourceData.value.name || 'Unknown';
 });
+*/
 
 const sizeClasses = computed(() => {
     const sizeMap = {
         sm: 'text-xs',
         md: 'text-sm',
         lg: 'text-base',
-    };
-    return sizeMap[props.size];
-});
-
-const iconClasses = computed(() => {
-    const sizeMap = {
-        sm: 'w-6 h-6',
-        md: 'w-8 h-8',
-        lg: 'w-10 h-10',
     };
     return sizeMap[props.size];
 });
