@@ -6,15 +6,26 @@
 
     <title>SunnyTown - Votre Aventure Pixelisée</title>
 
-    <!-- Fonts (si vous en utilisez via Blade, sinon géré par Vue/CSS) -->
-    {{-- <link rel="preconnect" href="https://fonts.bunny.net"> --}}
-    {{-- <link href="https://fonts.bunny.net/css?family=figtree:400,600&display=swap" rel="stylesheet" /> --}}
-
-    <!-- Styles et Scripts compilés par Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <!-- Si vous avez des styles spécifiques à la page d'accueil non gérés par Vue/Tailwind -->
-    {{-- <link rel="stylesheet" href="{{ asset('css/landing-specific.css') }}"> --}}
+    @if(config('app.env') === 'production' && config('services.matomo.host') && config('services.matomo.site_id'))
+    <script>
+        var _paq = window._paq = window._paq || [];
+        _paq.push(['trackPageView']);
+        _paq.push(['enableLinkTracking']);
+        (function() {
+            var u = "{{ config('services.matomo.host') }}";
+            _paq.push(['setTrackerUrl', u + 'matomo.php']);
+            _paq.push(['setSiteId', '{{ config('services.matomo.site_id') }}']);
+            var d = document,
+                g = d.createElement('script'),
+                s = d.getElementsByTagName('script')[0];
+            g.async = true;
+            g.src = u + 'matomo.js';
+            s.parentNode.insertBefore(g, s);
+        })();
+    </script>
+    @endif
 </head>
 <body class="antialiased">
     <div id="app">
@@ -22,5 +33,12 @@
         {{-- Si vous voulez passer des données initiales de Laravel à Vue --}}
         {{-- <sunny-town-landing :initial-data="{{ json_encode($someData) }}"></sunny-town-landing> --}}
     </div>
+
+    <!-- Noscript fallback pour Matomo -->
+    @if(config('app.env') === 'production' && config('services.matomo.host') && config('services.matomo.site_id'))
+    <noscript>
+        <p><img src="{{ config('services.matomo.host') }}matomo.php?idsite={{ config('services.matomo.site_id') }}&amp;rec=1" style="border:0;" alt="" /></p>
+    </noscript>
+    @endif
 </body>
 </html>

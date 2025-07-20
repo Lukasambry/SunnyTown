@@ -34,5 +34,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    
+    'matomo' => [
+        'host' => env('MATOMO_HOST'),
+        'site_id' => env('MATOMO_SITE_ID'),
+        'token' => env('MATOMO_TOKEN'),
+                ],
 
 ];

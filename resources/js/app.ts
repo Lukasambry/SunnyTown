@@ -6,11 +6,13 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
 import { initializeTheme } from './composables/useAppearance';
+import VueMatomo from 'vue-matomo';
 
-// Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
     interface ImportMetaEnv {
         readonly VITE_APP_NAME: string;
+        readonly VITE_MATOMO_HOST: string;
+        readonly VITE_MATOMO_SITE_ID: string;
         [key: string]: string | boolean | undefined;
     }
 
@@ -26,15 +28,26 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        const app = createApp({ render: () => h(App, props) })
             .use(plugin)
-            .use(ZiggyVue)
-            .mount(el);
+            .use(ZiggyVue);
+
+        if (import.meta.env.VITE_MATOMO_HOST && import.meta.env.VITE_MATOMO_SITE_ID) {
+            app.use(VueMatomo, {
+                host: import.meta.env.VITE_MATOMO_HOST,
+                siteId: parseInt(import.meta.env.VITE_MATOMO_SITE_ID),
+                trackerFileName: 'matomo',
+                enableHeartBeatTimer: true,
+                heartBeatTimerInterval: 15,
+                debug: import.meta.env.DEV,
+            });
+        }
+
+        app.mount(el);
     },
     progress: {
         color: '#4B5563',
     },
 });
 
-// This will set light / dark mode on page load...
 initializeTheme();

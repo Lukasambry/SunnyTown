@@ -16,10 +16,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
+import { useMatomo } from '@/composables/useMatomo';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 
 interface Props {
     breadcrumbs?: BreadcrumbItem[];
@@ -30,7 +31,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const page = usePage();
-const auth = computed(() => page.props.auth);
+const auth = computed(() => page.props.auth as { user: { id: number; name: string; avatar?: string } });
+const matomo = useMatomo();
 
 const isCurrentRoute = computed(() => (url: string) => page.url === url);
 
@@ -58,6 +60,53 @@ const rightNavItems: NavItem[] = [
         icon: BookOpen,
     },
 ];
+
+// Matomo tracking functions
+const trackMainNavClick = (item: NavItem) => {
+    matomo.trackNavigation(`main_nav_${item.title.toLowerCase()}`);
+    matomo.trackEvent('Header', 'Navigation', item.title);
+};
+
+const trackRightNavClick = (item: NavItem) => {
+    matomo.trackNavigation(`external_link_${item.title.toLowerCase()}`);
+    matomo.trackEvent('Header', 'External_Link', item.title);
+};
+
+const trackMobileMenuOpen = () => {
+    matomo.trackEvent('Header', 'Mobile_Menu', 'open');
+    matomo.trackEngagement('Mobile_Menu', 'open');
+};
+
+const trackSearchClick = () => {
+    matomo.trackEvent('Header', 'Search', 'click');
+    matomo.trackUserAction('Search', 'header');
+};
+
+const trackLogoClick = () => {
+    matomo.trackEvent('Header', 'Logo', 'click');
+    matomo.trackNavigation('logo_home');
+};
+
+const trackUserMenuOpen = () => {
+    matomo.trackEvent('Header', 'User_Menu', 'open');
+    matomo.trackEngagement('User_Menu', 'open');
+};
+
+const trackBreadcrumbClick = (breadcrumb: BreadcrumbItem, index: number) => {
+    matomo.trackEvent('Header', 'Breadcrumb', `${breadcrumb.title}_level_${index}`);
+    matomo.trackNavigation(`breadcrumb_${breadcrumb.title.toLowerCase()}`);
+};
+
+onMounted(() => {
+    // Track header load and user status
+    const userStatus = auth.value?.user ? 'authenticated' : 'guest';
+    matomo.trackEvent('Header', 'Load', userStatus);
+    
+    if (auth.value?.user) {
+        matomo.setUserId(auth.value.user.id.toString());
+        matomo.setCustomVariable(2, 'User Status', 'Authenticated', 'visit');
+    }
+});
 </script>
 
 <template>
@@ -68,7 +117,7 @@ const rightNavItems: NavItem[] = [
                 <div class="lg:hidden">
                     <Sheet>
                         <SheetTrigger :as-child="true">
-                            <Button variant="ghost" size="icon" class="mr-2 h-9 w-9">
+                            <Button variant="ghost" size="icon" class="mr-2 h-9 w-9" @click="trackMobileMenuOpen">
                                 <Menu class="h-5 w-5" />
                             </Button>
                         </SheetTrigger>
@@ -85,6 +134,7 @@ const rightNavItems: NavItem[] = [
                                         :href="item.href"
                                         class="hover:bg-accent flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium"
                                         :class="activeItemStyles(item.href)"
+                                        @click="trackMainNavClick(item)"
                                     >
                                         <component v-if="item.icon" :is="item.icon" class="h-5 w-5" />
                                         {{ item.title }}
@@ -98,6 +148,7 @@ const rightNavItems: NavItem[] = [
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         class="flex items-center space-x-2 text-sm font-medium"
+                                        @click="trackRightNavClick(item)"
                                     >
                                         <component v-if="item.icon" :is="item.icon" class="h-5 w-5" />
                                         <span>{{ item.title }}</span>
@@ -108,7 +159,7 @@ const rightNavItems: NavItem[] = [
                     </Sheet>
                 </div>
 
-                <Link :href="route('dashboard')" class="flex items-center gap-x-2">
+                <Link :href="route('dashboard')" class="flex items-center gap-x-2" @click="trackLogoClick">
                     <AppLogo />
                 </Link>
 
@@ -117,7 +168,7 @@ const rightNavItems: NavItem[] = [
                     <NavigationMenu class="ml-10 flex h-full items-stretch">
                         <NavigationMenuList class="flex h-full items-stretch space-x-2">
                             <NavigationMenuItem v-for="(item, index) in mainNavItems" :key="index" class="relative flex h-full items-center">
-                                <Link :href="item.href">
+                                <Link :href="item.href" @click="trackMainNavClick(item)">
                                     <NavigationMenuLink
                                         :class="[navigationMenuTriggerStyle(), activeItemStyles(item.href), 'h-9 cursor-pointer px-3']"
                                     >
@@ -136,7 +187,7 @@ const rightNavItems: NavItem[] = [
 
                 <div class="ml-auto flex items-center space-x-2">
                     <div class="relative flex items-center space-x-1">
-                        <Button variant="ghost" size="icon" class="group h-9 w-9 cursor-pointer">
+                        <Button variant="ghost" size="icon" class="group h-9 w-9 cursor-pointer" @click="trackSearchClick">
                             <Search class="size-5 opacity-80 group-hover:opacity-100" />
                         </Button>
 
@@ -146,7 +197,7 @@ const rightNavItems: NavItem[] = [
                                     <Tooltip>
                                         <TooltipTrigger>
                                             <Button variant="ghost" size="icon" as-child class="group h-9 w-9 cursor-pointer">
-                                                <a :href="item.href" target="_blank" rel="noopener noreferrer">
+                                                <a :href="item.href" target="_blank" rel="noopener noreferrer" @click="trackRightNavClick(item)">
                                                     <span class="sr-only">{{ item.title }}</span>
                                                     <component :is="item.icon" class="size-5 opacity-80 group-hover:opacity-100" />
                                                 </a>
@@ -167,6 +218,7 @@ const rightNavItems: NavItem[] = [
                                 variant="ghost"
                                 size="icon"
                                 class="focus-within:ring-primary relative size-10 w-auto rounded-full p-1 focus-within:ring-2"
+                                @click="trackUserMenuOpen"
                             >
                                 <Avatar class="size-8 overflow-hidden rounded-full">
                                     <AvatarImage v-if="auth.user.avatar" :src="auth.user.avatar" :alt="auth.user.name" />
@@ -186,7 +238,7 @@ const rightNavItems: NavItem[] = [
 
         <div v-if="props.breadcrumbs.length > 1" class="border-sidebar-border/70 flex w-full border-b">
             <div class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
+                <Breadcrumbs :breadcrumbs="breadcrumbs" @breadcrumb-click="trackBreadcrumbClick" />
             </div>
         </div>
     </div>
