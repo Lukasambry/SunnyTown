@@ -19,6 +19,7 @@ export class ResourceManager {
     private readonly registry: ResourceRegistry;
     private readonly globalInventory: ResourceInventory;
     private isInitialized: boolean = false;
+    private saveTimeout: number | null = null;
 
     private constructor() {
         try {
@@ -52,11 +53,18 @@ export class ResourceManager {
         return this.isInitialized && this.registry !== null;
     }
 
+    private getCurrentResourcesData(): Record<string, number> {
+        try {
+            return this.saveGlobalInventory();
+        } catch (error) {
+            console.error('Error getting resources data:', error);
+            return {};
+        }
+    }
+
     private setupGlobalEvents(): void {
-        // Listen for inventory changes and emit to game systems
         this.globalInventory.on('change', (event) => {
             try {
-                // Emit to Vue.js
                 window.dispatchEvent(new CustomEvent('game:resourceUpdate', {
                     detail: {
                         type: event.type,
@@ -65,7 +73,6 @@ export class ResourceManager {
                     }
                 }));
 
-                // Emit to Phaser scenes
                 const game = (window as any).gameInstance;
                 if (game) {
                     const mainScene = game.scene.getScene('MainScene');
@@ -79,7 +86,6 @@ export class ResourceManager {
         });
     }
 
-    // Global inventory access with error handling
     public getGlobalInventory(): ResourceInventory {
         if (!this.isInitialized) {
             throw new Error('ResourceManager not initialized');
@@ -94,7 +100,7 @@ export class ResourceManager {
         }
 
         const result = this.globalInventory.addResource(type, amount, source);
-        this.triggerSave();
+        this.triggerAutoSave();
         return result;
     }
 
@@ -105,8 +111,30 @@ export class ResourceManager {
         }
 
         const result = this.globalInventory.removeResource(type, amount, target);
-        this.triggerSave();
+        this.triggerAutoSave();
         return result;
+    }
+
+    private triggerAutoSave(): void {
+        clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => {
+            try {
+                const gameDataService = (window as any).__GAME_DATA_SERVICE__;
+                if (gameDataService && gameDataService.saveGameData) {
+                    gameDataService.saveGameData();
+                }
+            } catch (error) {
+                console.error('Error triggering auto-save:', error);
+            }
+        }, 1000);
+    }
+
+    public restoreResourcesFromSave(resourcesData: Record<string, number>): void {
+        try {
+            this.loadGlobalInventory(resourcesData);
+        } catch (error) {
+            console.error('Error restoring resources:', error);
+        }
     }
 
     public getResource(type: ResourceType): number {

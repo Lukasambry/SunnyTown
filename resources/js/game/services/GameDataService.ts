@@ -55,6 +55,7 @@ export class GameDataService {
 
     constructor() {
         this.workerCounterService = WorkerCounterService.getInstance();
+        (window as any).__GAME_DATA_SERVICE__ = this;
     }
 
     private getDefaultGameData(): GameData {
@@ -145,13 +146,11 @@ export class GameDataService {
 
             const parsedData = JSON.parse(stored);
 
-            // Version check et migration si nécessaire
             if (parsedData.version !== this.VERSION) {
                 console.warn(`Version mismatch: saved=${parsedData.version}, current=${this.VERSION}`);
                 parsedData.data = this.migrateGameData(parsedData.data, parsedData.version);
             }
 
-            // Validation des données
             if (!this.isValidGameData(parsedData.data)) {
                 console.error('Invalid game data structure');
                 return null;
@@ -168,6 +167,20 @@ export class GameDataService {
         } catch (error) {
             console.error('Error loading game data:', error);
             return null;
+        }
+    }
+
+    public forceResourceSave(): boolean {
+        try {
+            const resourceManager = (window as any).__RESOURCE_MANAGER__;
+            if (resourceManager && resourceManager.saveGlobalInventory) {
+                resourceManager.saveGlobalInventory();
+                return this.saveGameData();
+            }
+            return false;
+        } catch (error) {
+            console.error('Error force saving resources:', error);
+            return false;
         }
     }
 
@@ -223,18 +236,10 @@ export class GameDataService {
     private getCurrentResourcesData(): Record<string, number> {
         try {
             const resourceManager = (window as any).__RESOURCE_MANAGER__;
-            if (resourceManager && resourceManager.getGlobalInventory) {
-                const inventory = resourceManager.getGlobalInventory();
-                const resources: Record<string, number> = {};
-
-                if (inventory.getAllResources) {
-                    const allResources = inventory.getAllResources();
-                    allResources.forEach((resource: any) => {
-                        resources[resource.type] = resource.amount;
-                    });
-                }
-
-                return resources;
+            if (resourceManager && resourceManager.saveGlobalInventory) {
+                const resourcesData = resourceManager.saveGlobalInventory();
+                console.log('Resources data retrieved:', resourcesData);
+                return resourcesData;
             }
         } catch (error) {
             console.error('Error getting resources data:', error);
@@ -322,11 +327,23 @@ export class GameDataService {
     }
 
     private restoreResourcesData(resources: Record<string, number>): void {
-        Object.entries(resources).forEach(([type, amount]) => {
-            window.dispatchEvent(new CustomEvent('game:restoreResource', {
-                detail: { type, amount }
-            }));
-        });
+        try {
+            const resourceManager = (window as any).__RESOURCE_MANAGER__;
+            if (resourceManager && resourceManager.loadGlobalInventory) {
+                console.log('Restoring resources:', resources);
+                resourceManager.loadGlobalInventory(resources);
+                console.log('Resources restored successfully');
+            } else {
+                console.warn('ResourceManager not available for restoration');
+                Object.entries(resources).forEach(([type, amount]) => {
+                    window.dispatchEvent(new CustomEvent('game:restoreResource', {
+                        detail: { type, amount }
+                    }));
+                });
+            }
+        } catch (error) {
+            console.error('Error restoring resources:', error);
+        }
     }
 
     private restoreWorkerData(workersData: GameData['workers']): void {

@@ -296,18 +296,10 @@ export const useGameStore = defineStore('game', () => {
         if (loaded) {
             if (initializeManagers()) {
                 initializeResourceSync();
-
-                // Give some starting resources for testing
-                if (resourceManager) {
-                    resourceManager.addResource(ResourceType.WOOD, 25, 'initial_resources');
-                    resourceManager.addResource(ResourceType.STONE, 10, 'initial_resources');
-                    resourceManager.addResource(ResourceType.FOOD, 5, 'initial_resources');
-                }
             }
         }
     };
 
-    // AMÉLIORÉ: Actions avec vérifications de réactivité
     const updateResource = (type: ResourceType, amount: number) => {
         if (!resourceManager) {
             console.error('ResourceManager not available for updateResource');

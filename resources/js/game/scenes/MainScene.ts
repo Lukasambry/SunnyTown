@@ -460,11 +460,12 @@ export class MainScene extends Phaser.Scene {
         });
 
         const gameStore = useGameStore();
-
         gameStore.setupAutoSave(5);
         if (gameStore.hasExistingSave()) {
             gameStore.loadGameData();
         }
+
+        this.setupResourceRestoreListeners();
     }
 
     private setupGameDataListeners(): void {
@@ -560,6 +561,35 @@ export class MainScene extends Phaser.Scene {
                 }),
             );
         }
+    }
+
+    private setupResourceRestoreListeners(): void {
+        window.addEventListener('game:restoreResource', (event: CustomEvent) => {
+            const { type, amount } = event.detail;
+            try {
+                const inventory = this.resourceManager.getGlobalInventory();
+                if (inventory.setResource) {
+                    inventory.setResource(type, amount);
+                } else {
+                    const currentAmount = inventory.getResource(type);
+                    if (currentAmount > 0) {
+                        inventory.removeResource(type, currentAmount);
+                    }
+                    inventory.addResource(type, amount);
+                }
+            } catch (error) {
+                console.error(`Error restoring resource ${type}:`, error);
+            }
+        });
+
+        window.addEventListener('game:restoreAllResources', (event: CustomEvent) => {
+            const resourcesData = event.detail;
+            try {
+                this.resourceManager.loadGlobalInventory(resourcesData);
+            } catch (error) {
+                console.error('Error restoring all resources:', error);
+            }
+        });
     }
 
     private onCancelBuildingPlacement(): void {
@@ -1701,17 +1731,21 @@ export class MainScene extends Phaser.Scene {
 
     public getResourcesSnapshot(): Record<string, number> {
         try {
-            const inventory = this.resourceManager.getGlobalInventory();
-            const resources: Record<string, number> = {};
-
-            inventory.getAllResources().forEach((amount, type) => {
-                resources[type] = amount;
-            });
-
-            return resources;
+            return this.resourceManager.saveGlobalInventory();
         } catch (error) {
             console.error('Error getting resources snapshot:', error);
             return {};
+        }
+    }
+
+    public forceSaveResources(): void {
+        try {
+            const gameDataService = (window as any).__GAME_DATA_SERVICE__;
+            if (gameDataService && gameDataService.forceResourceSave) {
+                gameDataService.forceResourceSave();
+            }
+        } catch (error) {
+            console.error('Error forcing resource save:', error);
         }
     }
 
