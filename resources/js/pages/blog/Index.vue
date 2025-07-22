@@ -233,7 +233,6 @@ let pageStartTime: number;
 let articleInteractions: Record<string, number> = {};
 let authorInteractions: Record<string, number> = {};
 let scrollDepth = 0;
-let readingTimeTracked: Set<string> = new Set();
 
 const sortedBlogPosts = computed(() => {
     if (!props.blogPosts) return [];
