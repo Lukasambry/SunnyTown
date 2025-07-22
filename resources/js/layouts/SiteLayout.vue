@@ -84,7 +84,7 @@
                             <div v-if="showUserMenu" class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl shadow-lg backdrop-blur-sm">
                                 <div class="py-2">
                                     <Link
-                                        :href="route('dashboard')"
+                                        href="/admin"
                                         class="block px-4 py-2 text-sm text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                                     >
                                         Dashboard
