@@ -4,20 +4,35 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        {{-- Inline script to detect system dark mode preference and apply it immediately --}}
-        <script>
-            (function() {
-                const appearance = '{{ $appearance ?? "system" }}';
+       <script>
+  (function() {
+    // 1. Détection du mode sombre système
+    const appearance = '{{ $appearance ?? "system" }}';
+    if (appearance === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        document.documentElement.classList.add('dark');
+      }
+    }
 
-                if (appearance === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // 2. Initialisation Matomo
+    var _paq = window._paq = window._paq || [];
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
 
-                    if (prefersDark) {
-                        document.documentElement.classList.add('dark');
-                    }
-                }
-            })();
-        </script>
+    (function() {
+      var u = "//matomo.florddev.fr/";
+      _paq.push(['setTrackerUrl', u + 'matomo.php']);
+      _paq.push(['setSiteId', '1']);
+      var d = document,
+          g = d.createElement('script'),
+          s = d.getElementsByTagName('script')[0];
+      g.async = true;
+      g.src = u + 'matomo.js';
+      s.parentNode.insertBefore(g, s);
+    })();
+  })();
+</script>
 
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
