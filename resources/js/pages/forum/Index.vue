@@ -31,7 +31,7 @@
 
                 <div class="space-y-8">
                     <div
-                        v-for="(category, categoryIndex) in categories"
+                        v-for="(category) in categories"
                         :key="category.id"
                         :data-category="category.name"
                         class="group relative rounded-2xl overflow-hidden backdrop-blur-sm border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:border-black/20 dark:hover:border-white/20 transition-all duration-300 hover:shadow-xl"
