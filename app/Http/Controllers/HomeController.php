@@ -12,12 +12,8 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
-    /**
-     * Affiche la page d'accueil complète de SunnyTown
-     */
     public function index(): Response
     {
-        // Récupération des derniers articles de blog
         $latestBlogPosts = BlogPost::whereNotNull('published_at')
             ->orderBy('published_at', 'desc')
             ->take(3)
@@ -33,7 +29,6 @@ class HomeController extends Controller
                 ];
             });
 
-        // Récupération des threads récents du forum
         $recentThreads = Thread::with(['user:id,name', 'forumCategory:id,name'])
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -53,7 +48,6 @@ class HomeController extends Controller
                 ];
             });
 
-        // Statistiques du site
         $stats = [
             'total_players' => User::count(),
             'active_players' => User::where('created_at', '>=', now()->subDays(30))->count(),
@@ -62,7 +56,6 @@ class HomeController extends Controller
             'community_growth' => $this->calculateGrowthPercentage()
         ];
 
-        // Fonctionnalités principales de SunnyTown
         $gameFeatures = [
             [
                 'icon' => '🏗️',
@@ -94,7 +87,6 @@ class HomeController extends Controller
             ]
         ];
 
-        // Nouvelles récentes et mises à jour
         $recentNews = [
             [
                 'title' => 'Mise à jour Hiver 2025',
@@ -119,7 +111,6 @@ class HomeController extends Controller
             ]
         ];
 
-        // Témoignages de joueurs
         $playerTestimonials = [
             [
                 'name' => 'Marie L.',
@@ -144,7 +135,6 @@ class HomeController extends Controller
             ]
         ];
 
-        // Catégories du forum pour l'aperçu
         $forumCategories = ForumCategory::withCount('threads')
             ->take(4)
             ->get(['id', 'name', 'description'])
@@ -195,9 +185,6 @@ class HomeController extends Controller
         ]);
     }
 
-    /**
-     * Génère un extrait de texte
-     */
     private function generateExcerpt(string $content, int $length = 120): string
     {
         $plainText = strip_tags($content);
@@ -208,20 +195,14 @@ class HomeController extends Controller
         return substr($plainText, 0, $length) . '...';
     }
 
-    /**
-     * Calcule le temps de lecture estimé
-     */
     private function calculateReadTime(string $content): string
     {
         $wordCount = str_word_count(strip_tags($content));
-        $readTime = ceil($wordCount / 200); // 200 mots par minute
+        $readTime = ceil($wordCount / 200);
 
         return $readTime . ' min de lecture';
     }
 
-    /**
-     * Calcule le pourcentage de croissance de la communauté
-     */
     private function calculateGrowthPercentage(): float
     {
         $thisMonth = User::where('created_at', '>=', now()->startOfMonth())->count();

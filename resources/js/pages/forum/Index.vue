@@ -147,6 +147,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import SiteLayout from '@/layouts/SiteLayout.vue';
 
+
 const props = defineProps<{
     categories: Array<{
         id: number;

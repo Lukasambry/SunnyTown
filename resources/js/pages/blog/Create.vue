@@ -326,10 +326,21 @@
 
 <script lang="ts" setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import SiteLayout from '@/layouts/SiteLayout.vue';
 
 const isSubmitting = ref(false);
+
+// Vérification si l'utilisateur est autorisé
+const checkAuthorization = () => {
+    if (!$page.props.auth.user || !$page.props.auth.user.roles.some(role => role.name === 'admin')) {
+        window.location = route('blog.index');
+    }
+};
+
+onMounted(() => {
+    checkAuthorization();
+});
 
 const today = new Date();
 const formattedDate = today.toISOString().split('T')[0];

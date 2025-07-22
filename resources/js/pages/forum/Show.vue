@@ -1,4 +1,7 @@
 <template>
+    <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">
+        <Navbar />
+    </header>
     <Head :title="`Forum: ${category.name}`" />
 
     <SiteLayout :auth="$page.props.auth">
@@ -213,6 +216,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import SiteLayout from '@/layouts/SiteLayout.vue';
+import Navbar from '@/components/home/Navbar.vue';
 
 const props = defineProps<{
     category: {
