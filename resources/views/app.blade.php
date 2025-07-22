@@ -6,7 +6,6 @@
 
        <script>
   (function() {
-    // 1. Détection du mode sombre système
     const appearance = '{{ $appearance ?? "system" }}';
     if (appearance === 'system') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -15,7 +14,6 @@
       }
     }
 
-    // 2. Initialisation Matomo
     var _paq = window._paq = window._paq || [];
     _paq.push(['trackPageView']);
     _paq.push(['enableLinkTracking']);
