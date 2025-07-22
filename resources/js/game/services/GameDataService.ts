@@ -89,11 +89,16 @@ export class GameDataService {
 
     public saveGameData(): boolean {
         try {
+            const playerData = this.getCurrentPlayerData();
+            const buildingsData = this.getCurrentBuildingsData();
+            const resourcesData = this.getCurrentResourcesData();
+            const workersData = this.getCurrentWorkersData();
+
             const gameData: GameData = {
-                player: this.getCurrentPlayerData(),
-                buildings: this.getCurrentBuildingsData(),
-                resources: this.getCurrentResourcesData(),
-                workers: this.getCurrentWorkersData(),
+                player: playerData,
+                buildings: buildingsData,
+                resources: resourcesData,
+                workers: workersData,
                 lastSaved: Date.now(),
                 gameVersion: this.VERSION
             };
@@ -103,15 +108,9 @@ export class GameDataService {
                 data: gameData
             };
 
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
-            console.log('Game data saved successfully', {
-                players: gameData.player,
-                buildingCount: gameData.buildings.length,
-                resourceTypes: Object.keys(gameData.resources).length,
-                totalWorkers: gameData.workers.totalCount
-            });
+            const jsonString = JSON.stringify(dataToSave);
+            localStorage.setItem(this.STORAGE_KEY, jsonString);
 
-            // Émettre un événement de sauvegarde
             window.dispatchEvent(new CustomEvent('game:dataSaved', {
                 detail: {
                     timestamp: gameData.lastSaved,
@@ -123,15 +122,9 @@ export class GameDataService {
                     }
                 }
             }));
-
             return true;
         } catch (error) {
             console.error('Error saving game data:', error);
-
-            window.dispatchEvent(new CustomEvent('game:saveFailed', {
-                detail: { error: error.message }
-            }));
-
             return false;
         }
     }
@@ -156,14 +149,27 @@ export class GameDataService {
                 return null;
             }
 
+            const gameData = parsedData.data as GameData;
+
+            if (!gameData.player || typeof gameData.player.level !== 'number') {
+                console.error('Invalid player data detected');
+                gameData.player = this.getDefaultGameData().player;
+            }
+
+            if (!gameData.resources || typeof gameData.resources !== 'object') {
+                console.error('Invalid resources data detected');
+                gameData.resources = {};
+            }
+
             console.log('Game data loaded successfully', {
-                saveDate: new Date(parsedData.data.lastSaved).toLocaleString(),
-                level: parsedData.data.player.level,
-                buildings: parsedData.data.buildings.length,
-                workers: parsedData.data.workers.totalCount
+                saveDate: new Date(gameData.lastSaved).toLocaleString(),
+                level: gameData.player.level,
+                buildings: gameData.buildings.length,
+                workers: gameData.workers.totalCount,
+                resourceTypes: Object.keys(gameData.resources).length
             });
 
-            return parsedData.data as GameData;
+            return gameData;
         } catch (error) {
             console.error('Error loading game data:', error);
             return null;
@@ -204,8 +210,11 @@ export class GameDataService {
 
     private getCurrentPlayerData(): PlayerData {
         const gameStore = (window as any).__GAME_STORE__;
+
+        console.log('getCurrentPlayerData - __GAME_STORE__:', gameStore);
+
         if (gameStore) {
-            return {
+            const playerData = {
                 level: gameStore.getPlayerLevel || 1,
                 currentExperience: gameStore.getPlayerCurrentExperience || 0,
                 nextLevelExperience: gameStore.getPlayerNextLevelExperience || 100,
@@ -216,21 +225,63 @@ export class GameDataService {
                 gold: gameStore.getPlayerGold || 0,
                 avatar: gameStore.getPlayerAvatar || ''
             };
+
+            console.log('getCurrentPlayerData result:', playerData);
+            return playerData;
         }
-        return this.getDefaultGameData().player;
+
+        console.log('No __GAME_STORE__ found, using default data');
+        const defaultData = this.getDefaultGameData().player;
+        console.log('Default player data:', defaultData);
+        return defaultData;
     }
 
     private getCurrentBuildingsData(): StoredBuilding[] {
         try {
+            const buildingManager = (window as any).__BUILDING_MANAGER__;
+            if (buildingManager && typeof buildingManager.getBuildings === 'function') {
+                const buildings = buildingManager.getBuildings();
+                return buildings.map((building: any) => {
+                    const position = building.getPosition();
+                    return {
+                        type: building.getType(),
+                        x: position.x,
+                        y: position.y
+                    };
+                });
+            }
+
             const stored = sessionStorage.getItem('BUILDINGS_STORAGE');
             if (stored) {
                 const buildings = JSON.parse(stored);
                 return Array.isArray(buildings) ? buildings : [];
             }
+
+            return [];
         } catch (error) {
             console.error('Error getting buildings data:', error);
         }
         return [];
+    }
+
+    public forceSynchronization(): boolean {
+        try {
+            const resourceManager = (window as any).__RESOURCE_MANAGER__;
+            if (resourceManager && resourceManager.saveGlobalInventory) {
+                resourceManager.saveGlobalInventory();
+            }
+
+            const buildingManager = (window as any).__BUILDING_MANAGER__;
+            if (buildingManager && buildingManager.forceSave) {
+                buildingManager.forceSave();
+            }
+
+            const success = this.saveGameData();
+            return success;
+        } catch (error) {
+            console.error('Erreur lors de la synchronisation:', error);
+            return false;
+        }
     }
 
     private getCurrentResourcesData(): Record<string, number> {

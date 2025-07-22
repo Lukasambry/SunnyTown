@@ -134,7 +134,7 @@ export class BuildingManager {
                 };
             });
 
-            sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+            //sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
             this.gameDataService.saveGameData();
         } catch (error) {
             console.error('Erreur lors de la sauvegarde des bâtiments:', error);
@@ -147,12 +147,10 @@ export class BuildingManager {
 
     public loadState(): void {
         try {
-            const stored = sessionStorage.getItem(this.STORAGE_KEY);
-            if (!stored) return;
+            const gameData = this.gameDataService.loadGameData();
+            if (!gameData?.buildings) return;
 
-            const state: StoredBuilding[] = JSON.parse(stored);
-
-            const validBuildings = state.filter(data =>
+            const validBuildings = gameData.buildings.filter(data =>
                 typeof data.type === 'string' &&
                 typeof data.x === 'number' &&
                 typeof data.y === 'number' &&
