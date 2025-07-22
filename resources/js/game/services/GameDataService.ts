@@ -239,29 +239,24 @@ export class GameDataService {
     private getCurrentBuildingsData(): StoredBuilding[] {
         try {
             const buildingManager = (window as any).__BUILDING_MANAGER__;
-            if (buildingManager && typeof buildingManager.getBuildings === 'function') {
-                const buildings = buildingManager.getBuildings();
-                return buildings.map((building: any) => {
-                    const position = building.getPosition();
-                    return {
-                        type: building.getType(),
-                        x: position.x,
-                        y: position.y
-                    };
-                });
+            if (buildingManager && typeof buildingManager.getCurrentBuildingsData === 'function') {
+                const buildings = buildingManager.getCurrentBuildingsData();
+                return buildings;
             }
 
+            console.warn('BuildingManager not available, falling back to sessionStorage');
             const stored = sessionStorage.getItem('BUILDINGS_STORAGE');
             if (stored) {
                 const buildings = JSON.parse(stored);
-                return Array.isArray(buildings) ? buildings : [];
+                const validBuildings = Array.isArray(buildings) ? buildings : [];
+                return validBuildings;
             }
 
             return [];
         } catch (error) {
-            console.error('Error getting buildings data:', error);
+            console.error('Error getting current buildings data:', error);
+            return [];
         }
-        return [];
     }
 
     public forceSynchronization(): boolean {
@@ -351,23 +346,16 @@ export class GameDataService {
         return true;
     }
 
-    public restoreGameData(gameData: GameData): boolean {
+    public restoreGameData(gameData: GameData): void {
         try {
-            this.restorePlayerData(gameData.player);
-            this.restoreResourcesData(gameData.resources);
-            this.restoreWorkerData(gameData.workers);
-
-            window.dispatchEvent(new CustomEvent('game:dataRestored', {
-                detail: {
-                    timestamp: Date.now(),
-                    originalSaveTime: gameData.lastSaved
-                }
-            }));
-
-            return true;
+            const buildingManager = (window as any).__BUILDING_MANAGER__;
+            if (buildingManager && typeof buildingManager.restoreBuildingsFromGameData === 'function') {
+                buildingManager.restoreBuildingsFromGameData(gameData.buildings);
+            } else {
+                console.warn('BuildingManager not available for buildings restoration');
+            }
         } catch (error) {
             console.error('Error restoring game data:', error);
-            return false;
         }
     }
 

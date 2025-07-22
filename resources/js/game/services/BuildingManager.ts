@@ -31,10 +31,11 @@ export class BuildingManager {
         this.scene = scene;
         this.buildingRegistry = BuildingRegistry.getInstance();
         this.gameDataService = GameDataService.getInstance();
+
+        (window as any).__BUILDING_MANAGER__ = this;
     }
 
     public placeBuilding(type: string, x: number, y: number): TiledBuilding {
-        // Correction : utiliser le template du config
         const buildingConfig = this.buildingRegistry.getBuildingConfig(type);
         if (!buildingConfig) {
             throw new Error(`Aucun config trouvé pour le bâtiment ${type}`);
@@ -42,14 +43,8 @@ export class BuildingManager {
         const templateKey = buildingConfig.template;
         const building = new TiledBuilding(this.scene, x, y, templateKey, type);
 
-        /*
-        const player = (this.scene as any).player;
-        if (player) {
-            building.setupCollisions(player);
-        }
-        */
-
         this.buildings.push(building);
+
         this.saveState();
         this.rebuildPathfindingGrid();
 
@@ -63,11 +58,11 @@ export class BuildingManager {
 
         this.buildings.splice(index, 1);
         building.destroy();
+
         this.saveState();
         this.rebuildPathfindingGrid();
 
         this.emit('buildingDestroyed', building);
-
         return true;
     }
 
@@ -134,12 +129,15 @@ export class BuildingManager {
                 };
             });
 
-            //sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
-            this.gameDataService.saveGameData();
+            sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+            setTimeout(() => {
+                this.gameDataService.saveGameData();
+            }, 50);
         } catch (error) {
             console.error('Erreur lors de la sauvegarde des bâtiments:', error);
         }
     }
+
 
     public forceSave(): void {
         this.saveState();
@@ -147,10 +145,14 @@ export class BuildingManager {
 
     public loadState(): void {
         try {
-            const gameData = this.gameDataService.loadGameData();
-            if (!gameData?.buildings) return;
+            const stored = sessionStorage.getItem(this.STORAGE_KEY);
+            if (!stored) {
+                console.log('No buildings data in sessionStorage');
+                return;
+            }
 
-            const validBuildings = gameData.buildings.filter(data =>
+            const state: StoredBuilding[] = JSON.parse(stored);
+            const validBuildings = state.filter(data =>
                 typeof data.type === 'string' &&
                 typeof data.x === 'number' &&
                 typeof data.y === 'number' &&
@@ -161,13 +163,53 @@ export class BuildingManager {
             validBuildings.forEach(data => {
                 this.placeBuilding(data.type, data.x, data.y);
             });
-
-            console.log(`Chargés ${validBuildings.length} bâtiments`);
-
         } catch (error) {
             console.error('Erreur chargement bâtiments:', error);
             sessionStorage.removeItem(this.STORAGE_KEY);
         }
+    }
+
+    public getCurrentBuildingsData(): StoredBuilding[] {
+        return this.buildings.map(building => {
+            const position = building.getPosition();
+            return {
+                type: building.getType(),
+                x: position.x,
+                y: position.y
+            };
+        });
+    }
+
+    public restoreBuildingsFromGameData(buildingsData: StoredBuilding[]): void {
+        this.clearAll();
+
+        buildingsData.forEach(data => {
+            if (typeof data.type === 'string' &&
+                typeof data.x === 'number' &&
+                typeof data.y === 'number' &&
+                !isNaN(data.x) && !isNaN(data.y)) {
+
+                const buildingConfig = this.buildingRegistry.getBuildingConfig(data.type);
+                if (buildingConfig) {
+                    const templateKey = buildingConfig.template;
+                    const building = new TiledBuilding(this.scene, data.x, data.y, templateKey, data.type);
+                    this.buildings.push(building);
+                }
+            }
+        });
+
+        const state: StoredBuilding[] = this.buildings.map(building => {
+            const position = building.getPosition();
+            return {
+                type: building.getType(),
+                x: position.x,
+                y: position.y
+            };
+        });
+        sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+
+        this.rebuildPathfindingGrid();
+        console.log(`Restored ${this.buildings.length} buildings`);
     }
 
     public updateBuildings(player: Phaser.Physics.Arcade.Sprite): void {

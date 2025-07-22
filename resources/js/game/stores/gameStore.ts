@@ -120,28 +120,18 @@ export const useGameStore = defineStore('game', () => {
 
     const loadGameData = (): boolean => {
         try {
-            console.log('Starting to load game data...');
-
             const gameData = gameDataService.loadGameData();
             if (!gameData) {
                 console.log('No game data found');
                 return false;
             }
 
-            console.log('Loaded game data from localStorage:', gameData);
-
-            // Restaurer les données du joueur
             restorePlayerData(gameData.player);
-
-            // Restaurer les ressources
             Object.entries(gameData.resources).forEach(([type, amount]) => {
                 updateResource(type as any, amount);
             });
 
-            // Restaurer le reste des données
             gameDataService.restoreGameData(gameData);
-
-            console.log('Game data loading completed successfully');
             return true;
         } catch (error) {
             console.error('Error loading game data:', error);
