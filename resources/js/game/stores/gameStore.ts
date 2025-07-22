@@ -5,6 +5,7 @@ import { ResourceManager } from '@/game/services/ResourceManager';
 import { BuildingRegistry } from '@/game/services/BuildingRegistry';
 import type { TiledBuilding } from '@/game/objects/TiledBuilding';
 import type { Worker } from '@/game/objects/workers/Worker';
+import { GameDataService, type PlayerData, type GameData } from '@/game/services/GameDataService';
 
 interface GameState {
     isGameLoaded: boolean;
@@ -36,6 +37,7 @@ export const useGameStore = defineStore('game', () => {
     const playerGold = ref<number>(0);
     const playerHealth = ref<{ current: number, max: number }>({ current: 100, max: 100 });
     const playerExperience = ref<{ current: number, nextLevel: number }>({ current: 0, nextLevel: 100 });
+    const gameDataService = GameDataService.getInstance();
 
     // Player data
     const getPlayerAvatar = computed(() => playerAvatar.value);
@@ -46,6 +48,65 @@ export const useGameStore = defineStore('game', () => {
     const getPlayerCurrentHealth = computed(() => playerHealth.value.current);
     const getPlayerMaxHealth = computed(() => playerHealth.value.max);
 
+    const saveGameData = (): boolean => {
+        try {
+            (window as any).__GAME_STORE__ = {
+                getPlayerLevel: playerLevel.value,
+                getPlayerCurrentExperience: playerExperience.value.current,
+                getPlayerNextLevelExperience: playerExperience.value.nextLevel,
+                getPlayerCurrentHealth: playerHealth.value.current,
+                getPlayerMaxHealth: playerHealth.value.max,
+                getPlayerGold: playerGold.value,
+                getPlayerAvatar: playerAvatar.value
+            };
+
+            return gameDataService.saveGameData();
+        } catch (error) {
+            console.error('Error in saveGameData:', error);
+            return false;
+        }
+    };
+
+    const restorePlayerData = (playerData: PlayerData): void => {
+        updatePlayerLevel(playerData.level);
+        updatePlayerGold(playerData.gold);
+        updatePlayerHealth(playerData.health);
+        updatePlayerExperience({
+            current: playerData.currentExperience,
+            nextLevel: playerData.nextLevelExperience
+        });
+        updatePlayerAvatar(playerData.avatar);
+    };
+
+    const loadGameData = (): boolean => {
+        try {
+            const gameData = gameDataService.loadGameData();
+
+            restorePlayerData(gameData.player);
+            Object.entries(gameData.resources).forEach(([type, amount]) => {
+                updateResource(type as any, amount);
+            });
+
+            gameDataService.restoreGameData(gameData);
+            return true;
+        } catch (error) {
+            console.error('Error loading game data:', error);
+            return false;
+        }
+    };
+
+    const hasExistingSave = (): boolean => {
+        return gameDataService.hasExistingSave();
+    };
+
+    const deleteSaveData = (): boolean => {
+        return gameDataService.deleteSaveData();
+    };
+
+    const setupAutoSave = (intervalMinutes: number = 5): void => {
+        gameDataService.setupAutoSave(intervalMinutes);
+    };
+
     // Player actions
     const updatePlayerAvatar = (avatar: string) => {
         playerAvatar.value = avatar;
@@ -53,18 +114,22 @@ export const useGameStore = defineStore('game', () => {
 
     const updatePlayerLevel = (level: number) => {
         playerLevel.value = level;
+        setTimeout(() => saveGameData(), 100);
     };
 
     const updatePlayerGold = (gold: number) => {
         playerGold.value = gold;
+        setTimeout(() => saveGameData(), 100);
     };
 
     const updatePlayerHealth = (health: { current: number, max: number }) => {
         playerHealth.value = {...health};
+        setTimeout(() => saveGameData(), 100);
     };
 
     const updatePlayerExperience = (experience: { current: number, nextLevel: number }) => {
         playerExperience.value = {...experience};
+        setTimeout(() => saveGameData(), 100);
     };
 
     const resourcesMap = ref<Map<ResourceType, number>>(new Map());
@@ -272,7 +337,9 @@ export const useGameStore = defineStore('game', () => {
             return 0;
         }
         try {
-            return resourceManager.addResource(type, amount, 'game_store');
+            const result = resourceManager.addResource(type, amount, 'game_store');
+            setTimeout(() => saveGameData(), 100);
+            return result;
         } catch (error) {
             console.error('Error adding resource:', error);
             return 0;
@@ -285,7 +352,9 @@ export const useGameStore = defineStore('game', () => {
             return 0;
         }
         try {
-            return resourceManager.removeResource(type, amount, 'game_store');
+            const result = resourceManager.removeResource(type, amount, 'game_store');
+            setTimeout(() => saveGameData(), 100);
+            return result;
         } catch (error) {
             console.error('Error removing resource:', error);
             return 0;
@@ -434,6 +503,13 @@ export const useGameStore = defineStore('game', () => {
         getPlayerCurrentHealth,
         getPlayerMaxHealth,
 
+        saveGameData,
+        loadGameData,
+        restorePlayerData,
+        hasExistingSave,
+        deleteSaveData,
+        setupAutoSave,
+
         // Actions
         setGameLoaded,
         updateResource,
@@ -441,7 +517,7 @@ export const useGameStore = defineStore('game', () => {
         removeResource,
         purchaseBuilding,
         getBuildingAffordability,
-        forceResourceUpdate, // NOUVEAU
+        forceResourceUpdate,
         selectBuilding,
         showBuildingInfo,
         hideBuildingInfo,
@@ -457,7 +533,6 @@ export const useGameStore = defineStore('game', () => {
         updatePlayerGold,
         updatePlayerHealth,
         updatePlayerExperience,
-
 
         // Resource Manager access
         getResourceManager,

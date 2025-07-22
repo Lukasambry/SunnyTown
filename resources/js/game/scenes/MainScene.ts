@@ -23,6 +23,7 @@ import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 import { ZoneBlockerService } from '../services/ZoneBlockerService';
+import { useGameStore } from '@/game/stores/gameStore';
 import { AudioService } from '../../game/services/AudioService'
 
 
@@ -280,8 +281,11 @@ export class MainScene extends Phaser.Scene {
         this.buildingManager.loadState();
         this.rebuildPathfindingGrid();
 
-        this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));
+        (window as any).__WORKER_MANAGER__ = this.workerManager;
+        (window as any).__RESOURCE_MANAGER__ = this.resourceManager;
+        this.setupGameDataListeners();
 
+        this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));
         this.mapLayers.forEach((layerConfig) => {
             if (!layerConfig.hasCollision) return;
             const layer = layerConfig.layer;
@@ -455,6 +459,28 @@ export class MainScene extends Phaser.Scene {
             this.clearPathDots();
         });
 
+        const gameStore = useGameStore();
+
+        gameStore.setupAutoSave(5);
+        if (gameStore.hasExistingSave()) {
+            gameStore.loadGameData();
+        }
+    }
+
+    private setupGameDataListeners(): void {
+        window.addEventListener('game:restorePlayerData', (event: CustomEvent) => {
+            const playerData = event.detail;
+            const gameStore = useGameStore();
+            gameStore.restorePlayerData(playerData);
+        });
+
+        window.addEventListener('game:restoreResource', (event: CustomEvent) => {
+            const { type, amount } = event.detail;
+            if (this.resourceManager) {
+                const inventory = this.resourceManager.getGlobalInventory();
+                inventory.setAmount(type, amount);
+            }
+        });
     }
 
     private setupVueResourceSync(): void {
@@ -1307,7 +1333,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     private findNearestDepositPoint(workerType: WorkerType, position: WorkerPosition): WorkerPosition | undefined {
-        
+
         return { x: position.x + 100, y: position.y };
     }
 
@@ -1849,7 +1875,7 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
-    
+
     private showPathDots(path: { x: number; y: number }[]): void {
         this.clearPathDots();
         if (!path || path.length === 0 || !this.pathDotsGroup) return;
@@ -1899,7 +1925,7 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    
+
     private clearPathDots(): void {
         if (this.pathDotsGroup) {
             this.pathDotsGroup.clear(true, true);

@@ -4,6 +4,7 @@ type Scene = typeof Scene;
 import { ResourceType, type ResourceDefinition, type ResourceStack } from '../types/ResourceSystemTypes';
 import { ResourceRegistry } from './ResourceRegistry';
 import { ResourceInventory } from './ResourceInventory';
+import { GameDataService } from '@/game/services/GameDataService';
 
 interface ResourceDisplayOptions {
     iconSize?: number;
@@ -25,7 +26,8 @@ export class ResourceManager {
             this.globalInventory = new ResourceInventory();
             this.setupGlobalEvents();
             this.isInitialized = true;
-            console.log('ResourceManager initialized successfully');
+
+            (window as any).__RESOURCE_MANAGER__ = this;
         } catch (error) {
             console.error('Error initializing ResourceManager:', error);
             throw error;
@@ -37,6 +39,13 @@ export class ResourceManager {
             ResourceManager.instance = new ResourceManager();
         }
         return ResourceManager.instance;
+    }
+
+    private triggerSave(): void {
+        setTimeout(() => {
+            const gameDataService = GameDataService.getInstance();
+            gameDataService.saveGameData();
+        }, 100);
     }
 
     public isReady(): boolean {
@@ -83,7 +92,10 @@ export class ResourceManager {
             console.error('ResourceManager not initialized');
             return 0;
         }
-        return this.globalInventory.addResource(type, amount, source);
+
+        const result = this.globalInventory.addResource(type, amount, source);
+        this.triggerSave();
+        return result;
     }
 
     public removeResource(type: ResourceType, amount: number, target?: string): number {
@@ -91,7 +103,10 @@ export class ResourceManager {
             console.error('ResourceManager not initialized');
             return 0;
         }
-        return this.globalInventory.removeResource(type, amount, target);
+
+        const result = this.globalInventory.removeResource(type, amount, target);
+        this.triggerSave();
+        return result;
     }
 
     public getResource(type: ResourceType): number {

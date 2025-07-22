@@ -4,6 +4,7 @@ type Scene = typeof Scene;
 import { TiledBuilding } from '../objects/TiledBuilding';
 import type { BuildingPosition } from '../types';
 import { BuildingRegistry } from './BuildingRegistry';
+import { GameDataService } from '@/game/services/GameDataService';
 
 interface StoredBuilding {
     readonly type: string;
@@ -24,10 +25,12 @@ export class BuildingManager {
     private readonly eventCallbacks = new Map<keyof BuildingManagerEvents, Set<Function>>();
     private readonly STORAGE_KEY = 'BUILDINGS_STORAGE';
     private readonly buildingRegistry: BuildingRegistry;
+    private readonly gameDataService: GameDataService;
 
     constructor(scene: Scene) {
         this.scene = scene;
         this.buildingRegistry = BuildingRegistry.getInstance();
+        this.gameDataService = GameDataService.getInstance();
     }
 
     public placeBuilding(type: string, x: number, y: number): TiledBuilding {
@@ -132,9 +135,14 @@ export class BuildingManager {
             });
 
             sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+            this.gameDataService.saveGameData();
         } catch (error) {
             console.error('Erreur lors de la sauvegarde des bâtiments:', error);
         }
+    }
+
+    public forceSave(): void {
+        this.saveState();
     }
 
     public loadState(): void {
