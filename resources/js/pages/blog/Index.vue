@@ -210,8 +210,9 @@
 
 <script lang="ts" setup>
 import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import SiteLayout from '@/layouts/SiteLayout.vue';
+import { useMatomo } from '@/composables/useMatomo';
 
 interface BlogPost {
     id: number;
@@ -225,6 +226,13 @@ const props = defineProps<{
     blogPosts?: BlogPost[];
     canCreatePost?: boolean;
 }>();
+
+const matomo = useMatomo();
+
+let pageStartTime: number;
+let articleInteractions: Record<string, number> = {};
+let authorInteractions: Record<string, number> = {};
+let scrollDepth = 0;
 
 const sortedBlogPosts = computed(() => {
     if (!props.blogPosts) return [];
@@ -277,6 +285,124 @@ const getWordCount = (content: string) => {
     const textContent = content.replace(/<[^>]*>/g, '');
     return textContent.split(/\s+/).filter(word => word.length > 0).length;
 };
+
+const trackScrollBehavior = () => {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    
+    if (docHeight > 0) {
+        const currentDepth = Math.round((scrollTop / docHeight) * 100);
+        
+        if (currentDepth > scrollDepth && currentDepth % 25 === 0) {
+            scrollDepth = currentDepth;
+            matomo.trackEvent('Blog', 'Scroll_Depth', 'blog_index', scrollDepth);
+            
+            if (scrollDepth >= 50) {
+                matomo.trackEvent('Blog', 'Deep_Scroll', 'blog_index');
+            }
+        }
+    }
+};
+
+const trackAuthorEngagement = () => {
+    const sortedAuthors = Object.entries(authorInteractions)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3);
+    
+    sortedAuthors.forEach(([author, interactions], index) => {
+        matomo.trackEvent('Blog', 'Popular_Author', `${author}_rank_${index + 1}`, interactions);
+    });
+};
+
+const trackContentAnalytics = () => {
+    if (!props.blogPosts || props.blogPosts.length === 0) return;
+    
+    const readingTimes = props.blogPosts.map(post => getReadingTime(post.content));
+    const avgReadingTime = Math.round(readingTimes.reduce((a, b) => a + b, 0) / readingTimes.length);
+    
+    const wordCounts = props.blogPosts.map(post => getWordCount(post.content));
+    const avgWordCount = Math.round(wordCounts.reduce((a, b) => a + b, 0) / wordCounts.length);
+    
+    matomo.trackEvent('Blog', 'Content_Metrics', 'avg_reading_time', avgReadingTime);
+    matomo.trackEvent('Blog', 'Content_Metrics', 'avg_word_count', avgWordCount);
+    
+    const now = new Date();
+    const recentArticles = props.blogPosts.filter(post => {
+        const publishDate = new Date(post.published_at);
+        const daysDiff = Math.ceil((now.getTime() - publishDate.getTime()) / (1000 * 60 * 60 * 24));
+        return daysDiff <= 7;
+    }).length;
+    
+    matomo.trackEvent('Blog', 'Content_Freshness', 'recent_articles', recentArticles);
+};
+
+const trackUserBehaviorPattern = () => {
+    const totalInteractions = Object.values(articleInteractions).reduce((a, b) => a + b, 0) +
+                             Object.values(authorInteractions).reduce((a, b) => a + b, 0);
+    
+    if (totalInteractions === 0) {
+        matomo.trackEvent('Blog', 'User_Behavior', 'passive_browsing');
+    } else if (totalInteractions < 3) {
+        matomo.trackEvent('Blog', 'User_Behavior', 'light_engagement');
+    } else if (totalInteractions < 8) {
+        matomo.trackEvent('Blog', 'User_Behavior', 'moderate_engagement');
+    } else {
+        matomo.trackEvent('Blog', 'User_Behavior', 'high_engagement');
+    }
+    
+    matomo.trackEvent('Blog', 'Total_Interactions', 'blog_index', totalInteractions);
+};
+
+onMounted(() => {
+    pageStartTime = Date.now();
+    
+    matomo.trackBlogPage('index');
+    
+    matomo.setCustomVariable(1, 'Page Type', 'Blog', 'page');
+    matomo.setCustomVariable(2, 'Blog Section', 'Index', 'page');
+    matomo.setCustomVariable(3, 'Articles Count', (props.blogPosts?.length || 0).toString(), 'page');
+    matomo.setCustomVariable(4, 'Authors Count', uniqueAuthors.value.toString(), 'page');
+    
+    const articlesCount = props.blogPosts?.length || 0;
+    const authorsCount = uniqueAuthors.value;
+    
+    matomo.trackEvent('Blog', 'Page_Stats', 'articles', articlesCount);
+    matomo.trackEvent('Blog', 'Page_Stats', 'authors', authorsCount);
+    matomo.trackEvent('Blog', 'Page_Stats', 'can_create', props.canCreatePost ? 1 : 0);
+    
+    trackContentAnalytics();
+    
+    const engagementInterval = setInterval(() => {
+        const timeOnPage = Math.floor((Date.now() - pageStartTime) / 1000);
+        if (timeOnPage > 0 && timeOnPage % 30 === 0) {
+            matomo.trackEngagement('time_on_blog_index', timeOnPage);
+            trackAuthorEngagement();
+        }
+    }, 30000);
+    
+    window.addEventListener('scroll', trackScrollBehavior);
+    
+    if (!props.blogPosts || props.blogPosts.length === 0) {
+        matomo.trackEvent('Blog', 'Empty_State', 'no_articles');
+        if (props.canCreatePost) {
+            matomo.trackEvent('Blog', 'Empty_State', 'can_create_first');
+        }
+    }
+    
+    onUnmounted(() => {
+        clearInterval(engagementInterval);
+        window.removeEventListener('scroll', trackScrollBehavior);
+        
+        const sessionTime = Math.floor((Date.now() - pageStartTime) / 1000);
+        matomo.trackEvent('Blog', 'Session_Duration', 'blog_index', sessionTime);
+        
+        trackUserBehaviorPattern();
+        
+        matomo.trackEvent('Blog', 'Exit_Metrics', 'scroll_depth', scrollDepth);
+        matomo.trackEvent('Blog', 'Exit_Metrics', 'article_interactions', Object.keys(articleInteractions).length);
+        matomo.trackEvent('Blog', 'Exit_Metrics', 'author_interactions', Object.keys(authorInteractions).length);
+    });
+});
 </script>
 
 <style scoped>
