@@ -29,10 +29,6 @@ class GoogleController extends Controller
                 ]
             );
 
-            if (!$user->hasRole('user') && !$user->hasRole('admin')) {
-                $user->assignRole('user');
-            }
-
             Auth::login($user, true);
 
             return redirect()->route('game.index');
