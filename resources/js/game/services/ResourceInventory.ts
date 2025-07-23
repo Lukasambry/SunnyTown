@@ -129,13 +129,39 @@ export class ResourceInventory {
             if (current > 0) {
                 usedSlots += Math.ceil(current / max);
             }
-            totalSlots += 1; // Each resource type = 1 slot
+            totalSlots += 1;
         });
 
         return totalSlots > 0 ? usedSlots / totalSlots : 0;
     }
 
-    // Event system
+    public setResource(type: ResourceType, amount: number): void {
+        if (amount < 0) {
+            console.warn(`Cannot set negative amount for resource ${type}`);
+            return;
+        }
+
+        const currentAmount = this.resources.get(type) || 0;
+        const newAmount = Math.min(amount, this.registry.getStackSize(type));
+
+        if (newAmount !== currentAmount) {
+            if (newAmount === 0) {
+                this.resources.delete(type);
+            } else {
+                this.resources.set(type, newAmount);
+            }
+
+            const change = newAmount - currentAmount;
+            this.recordTransaction(
+                change > 0 ? 'add' : 'remove',
+                type,
+                Math.abs(change),
+                'restore_save'
+            );
+            this.emitChange(type, currentAmount, newAmount, change);
+        }
+    }
+
     public on(event: 'change', callback: InventoryEventCallback): void {
         if (!this.eventCallbacks.has(event)) {
             this.eventCallbacks.set(event, new Set());
@@ -248,10 +274,18 @@ export class ResourceInventory {
     }
 
     public deserialize(data: Record<string, number>): void {
-        this.clear();
+        const oldResources = new Map(this.resources);
+        this.resources.clear();
+
         Object.entries(data).forEach(([type, amount]) => {
             if (this.registry.isValidType(type) && amount > 0) {
-                this.resources.set(type as ResourceType, amount);
+                this.setResource(type as ResourceType, amount);
+            }
+        });
+
+        oldResources.forEach((amount, type) => {
+            if (amount > 0 && !this.resources.has(type)) {
+                this.emitChange(type, amount, 0, -amount);
             }
         });
     }

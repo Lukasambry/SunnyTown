@@ -23,6 +23,9 @@ import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 import { ZoneBlockerService } from '../services/ZoneBlockerService';
+import { useGameStore } from '@/game/stores/gameStore';
+import { AudioService } from '../../game/services/AudioService'
+
 
 interface LayerConfig {
     layer: Phaser.Tilemaps.TilemapLayer;
@@ -71,6 +74,8 @@ export class MainScene extends Phaser.Scene {
     private targetIndicatorTween: Phaser.Tweens.Tween | null = null;
     private playerLevelSystem!: PlayerLevelSystem;
     private pathDotsGroup: Phaser.GameObjects.Group | null = null;
+    private audioService!: AudioService;
+
 
     constructor() {
         super({ key: 'MainScene' });
@@ -122,34 +127,28 @@ export class MainScene extends Phaser.Scene {
         this.load.tilemapTiledJSON('map', 'maps/map.json');
         this.load.image('action-button', 'ui/action-button.png');
 
-        // Cursors
         this.load.image('cursor', 'ui/cursor.png');
         this.load.image('cursor-chopping', 'ui/cursor-chopping.png');
         this.load.image('cursor-grab', 'ui/cursor-grab.png');
         this.load.image('cursor-grabbing', 'ui/cursor-grabbing.png');
 
-        // Corners
         this.load.image('corner-top-left', 'ui/corner-top-left.png');
         this.load.image('corner-top-right', 'ui/corner-top-right.png');
         this.load.image('corner-bottom-left', 'ui/corner-bottom-left.png');
         this.load.image('corner-bottom-right', 'ui/corner-bottom-right.png');
 
-        // Validation/Invalidation buttons
         this.load.image('building-confirm-button', 'ui/building-confirm-button.png');
         this.load.image('building-cancel-button', 'ui/building-cancel-button.png');
 
-        // Housing
         this.load.image('house', 'buildings/house.png');
         this.load.image('sawmill', 'buildings/sawmill.png');
 
         this.load.tilemapTiledJSON('house-template', 'buildings/templates/house-template.json');
         this.load.tilemapTiledJSON('sawmill-template', 'buildings/templates/sawmill-template.json');
 
-        // Utilities
         this.load.image('select_dots', 'ui/select_dots.png');
         this.load.image('select_dots_large', 'ui/select_dots_large.png');
 
-        // Load icons for UI
         this.load.image('house-icon', 'ui/icons/house.png');
         this.load.image('sawmill-icon', 'ui/icons/sawmill.png');
         this.load.image('target-indicator', 'ui/sm-arrow-down.png');
@@ -165,6 +164,9 @@ export class MainScene extends Phaser.Scene {
 
         this.setupAnimations();
         this.setupVueResourceSync();
+
+        this.audioService = AudioService.getInstance()
+        this.audioService.initialize(this)
 
         this.map = this.make.tilemap({ key: 'map' });
         const tileset = this.map.addTilesetImage('tileset', 'tiles');
@@ -225,9 +227,7 @@ export class MainScene extends Phaser.Scene {
             const isAbovePlayer = properties.isAbovePlayer ?? false;
 
             if (hasCollision) {
-                // SetCollisionByProperty => Activate collision on these tiles
                 layer.setCollisionByProperty({ collides: true });
-                //this.physics.add.collider(this.player, layer);
             }
 
             if (isAbovePlayer) {
@@ -281,10 +281,13 @@ export class MainScene extends Phaser.Scene {
         this.buildingManager.loadState();
         this.rebuildPathfindingGrid();
 
-        this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));
+        (window as any).__WORKER_MANAGER__ = this.workerManager;
+        (window as any).__RESOURCE_MANAGER__ = this.resourceManager;
+        this.setupGameDataListeners();
 
+        this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));
         this.mapLayers.forEach((layerConfig) => {
-            if (!layerConfig.hasCollision) return; // Ignore those without collision
+            if (!layerConfig.hasCollision) return;
             const layer = layerConfig.layer;
             for (let y = 0; y < this.map.height; y++) {
                 for (let x = 0; x < this.map.width; x++) {
@@ -351,7 +354,7 @@ export class MainScene extends Phaser.Scene {
                     } else {
                         this.player.setPath(path);
                         this.createTargetIndicator(path);
-                        this.showPathDots(path); // Afficher les points du chemin
+                        this.showPathDots(path);
                     }
                 });
 
@@ -367,16 +370,13 @@ export class MainScene extends Phaser.Scene {
 
         this.testWorkerSystem();
 
-        // Ajout d'un listener global pour pointerdown sur les ResourceEntity
         this.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: any) => {
             if (gameObject instanceof Phaser.GameObjects.Sprite && gameObject.constructor.name === 'ResourceEntity') {
-                // Si une autre entité était ciblée, désactive ses coins
                 if (this.currentHarvestTarget && this.currentHarvestTarget !== gameObject) {
                     this.currentHarvestTarget.hideHoverCorners();
                     this.currentHarvestTarget.isPlayerApproaching = false;
                 }
                 this.currentHarvestTarget = gameObject;
-                // Lance la récolte en mode "gestion MainScene"
                 const player = this.player;
                 if (player) {
                     gameObject.startPlayerHarvesting(player, false);
@@ -384,19 +384,16 @@ export class MainScene extends Phaser.Scene {
             }
         });
 
-        // Helper to show/hide custom cursors
         const setCustomCursor = (type: 'default' | 'grabbing' | 'none') => {
             if (this.uiScene) {
                 this.uiScene.defaultCursor.setVisible(type === 'default');
-                this.uiScene.grabCursor.setVisible(false); // never show grab in free camera mode
+                this.uiScene.grabCursor.setVisible(false);
                 this.uiScene.grabbingCursor.setVisible(type === 'grabbing');
                 this.uiScene.hoverCursor.setVisible(false);
             }
         };
-        // Always hide system cursor
         this.input.setDefaultCursor('none');
 
-        // Camera drag logic for free camera mode (right mouse button)
         this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
             if (!this.isCameraFollowingPlayer && pointer.rightButtonDown()) {
                 this.isDraggingCamera = true;
@@ -406,7 +403,7 @@ export class MainScene extends Phaser.Scene {
                 setCustomCursor('default');
             }
         });
-        this.input.on('pointerup', (/*pointer: Phaser.Input.Pointer*/) => {
+        this.input.on('pointerup', () => {
             if (!this.isCameraFollowingPlayer) {
                 this.isDraggingCamera = false;
                 this.lastPointerPosition = null;
@@ -420,12 +417,11 @@ export class MainScene extends Phaser.Scene {
                 this.cameras.main.scrollX -= dx / this.cameras.main.zoom;
                 this.cameras.main.scrollY -= dy / this.cameras.main.zoom;
                 this.lastPointerPosition = { x: pointer.x, y: pointer.y };
-                setCustomCursor('grabbing'); // Always show grabbing while dragging
+                setCustomCursor('grabbing');
             } else if (!this.isCameraFollowingPlayer && !this.isDraggingCamera) {
                 setCustomCursor('default');
             }
         });
-        // Handle pointer leaving the game area
         this.input.on('pointerout', () => {
             if (!this.isCameraFollowingPlayer) {
                 this.isDraggingCamera = false;
@@ -440,7 +436,6 @@ export class MainScene extends Phaser.Scene {
                 setCustomCursor('default');
             }
         });
-        // On camera mode toggle, update cursor state
         window.addEventListener('game:toggleCameraMode', () => {
             const currentMode = this.cameraService.getCurrentMode();
 
@@ -452,7 +447,6 @@ export class MainScene extends Phaser.Scene {
 
             this.input.setDefaultCursor('none');
         });
-        // Listen for path completion
         this.events.on('player_path_complete', () => {
             if (this.targetIndicator) {
                 this.targetIndicator.destroy();
@@ -462,10 +456,186 @@ export class MainScene extends Phaser.Scene {
                 this.targetIndicatorTween.stop();
                 this.targetIndicatorTween = null;
             }
-            this.clearPathDots(); // Nettoyer les points à l'arrivée
+            this.clearPathDots();
         });
 
-        // Supprimer le dot de test manuel (ligne avec this.add.image(500, 500, 'select_dots'))
+        const gameStore = useGameStore();
+        gameStore.setupAutoSave(5);
+        if (gameStore.hasExistingSave()) {
+            gameStore.loadGameData();
+        }
+
+        this.initializeAllManagers();
+
+        // ✅ NOUVEAU: Attendre que tout soit prêt avant de charger les données du jeu
+        this.time.delayedCall(500, () => {
+            const gameStore = useGameStore();
+            gameStore.setupAutoSave(5);
+
+            if (gameStore.hasExistingSave()) {
+                console.log('Loading existing save data...');
+                const loadSuccess = gameStore.loadGameData();
+                if (loadSuccess) {
+                    console.log('Game data loaded successfully, workers should be created');
+                } else {
+                    console.error('Failed to load game data');
+                }
+            } else {
+                console.log('No existing save found, starting fresh game');
+            }
+        });
+
+        this.setupWorkerPurchaseListener();
+        this.setupResourceRestoreListeners();
+    }
+
+    private initializeAllManagers(): void {
+        try {
+            // Initialiser WorkerManager
+            if (!this.workerManager) {
+                this.workerManager = new WorkerManager(this);
+                console.log('WorkerManager initialized');
+            }
+
+            // Initialiser BuildingManager
+            if (!this.buildingManager) {
+                this.buildingManager = new BuildingManager(this);
+                console.log('BuildingManager initialized');
+            }
+
+            // S'assurer que les références sont disponibles globalement
+            (window as any).__WORKER_MANAGER__ = this.workerManager;
+            (window as any).__BUILDING_MANAGER__ = this.buildingManager;
+
+            console.log('All managers initialized and available globally');
+        } catch (error) {
+            console.error('Error initializing managers:', error);
+        }
+    }
+
+    private setupGameDataListeners(): void {
+        window.addEventListener('game:restorePlayerData', (event: CustomEvent) => {
+            const playerData = event.detail;
+            const gameStore = useGameStore();
+            gameStore.restorePlayerData(playerData);
+        });
+
+        window.addEventListener('game:restoreResource', (event: CustomEvent) => {
+            const { type, amount } = event.detail;
+            if (this.resourceManager) {
+                const inventory = this.resourceManager.getGlobalInventory();
+                inventory.setAmount(type, amount);
+            }
+        });
+    }
+
+    private setupWorkerPurchaseListener(): void {
+        window.addEventListener('game:purchaseWorker', this.onPurchaseWorker.bind(this));
+    }
+
+    private onPurchaseWorker(/*event: CustomEvent*/): void {
+        //const { workerType, cost } = event.detail;
+
+        try {
+            if (!this.workerManager) {
+                console.error('WorkerManager not available for worker purchase');
+                return;
+            }
+
+            // Calculer une position près du joueur avec un peu d'aléatoire
+            const playerX = this.player.x;
+            const playerY = this.player.y;
+
+            // Ajouter un décalage aléatoire pour éviter que tous les ouvriers apparaissent au même endroit
+            const offsetX = (Math.random() - 0.5) * 100; // -50 à +50 pixels
+            const offsetY = (Math.random() - 0.5) * 100; // -50 à +50 pixels
+
+            const workerX = playerX + offsetX;
+            const workerY = playerY + offsetY;
+
+            // Créer le nouvel ouvrier NEUTRAL
+            const newWorker = this.workerManager.createWorker('neutral', workerX, workerY);
+
+            if (newWorker) {
+                console.log(`Successfully created new NEUTRAL worker at position (${workerX}, ${workerY}) for ${cost} coins`);
+
+                // Optionnel : ajouter un effet visuel d'apparition
+                this.createWorkerSpawnEffect(workerX, workerY);
+            } else {
+                console.error('Failed to create worker during purchase');
+
+                // Rembourser le joueur si la création échoue
+                const gameStore = useGameStore();
+                gameStore.updatePlayerGold(gameStore.getPlayerGold + cost);
+
+                window.dispatchEvent(new CustomEvent('game:notification', {
+                    detail: {
+                        type: 'error',
+                        title: 'Erreur de recrutement',
+                        message: 'Impossible de créer l\'ouvrier. Vos coins ont été remboursés.'
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('Error during worker purchase:', error);
+
+            // Rembourser le joueur en cas d'erreur
+            const gameStore = useGameStore();
+            gameStore.updatePlayerGold(gameStore.getPlayerGold + cost);
+
+            window.dispatchEvent(new CustomEvent('game:notification', {
+                detail: {
+                    type: 'error',
+                    title: 'Erreur',
+                    message: 'Une erreur s\'est produite lors du recrutement. Vos coins ont été remboursés.'
+                }
+            }));
+        }
+    }
+
+    private createWorkerSpawnEffect(x: number, y: number): void {
+        try {
+            // Créer un effet de particules pour l'apparition de l'ouvrier
+            if (this.scene && this.scene.scene.isActive()) {
+                // Créer un cercle de lumière temporaire
+                const spawnEffect = this.add.circle(x, y, 30, 0xFFD700, 0.6);
+                spawnEffect.setDepth(10);
+
+                // Animation de l'effet
+                this.tweens.add({
+                    targets: spawnEffect,
+                    scaleX: 2,
+                    scaleY: 2,
+                    alpha: 0,
+                    duration: 1000,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        spawnEffect.destroy();
+                    }
+                });
+
+                // Ajouter du texte "Nouvel ouvrier !"
+                const spawnText = this.add.text(x, y - 40, 'Nouvel ouvrier !', {
+                    fontSize: '16px',
+                    fontStyle: 'bold',
+                    color: '#00FF00',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }).setOrigin(0.5);
+                spawnText.setDepth(11);
+
+                this.tweens.add({
+                    targets: spawnText,
+                    y: spawnText.y - 30,
+                    alpha: 0,
+                    duration: 1500,
+                    ease: 'Power1',
+                    onComplete: () => spawnText.destroy()
+                });
+            }
+        } catch (error) {
+            console.warn('Could not create worker spawn effect:', error);
+        }
     }
 
     private setupVueResourceSync(): void {
@@ -545,6 +715,35 @@ export class MainScene extends Phaser.Scene {
                 }),
             );
         }
+    }
+
+    private setupResourceRestoreListeners(): void {
+        window.addEventListener('game:restoreResource', (event: CustomEvent) => {
+            const { type, amount } = event.detail;
+            try {
+                const inventory = this.resourceManager.getGlobalInventory();
+                if (inventory.setResource) {
+                    inventory.setResource(type, amount);
+                } else {
+                    const currentAmount = inventory.getResource(type);
+                    if (currentAmount > 0) {
+                        inventory.removeResource(type, currentAmount);
+                    }
+                    inventory.addResource(type, amount);
+                }
+            } catch (error) {
+                console.error(`Error restoring resource ${type}:`, error);
+            }
+        });
+
+        window.addEventListener('game:restoreAllResources', (event: CustomEvent) => {
+            const resourcesData = event.detail;
+            try {
+                this.resourceManager.loadGlobalInventory(resourcesData);
+            } catch (error) {
+                console.error('Error restoring all resources:', error);
+            }
+        });
     }
 
     private onCancelBuildingPlacement(): void {
@@ -687,7 +886,6 @@ export class MainScene extends Phaser.Scene {
     private testBuildingSetFunctionality(building: TiledBuilding): void {
         console.log('\n=== TESTING SET FUNCTIONALITY ===');
 
-        // Test direct du Set
         const testSet = new Set<string>();
         console.log('New Set size:', testSet.size);
         testSet.add('test1');
@@ -696,7 +894,6 @@ export class MainScene extends Phaser.Scene {
         console.log('After adding test2:', testSet.size);
         console.log('Set contents:', Array.from(testSet));
 
-        // Test sur le bâtiment
         console.log('\nTesting building Set...');
         const buildingSet = (building as any).assignedWorkers;
         console.log('Building Set type:', typeof buildingSet);
@@ -748,7 +945,6 @@ export class MainScene extends Phaser.Scene {
         console.log(`Attempting assignment with worker ID: "${workerId}"`);
 
         try {
-            // Étape 1: Vérifier les prérequis
             if (worker.getConfig().id !== WorkerType.NEUTRAL) {
                 throw new Error(`Worker is not neutral type, current type: ${worker.getConfig().id}`);
             }
@@ -757,7 +953,6 @@ export class MainScene extends Phaser.Scene {
                 throw new Error(`Worker is already assigned to building: ${worker.getAssignedBuildingId()}`);
             }
 
-            // Étape 2: Obtenir la configuration du type de worker cible
             const targetWorkerType = building.getWorkerType();
             const newConfig = WorkerRegistry.getInstance().getWorkerConfig(targetWorkerType);
 
@@ -765,14 +960,12 @@ export class MainScene extends Phaser.Scene {
                 throw new Error(`No config found for worker type ${targetWorkerType}`);
             }
 
-            // Étape 3: Essayer l'assignation normale, puis fallback si échec
             console.log('=== STEP 3: Trying normal assignment ===');
             let assignmentResult = building.assignWorker(workerId);
 
             if (!assignmentResult) {
                 console.log('=== Normal assignment failed, trying fallback ===');
 
-                // Vérifier si la méthode fallback existe
                 if (typeof building.assignWorkerFallback === 'function') {
                     assignmentResult = building.assignWorkerFallback(workerId);
                     console.log(`Fallback assignment result: ${assignmentResult}`);
@@ -785,7 +978,6 @@ export class MainScene extends Phaser.Scene {
                 throw new Error('All assignment methods failed');
             }
 
-            // Étape 4: Convertir le worker
             console.log('=== STEP 4: Converting worker ===');
 
             try {
@@ -802,12 +994,10 @@ export class MainScene extends Phaser.Scene {
 
             } catch (conversionError) {
                 console.error('Worker conversion failed:', conversionError);
-                // Rollback l'assignation
                 building.unassignWorker(workerId);
                 throw conversionError;
             }
 
-            // Étape 5: Configurer le point de dépôt
             console.log('=== STEP 5: Setting deposit point ===');
             const pos = building.getPosition();
             const dim = building.getDimensions();
@@ -862,7 +1052,6 @@ export class MainScene extends Phaser.Scene {
         } catch (error) {
             console.error('Error during worker assignment:', error);
 
-            // Rollback complet
             try {
                 building.unassignWorker(workerId);
                 if (worker.convertToNeutral) {
@@ -876,7 +1065,6 @@ export class MainScene extends Phaser.Scene {
                 console.error('Rollback failed:', rollbackError);
             }
 
-            // Notifier l'échec
             window.dispatchEvent(new CustomEvent('game:workerAssignmentFailed', {
                 detail: {
                     buildingId,
@@ -921,7 +1109,6 @@ export class MainScene extends Phaser.Scene {
             const allWorkers = this.workerManager.getAllWorkers();
             console.log(`Total workers in manager: ${allWorkers.length}`);
 
-            // Diagnostiquer tous les workers
             allWorkers.forEach((worker, index) => {
                 const config = worker.getConfig();
                 const isAssigned = worker.isAssignedToBuilding?.() || false;
@@ -930,7 +1117,6 @@ export class MainScene extends Phaser.Scene {
                 console.log(`Worker ${index}: id=${worker.getWorkerId()}, type=${config.id}, assigned=${isAssigned}, buildingId=${assignedBuildingId}`);
             });
 
-            // Filtrer les workers neutres non assignés
             const neutralWorkers = allWorkers.filter(worker => {
                 const isNeutral = worker.getConfig().id === WorkerType.NEUTRAL;
                 const isAssigned = worker.isAssignedToBuilding?.() || false;
@@ -941,7 +1127,6 @@ export class MainScene extends Phaser.Scene {
 
             console.log(`Available neutral workers: ${neutralWorkers.length}`);
 
-            // Notifier l'UI
             window.dispatchEvent(new CustomEvent('game:availableWorkersUpdate', {
                 detail: {
                     count: neutralWorkers.length,
@@ -975,7 +1160,6 @@ export class MainScene extends Phaser.Scene {
             return;
         }
 
-        // Récupérer les workers assignés à ce bâtiment
         const assignedWorkerIds = building.getAssignedWorkerIds();
 
         if (assignedWorkerIds.length === 0) {
@@ -983,13 +1167,11 @@ export class MainScene extends Phaser.Scene {
             return;
         }
 
-        // Prendre le premier worker assigné pour le désassigner
         const workerIdToUnassign = assignedWorkerIds[0];
         const worker = this.workerManager.getWorker(workerIdToUnassign);
 
         if (!worker) {
             console.error(`Worker ${workerIdToUnassign} not found in manager`);
-            // Nettoyer l'assignation du bâtiment même si le worker n'existe plus
             building.unassignWorker(workerIdToUnassign);
             return;
         }
@@ -997,7 +1179,6 @@ export class MainScene extends Phaser.Scene {
         console.log(`Attempting to unassign worker ${workerIdToUnassign}`);
 
         try {
-            // Étape 1: Désassigner du bâtiment
             const unassignResult = building.unassignWorker(workerIdToUnassign);
             console.log(`Unassignment from building result: ${unassignResult}`);
 
@@ -1026,7 +1207,6 @@ export class MainScene extends Phaser.Scene {
         } catch (error) {
             console.error('Error during worker unassignment:', error);
 
-            // Notifier l'échec
             window.dispatchEvent(new CustomEvent('game:workerUnassignmentFailed', {
                 detail: {
                     buildingId,
@@ -1147,7 +1327,6 @@ export class MainScene extends Phaser.Scene {
             this.buildingPreview = null;
         }
 
-        // Correction : utiliser le template du config
         const buildingConfig = this.buildingRegistry.getBuildingConfig(buildingType);
         if (!buildingConfig) {
             console.error('Aucun config trouvé pour le bâtiment', buildingType);
@@ -1338,8 +1517,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     private findNearestDepositPoint(workerType: WorkerType, position: WorkerPosition): WorkerPosition | undefined {
-        // Pour l'instant, retourner une position par défaut
-        // TODO: Améliorer avec la logique du BuildingManager
+
         return { x: position.x + 100, y: position.y };
     }
 
@@ -1347,36 +1525,18 @@ export class MainScene extends Phaser.Scene {
         workerType: string,
         x: number,
         y: number,
-        /*depositPoint?: {
-            x: number;
-            y: number;
-        },*/
     ): any {
         if (workerType === 'lumberjack') {
-            return this.createLumberjack(x, y/*, depositPoint*/);
+            return this.createLumberjack(x, y);
         }
 
         console.warn(`Worker type ${workerType} not implemented yet`);
         return null;
     }
 
-    public createLumberjack(x?: number, y?: number/*, depositPoint?: WorkerPosition*/): Worker | null {
+    public createLumberjack(x?: number, y?: number): Worker | null {
         return this.createWorker(WorkerType.LUMBERJACK, x, y);
     }
-
-    /*
-    public pauseAllWorkers(): void {
-      this.workerManager.pauseAllWorkers();
-    }
-
-    public resumeAllWorkers(): void {
-      this.workerManager.resumeAllWorkers();
-    }
-
-    public getWorkerStats(): any {
-      return this.workerManager.getWorkerStats();
-    }
-    */
 
     private copyGrid(source: number[][]): number[][] {
         return source.map((row) => [...row]);
@@ -1397,7 +1557,6 @@ export class MainScene extends Phaser.Scene {
 
         this.buildingManager.getBuildings().forEach((building) => {
             const { x, y } = building.getPosition();
-            //const { tilesWidth, tilesHeight } = building.getDimensions();
 
             const tileX = Math.floor(x / this.tileWidth);
             const tileY = Math.floor(y / this.tileHeight);
@@ -1632,9 +1791,8 @@ export class MainScene extends Phaser.Scene {
 
         this.buildingPreview.setInitialPosition(playerPosition.x, playerPosition.y);
 
-        this.checkPlacementValidity(/*playerPosition*/);
+        this.checkPlacementValidity();
 
-        //this.showFloatingMessage('Déplacez le bâtiment avec la souris, appuyez sur ENTRÉE pour confirmer ou ESC pour annuler');
 
         if (this.uiScene) {
             this.uiScene.defaultCursor.setVisible(false);
@@ -1727,17 +1885,21 @@ export class MainScene extends Phaser.Scene {
 
     public getResourcesSnapshot(): Record<string, number> {
         try {
-            const inventory = this.resourceManager.getGlobalInventory();
-            const resources: Record<string, number> = {};
-
-            inventory.getAllResources().forEach((amount, type) => {
-                resources[type] = amount;
-            });
-
-            return resources;
+            return this.resourceManager.saveGlobalInventory();
         } catch (error) {
             console.error('Error getting resources snapshot:', error);
             return {};
+        }
+    }
+
+    public forceSaveResources(): void {
+        try {
+            const gameDataService = (window as any).__GAME_DATA_SERVICE__;
+            if (gameDataService && gameDataService.forceResourceSave) {
+                gameDataService.forceResourceSave();
+            }
+        } catch (error) {
+            console.error('Error forcing resource save:', error);
         }
     }
 
@@ -1817,6 +1979,10 @@ export class MainScene extends Phaser.Scene {
 
         this.animationRegistry.cleanupSceneAnimations(this);
         super.destroy();
+
+        if (this.audioService) {
+        this.audioService.destroy()
+      }
     }
 
     update() {
@@ -1825,7 +1991,6 @@ export class MainScene extends Phaser.Scene {
         this.buildingManager.updateBuildings(this.player);
         this.workerManager.update();
 
-        // Supprimer les dots déjà franchis par le joueur
         if (this.pathDotsGroup && this.pathDotsGroup.getLength() > 0) {
             const playerTileX = Math.floor(this.player.x / this.tileWidth);
             const playerTileY = Math.floor(this.player.y / this.tileHeight);
@@ -1840,8 +2005,7 @@ export class MainScene extends Phaser.Scene {
             this.debugResourceSync();
         }
         if (this.buildingPreview) {
-            //const worldPoint = new Phaser.Math.Vector2(this.buildingPreview.getPosition().x, this.buildingPreview.getPosition().y);
-            this.checkPlacementValidity(/*worldPoint*/);
+            this.checkPlacementValidity();
         }
     }
 
@@ -1884,7 +2048,7 @@ export class MainScene extends Phaser.Scene {
 
         const lastTile = path[path.length - 1];
         const targetX = lastTile.x * this.tileWidth + this.tileWidth / 2;
-        const targetY = lastTile.y * this.tileHeight; // top of the tile
+        const targetY = lastTile.y * this.tileHeight;
 
         this.targetIndicator = this.add.image(targetX, targetY, 'target-indicator');
         this.targetIndicator.setDepth(9999);
@@ -1899,27 +2063,23 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
-    /**
-     * Affiche des points "select_dots" espacés le long du chemin du pathfinder
-     */
+
     private showPathDots(path: { x: number; y: number }[]): void {
         this.clearPathDots();
         if (!path || path.length === 0 || !this.pathDotsGroup) return;
         console.log('showPathDots called, path:', path);
 
-        // Afficher les dots normaux sur les tuiles intermédiaires
         for (let i = 1; i < path.length - 1; i++) {
             const tile = path[i];
             const dotX = tile.x * this.tileWidth + this.tileWidth / 2;
             const dotY = tile.y * this.tileHeight + this.tileHeight / 2;
             const dot = this.add.image(dotX, dotY, 'select_dots');
-            dot.setDepth(0); // Sous le joueur
+            dot.setDepth(0);
             dot.setAlpha(1);
             dot.setScale(1);
             dot.setData('tileX', tile.x);
             dot.setData('tileY', tile.y);
             this.pathDotsGroup.add(dot);
-            // Animation de pulsation
             this.tweens.add({
                 targets: dot,
                 scale: { from: 1, to: 1.4 },
@@ -1930,20 +2090,18 @@ export class MainScene extends Phaser.Scene {
             });
         }
 
-        // Afficher un dot large sur la destination (dernière tuile)
         if (path.length > 1) {
             const destinationTile = path[path.length - 1];
             const destX = destinationTile.x * this.tileWidth + this.tileWidth / 2;
             const destY = destinationTile.y * this.tileHeight + this.tileHeight / 2;
             const destDot = this.add.image(destX, destY, 'select_dots_large');
-            destDot.setDepth(0); // Sous le joueur
+            destDot.setDepth(0);
             destDot.setAlpha(1);
             destDot.setScale(1);
             destDot.setData('tileX', destinationTile.x);
             destDot.setData('tileY', destinationTile.y);
             destDot.setData('isDestination', true);
             this.pathDotsGroup.add(destDot);
-            // Animation de pulsation pour la destination
             this.tweens.add({
                 targets: destDot,
                 scale: { from: 1, to: 1.6 },
@@ -1955,9 +2113,7 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    /**
-     * Supprime tous les points du chemin
-     */
+
     private clearPathDots(): void {
         if (this.pathDotsGroup) {
             this.pathDotsGroup.clear(true, true);

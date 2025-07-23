@@ -11,11 +11,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        // Création des rôles
         Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
-        // Création de l'admin
         $admin = User::create([
             'name' => 'Admin de SunnyTown',
             'email' => 'admin@sunnytown.com',
@@ -24,7 +22,6 @@ class UserSeeder extends Seeder
         ]);
         $admin->assignRole('admin');
 
-        // Création des autres utilisateurs
         $users = [
             ['name' => 'Pierre Bûcheron', 'email' => 'pierre.bucheron@sunnytown.com'],
             ['name' => 'Marie Fermière', 'email' => 'marie.fermiere@sunnytown.com'],
@@ -46,7 +43,6 @@ class UserSeeder extends Seeder
             $user->assignRole('user');
         }
 
-        // Utilisateurs générés par la factory
         User::factory(15)->create()->each(function ($user) {
             $user->assignRole('user');
         });

@@ -39,7 +39,7 @@ class AuthenticatedSessionController extends Controller
             return to_route('admin');
         }
 
-        return to_route('/');
+        return to_route('home');
     }
 
     /**

@@ -84,17 +84,25 @@
                             <div v-if="showUserMenu" class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-xl shadow-lg backdrop-blur-sm">
                                 <div class="py-2">
                                     <Link
-                                        :href="route('dashboard')"
+                                        :href="route('game.index')"
+                                        class="block px-4 py-2 text-sm text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                                    >
+                                        Jouer au jeu
+                                    </Link>
+                                    <Link
+                                        href="/admin"
                                         class="block px-4 py-2 text-sm text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                                     >
                                         Dashboard
                                     </Link>
+                                    <!--
                                     <Link
                                         :href="route('profile.edit')"
                                         class="block px-4 py-2 text-sm text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                                     >
                                         Profile
                                     </Link>
+                                    -->
                                     <hr class="my-2 border-black/5 dark:border-white/5">
                                     <Link
                                         :href="route('logout')"

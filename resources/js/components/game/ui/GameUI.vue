@@ -20,6 +20,8 @@
         <BuildingFabButton />
         <BuildingInfoModal />
         <BuildingSelectionOverlay />
+        <BuildingFabButton />
+        <WorkerFabButton />
         <ZoneBlockerOverlay />
         <NotificationSystem />
     </div>
@@ -30,13 +32,14 @@ import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useGameStore } from '@/game/stores/gameStore'
 import { ResourceType } from '@/game/types/ResourceSystemTypes'
 import ResourceDisplay from './ResourceDisplay.vue'
-import BuildingFabButton from './BuildingFabButton.vue'
 import BuildingInfoModal from './BuildingInfoModal.vue'
 import BuildingSelectionOverlay from './BuildingSelectionOverlay.vue'
 import ZoneBlockerOverlay from './ZoneBlockerOverlay.vue'
 import NotificationSystem from './NotificationSystem.vue'
 import ActionButton from './ActionButton.vue'
 import Level from '@/components/game/ui/Level.vue';
+import BuildingFabButton from './BuildingFabButton.vue'
+import WorkerFabButton from './WorkerFabButton.vue'
 
 const gameStore = useGameStore();
 

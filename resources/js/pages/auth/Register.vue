@@ -1,8 +1,7 @@
 <template>
     <Head title="Créer un compte" />
-    <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">
-        <Navbar />
-    </header>
+   
+<SiteLayout :auth="$page.props.auth">
 
     <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a]">
         <div class="absolute inset-0 before:absolute before:inset-0 before:bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20600%20600%22%3E%3Cfilter%20id%3D%22a%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%221.6%22%20numOctaves%3D%226%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url%28%23a%29%22%2F%3E%3C%2Fsvg%3E')] before:bg-repeat before:bg-[length:80px] before:opacity-[0.03] before:mix-blend-overlay before:content-['']"></div>
@@ -42,6 +41,9 @@
                                         placeholder="Votre nom complet"
                                         class="w-full px-4 py-3 text-base bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all duration-300"
                                         :class="{ 'border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50': form.errors.name }"
+                                        @focus="trackFieldFocus('name')"
+                                        @blur="trackFieldBlur('name')"
+                                        @input="trackNameValidation"
                                     />
 
                                     <div class="absolute right-3 top-1/2 -translate-y-1/2">
@@ -77,6 +79,9 @@
                                         placeholder="votre@email.com"
                                         class="w-full px-4 py-3 text-base bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all duration-300"
                                         :class="{ 'border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50': form.errors.email }"
+                                        @focus="trackFieldFocus('email')"
+                                        @blur="trackFieldBlur('email')"
+                                        @input="trackEmailValidation"
                                     />
 
                                     <div class="absolute right-3 top-1/2 -translate-y-1/2">
@@ -112,11 +117,13 @@
                                         placeholder="Créez un mot de passe sécurisé"
                                         class="w-full px-4 py-3 text-base bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl text-black dark:text-white placeholder:text-black/50 dark:placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition-all duration-300"
                                         :class="{ 'border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50': form.errors.password }"
+                                        @focus="trackFieldFocus('password')"
+                                        @blur="trackFieldBlur('password')"
                                     />
 
                                     <button
                                         type="button"
-                                        @click="showPassword = !showPassword"
+                                        @click="togglePasswordVisibility"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60 transition-colors duration-300"
                                     >
                                         <svg v-if="showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -175,11 +182,13 @@
                                             'border-red-500/50 focus:ring-red-500/50 focus:border-red-500/50': form.errors.password_confirmation,
                                             'border-green-500/50 focus:ring-green-500/50 focus:border-green-500/50': passwordsMatch && form.password_confirmation.length > 0
                                         }"
+                                        @focus="trackFieldFocus('password_confirmation')"
+                                        @blur="trackFieldBlur('password_confirmation')"
                                     />
 
                                     <button
                                         type="button"
-                                        @click="showPasswordConfirm = !showPasswordConfirm"
+                                        @click="togglePasswordConfirmVisibility"
                                         class="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60 transition-colors duration-300"
                                     >
                                         <svg v-if="showPasswordConfirm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -226,13 +235,14 @@
                                     v-model="acceptTerms"
                                     type="checkbox"
                                     class="w-4 h-4 mt-0.5 rounded border border-black/20 dark:border-white/20 bg-black/5 dark:bg-white/5 text-orange-500 focus:ring-orange-500/50 focus:ring-2"
+                                    @change="trackTermsAcceptance"
                                 />
                                 <label for="terms" class="text-sm text-black/70 dark:text-white/70 cursor-pointer leading-relaxed">
                                     J'accepte les
-                                    <a href="#" class="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors duration-300">
+                                    <a href="#" class="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors duration-300" @click="trackTermsClick">
                                         conditions d'utilisation
                                     </a> et la
-                                    <a href="#" class="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors duration-300">
+                                    <a href="#" class="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors duration-300" @click="trackPrivacyClick">
                                         politique de confidentialité
                                     </a>
                                 </label>
@@ -244,6 +254,7 @@
                                         type="submit"
                                         :disabled="!canSubmit || form.processing"
                                         class="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg font-medium text-base hover:from-orange-600 hover:to-orange-700 transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        @click="trackSubmitAttempt"
                                     >
                                         <div v-if="form.processing" class="flex items-center gap-2">
                                             <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -271,6 +282,7 @@
                                         <Link
                                             :href="route('login')"
                                             class="font-medium text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 transition-colors duration-300 ml-1"
+                                            @click="trackLoginLinkClick"
                                         >
                                             Se connecter
                                         </Link>
@@ -286,6 +298,7 @@
                         <Link
                             :href="route('home')"
                             class="text-black/60 dark:text-white/60 hover:text-orange-500 dark:hover:text-orange-400 transition-colors duration-300 flex items-center gap-2"
+                            @click="trackBackToHomeClick"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M5 12h14"/>
@@ -298,6 +311,7 @@
                         <a
                             href="#"
                             class="text-black/60 dark:text-white/60 hover:text-orange-500 dark:hover:text-orange-400 transition-colors duration-300"
+                            @click="trackHelpClick"
                         >
                             Aide
                         </a>
@@ -306,16 +320,26 @@
             </div>
         </div>
     </div>
+    </SiteLayout>
 </template>
 
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import Navbar from '@/components/home/Navbar.vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import SiteLayout from '@/layouts/SiteLayout.vue';
+import { useMatomo } from '@/composables/useMatomo';
+
+const matomo = useMatomo();
 
 const showPassword = ref(false);
 const showPasswordConfirm = ref(false);
 const acceptTerms = ref(false);
+
+let formStartTime: number;
+const fieldFocusTimes: Record<string, number> = {};
+let pageStartTime: number;
+let registrationAttempts = 0;
+const passwordStrengthHistory: number[] = [];
 
 const form = useForm({
     name: '',
@@ -382,13 +406,266 @@ const canSubmit = computed(() => {
         acceptTerms.value;
 });
 
+
+const trackFieldFocus = (field: string) => {
+    matomo.trackEvent('Form', 'Field_Focus', `register_${field}`);
+    fieldFocusTimes[field] = Date.now();
+};
+
+const trackFieldBlur = (field: string) => {
+    if (fieldFocusTimes[field]) {
+        const focusTime = Math.floor((Date.now() - fieldFocusTimes[field]) / 1000);
+        matomo.trackEvent('Form', 'Field_Time', `register_${field}`, focusTime);
+        
+        if (focusTime > 5) {
+            matomo.trackEvent('Form', 'Field_Engaged', `register_${field}`);
+        }
+    }
+};
+
+const trackNameValidation = () => {
+    if (form.name.trim().length >= 2) {
+        matomo.trackEvent('Form', 'Valid_Name_Length', 'register');
+    }
+};
+
+const trackEmailValidation = () => {
+    if (form.email && form.email.includes('@') && form.email.includes('.')) {
+        matomo.trackEvent('Form', 'Valid_Email_Format', 'register');
+    }
+};
+
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+    matomo.trackEvent('Form', 'Password_Visibility_Toggle', showPassword.value ? 'show' : 'hide');
+};
+
+const togglePasswordConfirmVisibility = () => {
+    showPasswordConfirm.value = !showPasswordConfirm.value;
+    matomo.trackEvent('Form', 'Password_Confirm_Visibility_Toggle', showPasswordConfirm.value ? 'show' : 'hide');
+};
+
+const trackTermsAcceptance = () => {
+    matomo.trackEvent('Form', 'Terms_Acceptance', acceptTerms.value ? 'accepted' : 'declined');
+    
+    if (acceptTerms.value) {
+        matomo.trackEvent('Legal', 'Terms_Accepted', 'register_flow');
+    }
+};
+
+const trackTermsClick = () => {
+    matomo.trackEvent('Legal', 'Terms_Link_Click', 'register_page');
+    matomo.trackNavigation('terms_from_register');
+};
+
+const trackPrivacyClick = () => {
+    matomo.trackEvent('Legal', 'Privacy_Link_Click', 'register_page');
+    matomo.trackNavigation('privacy_from_register');
+};
+
+const trackSubmitAttempt = () => {
+    registrationAttempts++;
+    matomo.trackEvent('Form', 'Submit_Attempt', 'register', registrationAttempts);
+    
+    const completionTime = Math.floor((Date.now() - formStartTime) / 1000);
+    matomo.trackEvent('Form', 'Completion_Time', 'register', completionTime);
+    
+    matomo.trackEvent('Form', 'Password_Strength_Final', 'register', passwordStrength.value);
+};
+
+const trackLoginLinkClick = () => {
+    matomo.trackEvent('Navigation', 'Login_Link_Click', 'from_register');
+    matomo.trackNavigation('login_from_register');
+};
+
+const trackBackToHomeClick = () => {
+    matomo.trackEvent('Navigation', 'Back_To_Home', 'from_register');
+    matomo.trackNavigation('home_from_register');
+};
+
+const trackHelpClick = () => {
+    matomo.trackEvent('Navigation', 'Help_Click', 'from_register');
+    matomo.trackNavigation('help_from_register');
+};
+
 const submit = () => {
     if (!canSubmit.value || form.processing) return;
 
+    matomo.trackEvent('Form', 'Submit_Processing', 'register');
+
     form.post(route('register'), {
-        onFinish: () => form.reset('password', 'password_confirmation'),
+        onFinish: () => {
+            form.reset('password', 'password_confirmation');
+        },
+        onSuccess: () => {
+            matomo.trackFormSubmission('register', true);
+            
+            const sessionTime = Math.floor((Date.now() - pageStartTime) / 1000);
+            matomo.trackEvent('Auth', 'Register_Success_Time', 'register', sessionTime);
+            matomo.trackEvent('Auth', 'Register_Attempts', 'success', registrationAttempts);
+            
+            matomo.trackEvent('User', 'Registration_Source', 'direct_signup');
+            matomo.trackEvent('User', 'Password_Strength_Success', 'register', passwordStrength.value);
+            
+            
+            const avgPasswordStrength = passwordStrengthHistory.length > 0 ? 
+                Math.round(passwordStrengthHistory.reduce((a, b) => a + b, 0) / passwordStrengthHistory.length) : 0;
+            matomo.trackEvent('User', 'Avg_Password_Strength', 'register', avgPasswordStrength);
+        },
+        onError: (errors) => {
+            const errorTypes = Object.keys(errors);
+            const primaryError = errorTypes[0] || 'unknown';
+            
+            matomo.trackFormSubmission('register', false, primaryError);
+            matomo.trackEvent('Auth', 'Register_Attempts', 'failed', registrationAttempts);
+            
+            errorTypes.forEach(errorType => {
+                matomo.trackEvent('Form', 'Error_Field', `register_${errorType}`);
+                matomo.trackEvent('Form', 'Error_Message', errors[errorType]);
+            });
+            
+            const formCompleteness = calculateFormCompleteness();
+            matomo.trackEvent('Form', 'Error_Form_Completeness', 'register', formCompleteness);
+        }
     });
 };
+
+const calculateFormCompleteness = () => {
+    const fields = [form.name, form.email, form.password, form.password_confirmation];
+    const completedFields = fields.filter(field => field && field.length > 0).length;
+    return Math.round((completedFields / 4) * 100);
+};
+
+onMounted(() => {
+    pageStartTime = Date.now();
+    formStartTime = Date.now();
+    
+    matomo.trackAuthPage('register');
+    
+    matomo.setCustomVariable(1, 'Page Type', 'Auth', 'page');
+    matomo.setCustomVariable(2, 'Auth Flow', 'Register', 'page');
+    matomo.setCustomVariable(3, 'User Type', 'New', 'page');
+    
+    const trackEngagement = () => {
+        const timeOnPage = Math.floor((Date.now() - pageStartTime) / 1000);
+        if (timeOnPage > 0 && timeOnPage % 30 === 0) {
+            matomo.trackEngagement('time_on_page', timeOnPage);
+        }
+    };
+    
+    const engagementInterval = setInterval(trackEngagement, 30000);
+    
+    let maxScrollDepth = 0;
+    const trackScrollDepth = () => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        
+        if (docHeight > 0) {
+            const scrollDepth = Math.round((scrollTop / docHeight) * 100);
+            if (scrollDepth > maxScrollDepth && scrollDepth % 25 === 0) {
+                maxScrollDepth = scrollDepth;
+                matomo.trackEvent('Page', 'Scroll_Depth', 'register_page', scrollDepth);
+            }
+        }
+    };
+    
+    window.addEventListener('scroll', trackScrollDepth);
+    
+    const trackFormAbandonment = () => {
+        if (registrationAttempts === 0) {
+            const timeSpent = Math.floor((Date.now() - pageStartTime) / 1000);
+            const formCompleteness = calculateFormCompleteness();
+            
+            if (formCompleteness > 0) {
+                matomo.trackEvent('Form', 'Abandonment', `register_${formCompleteness}%`, timeSpent);
+            } else {
+                matomo.trackEvent('Page', 'Exit_Without_Interaction', 'register');
+            }
+        }
+    };
+    
+    onUnmounted(() => {
+        clearInterval(engagementInterval);
+        window.removeEventListener('scroll', trackScrollDepth);
+        
+        trackFormAbandonment();
+        
+        const totalTime = Math.floor((Date.now() - pageStartTime) / 1000);
+        matomo.trackEvent('Page', 'Exit_Time', 'register', totalTime);
+    });
+});
+
+
+watch(() => form.name, (newName) => {
+    if (newName && newName.trim().length >= 2) {
+        matomo.trackEvent('Form', 'Name_Valid_Length', 'register');
+    }
+});
+
+watch(() => form.email, (newEmail) => {
+    if (newEmail && newEmail.includes('@') && newEmail.includes('.')) {
+        matomo.trackEvent('Form', 'Email_Valid_Format', 'register');
+    }
+});
+
+watch(() => form.password, (newPassword) => {
+    if (newPassword.length > 0) {
+        passwordStrengthHistory.push(passwordStrength.value);
+        
+        if (passwordStrengthHistory.length > 1) {
+            const prevStrength = passwordStrengthHistory[passwordStrengthHistory.length - 2];
+            if (passwordStrength.value > prevStrength) {
+                matomo.trackEvent('Form', 'Password_Strength_Improved', 'register', passwordStrength.value);
+            }
+        }
+        
+        if (newPassword.length >= 8) {
+            matomo.trackEvent('Form', 'Password_Length_Valid', 'register');
+        }
+        if (/[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword)) {
+            matomo.trackEvent('Form', 'Password_Case_Mix', 'register');
+        }
+        if (/[0-9]/.test(newPassword)) {
+            matomo.trackEvent('Form', 'Password_Numbers', 'register');
+        }
+        if (/[^A-Za-z0-9]/.test(newPassword)) {
+            matomo.trackEvent('Form', 'Password_Special_Chars', 'register');
+        }
+    }
+});
+
+watch(() => passwordsMatch, (matches) => {
+    if (matches && form.password_confirmation.length > 0) {
+        matomo.trackEvent('Form', 'Passwords_Match', 'register');
+    }
+});
+
+watch(() => acceptTerms.value, (accepted) => {
+    if (accepted) {
+        matomo.trackEvent('Form', 'Terms_Accepted_Watch', 'register');
+    }
+});
+
+watch([() => form.name, () => form.email, () => form.password, () => form.password_confirmation], () => {
+    const completeness = calculateFormCompleteness();
+    
+    if (completeness === 25) {
+        matomo.trackEvent('Form', 'Quarter_Complete', 'register');
+    } else if (completeness === 50) {
+        matomo.trackEvent('Form', 'Half_Complete', 'register');
+    } else if (completeness === 75) {
+        matomo.trackEvent('Form', 'Three_Quarter_Complete', 'register');
+    } else if (completeness === 100) {
+        matomo.trackEvent('Form', 'Complete', 'register');
+    }
+});
+
+watch(() => canSubmit.value, (canNowSubmit) => {
+    if (canNowSubmit) {
+        const timeToSubmittable = Math.floor((Date.now() - formStartTime) / 1000);
+        matomo.trackEvent('Form', 'Ready_To_Submit', 'register', timeToSubmittable);
+    }
+});
 </script>
 
 <style scoped>
@@ -474,14 +751,6 @@ a:hover {
 
 .dark ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.2);
-}
-
-.terms-box {
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.02), rgba(0, 0, 0, 0.05));
-}
-
-.dark .terms-box {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
 }
 
 .border-green-500\/50 {
