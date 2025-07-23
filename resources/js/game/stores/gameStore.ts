@@ -126,15 +126,28 @@ export const useGameStore = defineStore('game', () => {
                 return false;
             }
 
-            restorePlayerData(gameData.player);
-            Object.entries(gameData.resources).forEach(([type, amount]) => {
-                updateResource(type as any, amount);
-            });
+            isLoading.value = true;
 
-            gameDataService.restoreGameData(gameData);
-            return true;
+            try {
+                restorePlayerData(gameData.player);
+
+                Object.entries(gameData.resources).forEach(([type, amount]) => {
+                    updateResource(type as any, amount);
+                });
+
+                gameDataService.restoreGameData(gameData);
+                return true;
+
+            } finally {
+                setTimeout(() => {
+                    isLoading.value = false;
+                    console.log('Loading complete, auto-save re-enabled');
+                }, 500);
+            }
+
         } catch (error) {
             console.error('Error loading game data:', error);
+            isLoading.value = false;
             return false;
         }
     };

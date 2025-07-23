@@ -96,10 +96,25 @@ export class GameDataService {
 
     public saveGameData(): boolean {
         try {
+            console.log('=== DÉBUT SAUVEGARDE ===');
+
             const playerData = this.getCurrentPlayerData();
             const buildingsData = this.getCurrentBuildingsData();
             const resourcesData = this.getCurrentResourcesData();
             const workersData = this.getCurrentWorkersData();
+
+            console.log('Data to save:', {
+                player: playerData,
+                buildings: buildingsData.length,
+                resources: Object.keys(resourcesData).length,
+                workers: {
+                    total: workersData.totalCount,
+                    assignments: {
+                        buildingWorkers: Object.keys(workersData.assignments.buildingWorkers).length,
+                        workerBuildings: Object.keys(workersData.assignments.workerBuildings).length
+                    }
+                }
+            });
 
             const gameData: GameData = {
                 player: playerData,
@@ -115,9 +130,11 @@ export class GameDataService {
                 data: gameData
             };
 
-            const jsonString = JSON.stringify(dataToSave);
-            localStorage.setItem(this.STORAGE_KEY, jsonString);
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
+            console.log('Game data saved successfully to localStorage');
+            console.log('=== FIN SAUVEGARDE ===');
 
+            // Émettre un événement de sauvegarde
             window.dispatchEvent(new CustomEvent('game:dataSaved', {
                 detail: {
                     timestamp: gameData.lastSaved,
@@ -129,6 +146,7 @@ export class GameDataService {
                     }
                 }
             }));
+
             return true;
         } catch (error) {
             console.error('Error saving game data:', error);
@@ -362,12 +380,21 @@ export class GameDataService {
 
     public restoreGameData(gameData: GameData): void {
         try {
+            console.log('Restoring game data...', gameData);
+
+            // Restaurer d'abord les données workers dans le GlobalWorkerStorage
+            this.restoreWorkerData(gameData.workers);
+
+            // Restaurer les bâtiments avec leurs workers
             const buildingManager = (window as any).__BUILDING_MANAGER__;
             if (buildingManager && typeof buildingManager.restoreBuildingsFromGameData === 'function') {
-                buildingManager.restoreBuildingsFromGameData(gameData.buildings);
+                // ✅ NOUVEAU: Passer aussi les données workers
+                buildingManager.restoreBuildingsFromGameData(gameData.buildings, gameData.workers);
             } else {
                 console.warn('BuildingManager not available for buildings restoration');
             }
+
+            console.log('Game data restoration completed');
         } catch (error) {
             console.error('Error restoring game data:', error);
         }
@@ -401,10 +428,26 @@ export class GameDataService {
 
     private restoreWorkerData(workersData: GameData['workers']): void {
         try {
-            if (window.__WORKER_BUILDING_STORAGE__) {
-                window.__WORKER_BUILDING_STORAGE__.buildingWorkers = { ...workersData.assignments.buildingWorkers };
-                window.__WORKER_BUILDING_STORAGE__.workerBuildings = { ...workersData.assignments.workerBuildings };
+            console.log('Restoring worker assignments:', workersData.assignments);
+
+            // S'assurer que le storage est initialisé
+            if (!window.__WORKER_BUILDING_STORAGE__) {
+                window.__WORKER_BUILDING_STORAGE__ = {
+                    buildingWorkers: {},
+                    workerBuildings: {},
+                    initialized: true
+                };
             }
+
+            // Restaurer les assignations
+            window.__WORKER_BUILDING_STORAGE__.buildingWorkers = { ...workersData.assignments.buildingWorkers };
+            window.__WORKER_BUILDING_STORAGE__.workerBuildings = { ...workersData.assignments.workerBuildings };
+
+            console.log('Worker data restored:', {
+                buildingWorkers: Object.keys(workersData.assignments.buildingWorkers).length,
+                workerBuildings: Object.keys(workersData.assignments.workerBuildings).length
+            });
+
         } catch (error) {
             console.error('Error restoring worker data:', error);
         }
