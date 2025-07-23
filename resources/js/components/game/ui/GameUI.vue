@@ -17,6 +17,7 @@
             :experience="gameStore.playerExperience"
         />
         <ResourceDisplay :show-resource-list="true" :max-visible-resources="8" />
+        <SaveGameButton />
         <BuildingFabButton />
         <BuildingInfoModal />
         <BuildingSelectionOverlay />
@@ -37,6 +38,7 @@ import ZoneBlockerOverlay from './ZoneBlockerOverlay.vue'
 import NotificationSystem from './NotificationSystem.vue'
 import ActionButton from './ActionButton.vue'
 import Level from '@/components/game/ui/Level.vue';
+import SaveGameButton from '@/components/game/ui/SaveGameButton.vue';
 
 const gameStore = useGameStore();
 
