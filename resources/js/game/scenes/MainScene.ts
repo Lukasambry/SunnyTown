@@ -465,7 +465,51 @@ export class MainScene extends Phaser.Scene {
             gameStore.loadGameData();
         }
 
+        this.initializeAllManagers();
+
+        // ✅ NOUVEAU: Attendre que tout soit prêt avant de charger les données du jeu
+        this.time.delayedCall(500, () => {
+            const gameStore = useGameStore();
+            gameStore.setupAutoSave(5);
+
+            if (gameStore.hasExistingSave()) {
+                console.log('Loading existing save data...');
+                const loadSuccess = gameStore.loadGameData();
+                if (loadSuccess) {
+                    console.log('Game data loaded successfully, workers should be created');
+                } else {
+                    console.error('Failed to load game data');
+                }
+            } else {
+                console.log('No existing save found, starting fresh game');
+            }
+        });
+
         this.setupResourceRestoreListeners();
+    }
+
+    private initializeAllManagers(): void {
+        try {
+            // Initialiser WorkerManager
+            if (!this.workerManager) {
+                this.workerManager = new WorkerManager(this);
+                console.log('WorkerManager initialized');
+            }
+
+            // Initialiser BuildingManager
+            if (!this.buildingManager) {
+                this.buildingManager = new BuildingManager(this);
+                console.log('BuildingManager initialized');
+            }
+
+            // S'assurer que les références sont disponibles globalement
+            (window as any).__WORKER_MANAGER__ = this.workerManager;
+            (window as any).__BUILDING_MANAGER__ = this.buildingManager;
+
+            console.log('All managers initialized and available globally');
+        } catch (error) {
+            console.error('Error initializing managers:', error);
+        }
     }
 
     private setupGameDataListeners(): void {

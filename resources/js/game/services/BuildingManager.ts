@@ -5,6 +5,7 @@ import { TiledBuilding } from '../objects/TiledBuilding';
 import type { BuildingPosition } from '../types';
 import { BuildingRegistry } from './BuildingRegistry';
 import { GameDataService } from '@/game/services/GameDataService';
+import { WorkerType } from '../types';
 
 interface StoredBuilding {
     readonly type: string;
@@ -35,7 +36,7 @@ export class BuildingManager {
         (window as any).__BUILDING_MANAGER__ = this;
     }
 
-    public placeBuilding(type: string, x: number, y: number): TiledBuilding {
+    public placeBuilding(type: string, x: number, y: number, shouldCreateWorkers: boolean = true): TiledBuilding {
         const buildingConfig = this.buildingRegistry.getBuildingConfig(type);
         if (!buildingConfig) {
             throw new Error(`Aucun config trouvé pour le bâtiment ${type}`);
@@ -45,11 +46,44 @@ export class BuildingManager {
 
         this.buildings.push(building);
 
+        // ✅ NOUVEAU: Créer les workers si demandé (par défaut pour placement manuel, pas pour restauration)
+        if (shouldCreateWorkers) {
+            // Attendre un petit délai pour s'assurer que le bâtiment est bien initialisé
+            setTimeout(() => {
+                this.createWorkersForBuilding(building, buildingConfig);
+            }, 100);
+        }
+
+        console.log(`Bâtiment ${type} placé à (${x}, ${y}). Total: ${this.buildings.length}`);
         this.saveState();
         this.rebuildPathfindingGrid();
 
         this.emit('buildingPlaced', building);
         return building;
+    }
+
+    public getBuildingWorkerStats(): { [buildingId: string]: { assigned: number, max: number, type: WorkerType } } {
+        const stats: { [buildingId: string]: { assigned: number, max: number, type: WorkerType } } = {};
+
+        this.buildings.forEach(building => {
+            const buildingId = this.getBuildingId(building);
+            const buildingConfig = this.buildingRegistry.getBuildingConfig(building.getType());
+
+            if (buildingConfig) {
+                stats[buildingId] = {
+                    assigned: building.getAssignedWorkerCount(),
+                    max: buildingConfig.maxWorkers || 0,
+                    type: buildingConfig.workerType || WorkerType.NEUTRAL
+                };
+            }
+        });
+
+        return stats;
+    }
+
+    private getBuildingId(building: TiledBuilding): string {
+        const pos = building.getPosition();
+        return `${building.getType()}_${Math.round(pos.x)}_${Math.round(pos.y)}`;
     }
 
     public removeBuilding(building: TiledBuilding): boolean {
@@ -181,23 +215,32 @@ export class BuildingManager {
     }
 
     public restoreBuildingsFromGameData(buildingsData: StoredBuilding[]): void {
+        console.log('Restoring buildings from game data:', buildingsData);
+
+        // Nettoyer les bâtiments existants
         this.clearAll();
 
+        // Placer les bâtiments sans déclencher de sauvegarde
         buildingsData.forEach(data => {
             if (typeof data.type === 'string' &&
                 typeof data.x === 'number' &&
                 typeof data.y === 'number' &&
                 !isNaN(data.x) && !isNaN(data.y)) {
 
+                // Placer le bâtiment directement sans déclencher saveState()
                 const buildingConfig = this.buildingRegistry.getBuildingConfig(data.type);
                 if (buildingConfig) {
                     const templateKey = buildingConfig.template;
                     const building = new TiledBuilding(this.scene, data.x, data.y, templateKey, data.type);
                     this.buildings.push(building);
+
+                    // ✅ NOUVEAU: Créer les workers pour ce bâtiment après sa création
+                    this.createWorkersForBuilding(building, buildingConfig);
                 }
             }
         });
 
+        // Sauvegarder l'état final dans sessionStorage
         const state: StoredBuilding[] = this.buildings.map(building => {
             const position = building.getPosition();
             return {
@@ -209,7 +252,72 @@ export class BuildingManager {
         sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
 
         this.rebuildPathfindingGrid();
-        console.log(`Restored ${this.buildings.length} buildings`);
+        console.log(`Restored ${this.buildings.length} buildings with workers`);
+    }
+
+    private createWorkersForBuilding(building: TiledBuilding, buildingConfig: BuildingConfig): void {
+        try {
+            console.log(`Creating workers for building: ${building.getType()}`);
+
+            // Vérifier si le bâtiment a un type de worker et un nombre maximum
+            if (!buildingConfig.workerType ||
+                buildingConfig.workerType === WorkerType.NEUTRAL ||
+                !buildingConfig.maxWorkers ||
+                buildingConfig.maxWorkers <= 0) {
+                console.log(`Building ${building.getType()} does not require specific workers`);
+                return;
+            }
+
+            const workerType = buildingConfig.workerType;
+            const maxWorkers = buildingConfig.maxWorkers;
+            const buildingPosition = building.getPosition();
+
+            console.log(`Creating ${maxWorkers} workers of type ${workerType} for building at (${buildingPosition.x}, ${buildingPosition.y})`);
+
+            // Obtenir le WorkerManager depuis la scène
+            const workerManager = (this.scene as any).workerManager;
+            if (!workerManager) {
+                console.error('WorkerManager not available in scene');
+                return;
+            }
+
+            // Créer le nombre maximal de workers pour ce bâtiment
+            for (let i = 0; i < maxWorkers; i++) {
+                // Calculer une position légèrement décalée pour chaque worker
+                const workerX = buildingPosition.x + (i * 20) + 10; // Décalage horizontal
+                const workerY = buildingPosition.y + 30; // Légèrement en dessous du bâtiment
+
+                // Créer d'abord un worker neutre
+                const neutralWorker = workerManager.createWorker(
+                    WorkerType.NEUTRAL,
+                    workerX,
+                    workerY
+                );
+
+                if (neutralWorker) {
+                    console.log(`Created neutral worker ${i + 1} for building ${building.getType()}`);
+
+                    // Assigner et spécialiser le worker au bâtiment
+                    const workerId = neutralWorker.getWorkerId();
+                    const assignmentSuccess = workerManager.assignWorkerToBuilding(workerId, building);
+
+                    if (assignmentSuccess) {
+                        console.log(`Successfully assigned and specialized worker ${workerId} to building ${building.getType()}`);
+                    } else {
+                        console.warn(`Failed to assign worker ${workerId} to building ${building.getType()}`);
+                        // Si l'assignation échoue, détruire le worker pour éviter les workers orphelins
+                        neutralWorker.destroy();
+                    }
+                } else {
+                    console.error(`Failed to create neutral worker ${i + 1} for building ${building.getType()}`);
+                }
+            }
+
+            console.log(`Finished creating workers for building ${building.getType()}`);
+
+        } catch (error) {
+            console.error(`Error creating workers for building ${building.getType()}:`, error);
+        }
     }
 
     public updateBuildings(player: Phaser.Physics.Arcade.Sprite): void {

@@ -40,6 +40,13 @@ interface StoredBuilding {
     readonly y: number;
 }
 
+interface BuildingWithWorkers extends StoredBuilding {
+    workers?: {
+        count: number;
+        type: WorkerType;
+    };
+}
+
 export class GameDataService {
     private static instance: GameDataService;
     private readonly STORAGE_KEY = 'GAME_SAVE_DATA';
@@ -241,6 +248,11 @@ export class GameDataService {
             const buildingManager = (window as any).__BUILDING_MANAGER__;
             if (buildingManager && typeof buildingManager.getCurrentBuildingsData === 'function') {
                 const buildings = buildingManager.getCurrentBuildingsData();
+                console.log('getCurrentBuildingsData from BuildingManager:', buildings);
+
+                // ✅ NOUVEAU: Enrichir les données avec les informations des workers si nécessaire
+                // Pour l'instant, on garde la structure simple car les workers seront recréés
+                // basés sur la config des bâtiments
                 return buildings;
             }
 
@@ -249,9 +261,11 @@ export class GameDataService {
             if (stored) {
                 const buildings = JSON.parse(stored);
                 const validBuildings = Array.isArray(buildings) ? buildings : [];
+                console.log('getCurrentBuildingsData from sessionStorage:', validBuildings);
                 return validBuildings;
             }
 
+            console.log('No buildings data found');
             return [];
         } catch (error) {
             console.error('Error getting current buildings data:', error);
