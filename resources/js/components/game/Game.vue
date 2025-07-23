@@ -1,12 +1,12 @@
 <template>
     <div class="game-wrapper">
-        <!-- Phaser Game Container -->
         <div id="game-container" ref="gameContainer"></div>
 
-        <!-- Vue.js UI Overlay -->
         <GameUI v-if="isGameReady" />
 
-        <!-- Loading Screen - reste affiché jusqu'à la fin complète du chargement -->
+        <AudioControlButton v-if="isGameReady" />
+        <AudioControlModal />
+
         <LoadingScreen
             v-if="!isLoadingComplete"
             :progress="loadingProgress"
@@ -21,6 +21,8 @@ import { gameConfig } from '@/game/config'
 import { useGameState } from '@/game/ui/composables/useGameState'
 import GameUI from './ui/GameUI.vue'
 import LoadingScreen from './ui/LoadingScreen.vue'
+import AudioControlButton from '../ui/AudioControlButton.vue'
+import AudioControlModal from '../ui/AudioControlModal.vue'
 
 const gameContainer = ref<HTMLElement>()
 const loadingProgress = ref(0)
@@ -73,87 +75,56 @@ const createGame = async () => {
 }
 
 const handleGameReady = async () => {
-    if (!game) return
-
     try {
-        initializeGameIntegration(game)
+        console.log('Game ready, initializing integration...')
+        
+        if (!game) {
+            throw new Error('Game instance is null')
+        }
+
+        await initializeGameIntegration(game)
+
+        await nextTick()
 
         isGameReady.value = true
+        
+        setTimeout(() => {
+            isLoadingComplete.value = true
+        }, 500)
 
-        console.log('Game ready and UI integrated')
     } catch (error) {
         console.error('Error in handleGameReady:', error)
-        isLoadingComplete.value = true
+        throw error
     }
-}
-
-const handleLoadingComplete = () => {
-    console.log('Loading screen completed - showing game')
-    isLoadingComplete.value = true
-}
-
-const destroyGame = () => {
-    if (game) {
-        game.destroy(true)
-        game = null
-    }
-    isGameReady.value = false
-    isLoadingComplete.value = false
 }
 
 onMounted(async () => {
-    await nextTick()
-
-    window.addEventListener('loading:complete', handleLoadingComplete)
-
-    if (gameContainer.value) {
-        gameContainer.value.addEventListener('contextmenu', (e) => {
-            e.preventDefault()
-        })
-        gameContainer.value.style.cursor = 'none'
-    }
-
     try {
         const cleanup = await createGame()
-
+        
         onBeforeUnmount(() => {
-            cleanup?.()
-            destroyGame()
-            window.removeEventListener('loading:complete', handleLoadingComplete)
-            if (gameContainer.value) {
-                gameContainer.value.removeEventListener('contextmenu', (e) => e.preventDefault())
+            if (cleanup) cleanup()
+            if (game) {
+                game.destroy(true)
+                game = null
             }
         })
     } catch (error) {
         console.error('Failed to initialize game:', error)
-        isLoadingComplete.value = true
     }
 })
 </script>
 
 <style scoped>
 .game-wrapper {
+    position: relative;
     width: 100vw;
     height: 100vh;
-    margin: 0;
-    padding: 0;
     overflow: hidden;
-    position: relative;
-    background: #000;
 }
 
 #game-container {
     width: 100%;
     height: 100%;
-    margin: 0;
-    padding: 0;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
-
-#game-container canvas {
-    display: block;
-    margin: 0 auto;
 }
 </style>
