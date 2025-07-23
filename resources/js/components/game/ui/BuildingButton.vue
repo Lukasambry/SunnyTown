@@ -4,21 +4,17 @@
         'border-2 backdrop-blur-sm min-w-[80px]',
         buttonClasses
     ]" :disabled="!canAfford" @click="handleClick">
-    <!-- Icon Container -->
     <div class="icon-container relative w-10 h-10 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
          :class="iconContainerClasses">
       <BuildingIcon :building-type="building.key" :size="24" />
 
-      <!-- Disabled Overlay -->
       <div v-if="!canAfford" class="absolute inset-0 bg-black/50 rounded-lg" />
     </div>
 
-    <!-- Building Name -->
     <span class="building-name text-xs font-medium text-center leading-tight" :class="textClasses">
             {{ building.name }}
         </span>
 
-    <!-- Cost Display -->
     <div class="cost-display flex items-center gap-1 text-xs">
       <div v-for="(amount, resource) in building.cost" :key="resource" class="cost-item flex items-center gap-1"
            :class="getCostItemClasses(resource, amount)">
@@ -27,16 +23,13 @@
       </div>
     </div>
 
-    <!-- Selection Indicator -->
     <div v-if="selected"
          class="selection-indicator absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white" />
 
-    <!-- Tooltip with detailed cost information -->
     <div v-if="building.description || !canAfford"
          class="tooltip absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10 max-w-xs">
       <div v-if="building.description" class="mb-2">{{ building.description }}</div>
 
-      <!-- Detailed cost breakdown -->
       <div v-if="!canAfford && missingResources.length > 0" class="text-red-300">
         <div class="font-semibold mb-1">Ressources manquantes:</div>
         <div v-for="missing in missingResources" :key="missing.type" class="flex justify-between text-xs">
@@ -76,7 +69,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 const gameStore = useGameStore()
 
-// NOUVEAU: Calculer les ressources manquantes détaillées
 const missingResources = computed(() => {
   if (props.canAfford) return []
 
@@ -101,7 +93,6 @@ const missingResources = computed(() => {
   }
 })
 
-// Computed styles
 const buttonClasses = computed(() => {
   if (!props.canAfford) {
     return 'bg-gray-800/50 border-gray-600 cursor-not-allowed opacity-60'
@@ -138,7 +129,6 @@ const textClasses = computed(() => {
   return 'text-gray-200 group-hover:text-white'
 })
 
-// AMÉLIORATION: Utilisation du ResourceManager pour vérifier les coûts
 const getCostItemClasses = (resource: string, amount: number) => {
   try {
     const resourceManager = gameStore.getResourceManager()
@@ -160,7 +150,6 @@ const getCostItemClasses = (resource: string, amount: number) => {
   }
 }
 
-// Methods
 const handleClick = () => {
   if (props.canAfford) {
     emit('select', props.building.key)

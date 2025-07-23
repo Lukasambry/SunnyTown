@@ -144,9 +144,6 @@ export class ZoneBlockerService {
             });
         }
 
-        console.log(`Final properties for ${blockerName}:`, groupProperties);
-
-        // Créer les requirements basés sur les propriétés trouvées
         const unlockRequirements: any = {};
 
         if (groupProperties.minLevel) {
@@ -154,7 +151,6 @@ export class ZoneBlockerService {
         }
 
         if (groupProperties.resourcesNeeded) {
-            // Parse resourcesNeeded format: "wood:50,stone:25"
             const resourcesNeeded: Record<string, number> = {};
             const resourcePairs = groupProperties.resourcesNeeded.split(',');
 
@@ -171,7 +167,6 @@ export class ZoneBlockerService {
         }
 
         if (groupProperties.buildingsNeeded) {
-            // Parse buildingsNeeded format: "sawmill,house"
             const buildingsNeeded = groupProperties.buildingsNeeded.split(',').map((b: string) => b.trim());
             unlockRequirements.buildings = buildingsNeeded;
         }
@@ -180,7 +175,7 @@ export class ZoneBlockerService {
             name: blockerName,
             displayName: groupProperties.displayName || this.capitalizeFirstLetter(blockerName),
             description: groupProperties.description || `Zone de ${blockerName}`,
-            unlocked: false, // Par défaut, toutes les zones sont bloquées
+            unlocked: false,
             unlockRequirements: Object.keys(unlockRequirements).length > 0 ? unlockRequirements : undefined
         };
 
@@ -223,12 +218,10 @@ export class ZoneBlockerService {
     }
 
     private extractBlockerName(layerName: string): string {
-        // Améliorer l'extraction pour gérer les noms complexes
         const match = layerName.match(/^Blocker_(.+)$/);
         if (match) {
             return match[1];
         }
-        // Fallback: supprimer juste le préfixe "Blocker_"
         return layerName.replace('Blocker_', '');
     }
 
@@ -237,7 +230,6 @@ export class ZoneBlockerService {
         objectLayer: Phaser.Tilemaps.ObjectLayer,
         blockerName: string
     ): ZoneBlocker | null {
-        // Récupérer la zone d'interaction
         const interactionZone = this.createInteractionZone(objectLayer);
         if (!interactionZone) return null;
 
@@ -272,7 +264,6 @@ export class ZoneBlockerService {
         zone.setInteractive();
         zone.setData('blockerName', this.extractBlockerNameFromLayer(objectLayer.name));
 
-        // Ajouter les événements de survol
         zone.on('pointerover', () => {
             const blockerName = zone.getData('blockerName');
             this.showHoverCorners(blockerName);
@@ -331,7 +322,6 @@ export class ZoneBlockerService {
     }
 
     private extractBlockerNameFromLayer(layerName: string): string {
-        // Utiliser la même méthode d'extraction améliorée
         return this.extractBlockerName(layerName);
     }
 
@@ -368,7 +358,6 @@ export class ZoneBlockerService {
     }
 
     private showHoverCorners(blockerName: string): void {
-        // Ne pas montrer les coins de survol si le blocker est déjà sélectionné
         if (this.selectedBlocker && this.selectedBlocker.name === blockerName) return;
 
         this.hideHoverCorners();
@@ -402,7 +391,6 @@ export class ZoneBlockerService {
     }
 
     private createCornerAnimation(sprite: Phaser.GameObjects.Sprite, type: string): void {
-        // Définir le déplacement en fonction du type de coin
         let xMove = 0;
         let yMove = 0;
 
@@ -425,7 +413,6 @@ export class ZoneBlockerService {
                 break;
         }
 
-        // Créer l'animation de va-et-vient
         this.scene.tweens.add({
             targets: sprite,
             x: sprite.x + xMove,
@@ -448,7 +435,7 @@ export class ZoneBlockerService {
             case 'bottom-right':
                 return 'corner-bottom-right';
             default:
-                return 'corner-top-left'; // Fallback
+                return 'corner-top-left';
         }
     }
 
@@ -482,37 +469,26 @@ export class ZoneBlockerService {
             return;
         }
 
-        // Marquer comme débloqué
         blockerConfig.unlocked = true;
 
-        // ✅ NOUVEAU: Sauvegarder les informations de déblocage
         const blockerId = this.extractBlockerIdFromBlocker(blocker, blockerName);
         this.unlockedBlockerIds.add(blockerId);
         this.unlockedBlockerNames.add(blockerName);
         this.unlockTimestamps.set(blockerName, Date.now());
 
-        console.log(`Zone blocker ${blockerName} with blockerId ${blockerId} will be saved as unlocked`);
-
-        // Supprimer le groupe de layers de la map
         this.removeBlockerFromMap(blockerName);
 
-        // Nettoyer les références locales
         this.cleanupBlocker(blocker);
         this.blockers.delete(blockerName);
 
-        // Reconstruire la grid du pathfinder après suppression des layers
         this.rebuildPathfindingGrid();
 
-        // ✅ NOUVEAU: Déclencher une sauvegarde automatique après déblocage
         setTimeout(() => {
             const gameDataService = (window as any).__GAME_DATA_SERVICE__;
             if (gameDataService && gameDataService.saveGameData) {
                 gameDataService.saveGameData();
-                console.log('Game saved after zone unlock');
             }
         }, 500);
-
-        console.log(`Zone blocker ${blockerName} unlocked and removed from map!`);
     }
 
     private extractBlockerIdFromBlocker(blocker: ZoneBlocker, blockerName: string): string {
@@ -546,9 +522,6 @@ export class ZoneBlockerService {
     }
 
     public restoreUnlockedZones(unlockedZonesData: { blockerIds: string[], blockerNames: string[], unlockedAt: Record<string, number> }): void {
-        console.log('Restoring unlocked zones:', unlockedZonesData);
-
-        // Restaurer les données en mémoire
         this.unlockedBlockerIds = new Set(unlockedZonesData.blockerIds);
         this.unlockedBlockerNames = new Set(unlockedZonesData.blockerNames);
         this.unlockTimestamps.clear();
@@ -556,22 +529,17 @@ export class ZoneBlockerService {
             this.unlockTimestamps.set(blockerName, timestamp);
         });
 
-        // Masquer les layers de chaque blockerId débloqué
         unlockedZonesData.blockerIds.forEach(blockerId => {
-            console.log(`Hiding layers for previously unlocked blockerId: ${blockerId}`);
             this.hideLayersByBlockerId(blockerId);
         });
 
-        // Marquer les configs comme débloquées
         unlockedZonesData.blockerNames.forEach(blockerName => {
             const blockerConfig = this.registry.getBlocker(blockerName);
             if (blockerConfig) {
                 blockerConfig.unlocked = true;
-                console.log(`Marked blocker config as unlocked: ${blockerName}`);
             }
         });
 
-        // Supprimer les blockers déjà débloqués de la map
         unlockedZonesData.blockerNames.forEach(blockerName => {
             if (this.blockers.has(blockerName)) {
                 const blocker = this.blockers.get(blockerName);
@@ -579,14 +547,10 @@ export class ZoneBlockerService {
                     this.cleanupBlocker(blocker);
                 }
                 this.blockers.delete(blockerName);
-                console.log(`Removed already unlocked blocker from map: ${blockerName}`);
             }
         });
 
-        // Reconstruire la grid du pathfinder
         this.rebuildPathfindingGrid();
-
-        console.log(`Restored ${unlockedZonesData.blockerIds.length} unlocked zones`);
     }
 
     public isZoneUnlocked(blockerName: string): boolean {
@@ -611,81 +575,57 @@ export class ZoneBlockerService {
     private removeBlockerFromMap(blockerName: string): void {
         if (!this.currentMap) return;
 
-        console.log(`Removing blocker: ${blockerName}`);
-
-        // Trouver le layer d'objets du groupe et récupérer son blockerId
         const groupName = `Blocker_${blockerName}`;
         const objectLayerIndex = this.currentMap.objects.findIndex(layer => layer.name === groupName);
 
-        let blockerId = blockerName; // Fallback par défaut
+        let blockerId = blockerName;
 
         if (objectLayerIndex !== -1) {
             const objectLayer = this.currentMap.objects[objectLayerIndex];
 
-            // Récupérer le blockerId depuis les propriétés du layer object
             const layerProperties = this.extractLayerProperties(objectLayer);
             if (layerProperties.blockerId) {
                 blockerId = layerProperties.blockerId;
-                console.log(`Found blockerId from object layer: ${blockerId}`);
             } else {
                 console.warn(`No blockerId found in object layer ${groupName}, using fallback: ${blockerId}`);
             }
 
-            // Supprimer le layer d'objets
             this.currentMap.objects.splice(objectLayerIndex, 1);
-            console.log(`Removed object layer: ${groupName}`);
         } else {
             console.warn(`Object layer not found: ${groupName}`);
         }
 
-        // Maintenant utiliser le blockerId pour trouver et masquer tous les layers associés
         this.hideLayersByBlockerId(blockerId);
     }
 
     private hideLayersByBlockerId(blockerId: string): void {
         if (!this.currentMap) return;
-
-        console.log(`Looking for layers with blockerId: ${blockerId}`);
-
         const layersToDestroy: string[] = [];
 
-        // Parcourir tous les layers de la map
         this.currentMap.layers.forEach((layerData, index) => {
             const layerProperties = this.extractLayerProperties(layerData);
 
             if (layerProperties.blockerId === blockerId) {
-                console.log(`Found layer with matching blockerId: ${layerData.name} - ${index}`);
                 layersToDestroy.push(layerData.name);
             }
         });
 
-        // Supprimer les layers trouvés
         layersToDestroy.forEach(layerName => {
             this.destroyLayer(layerName);
         });
-
-        console.log(`Destroyed ${layersToDestroy.length} layers with blockerId: ${blockerId}`);
     }
 
     private destroyLayer(layerName: string): void {
         if (!this.currentMap) return;
 
-        // Récupérer le layer Phaser correspondant
         const tilemapLayer = this.currentMap.getLayer(layerName);
         if (tilemapLayer?.tilemapLayer) {
-            console.log(`Destroying layer: ${layerName}`);
-
-            // Supprimer les collisions de ce layer de la baseGrid AVANT de détruire le layer
             this.removeLayerCollisionsFromBaseGrid(tilemapLayer.tilemapLayer);
-
-            // Supprimer complètement le layer
             tilemapLayer.tilemapLayer.destroy();
 
-            // Retirer le layer de la map
             const layerIndex = this.currentMap.layers.findIndex(layer => layer.name === layerName);
             if (layerIndex !== -1) {
                 this.currentMap.layers.splice(layerIndex, 1);
-                console.log(`Removed layer from map layers array: ${layerName}`);
             }
         } else {
             console.warn(`Could not find tilemap layer for: ${layerName}`);
@@ -729,11 +669,7 @@ export class ZoneBlockerService {
         try {
             const mainScene = this.scene as any;
             if (mainScene.rebuildPathfindingGrid && typeof mainScene.rebuildPathfindingGrid === 'function') {
-                console.log('Rebuilding pathfinding grid after zone unlock...');
-                console.log('BaseGrid state before rebuild:', this.getBaseGridSummary());
                 mainScene.rebuildPathfindingGrid();
-                console.log('Pathfinding grid rebuilt successfully');
-                console.log('BaseGrid state after rebuild:', this.getBaseGridSummary());
             } else {
                 console.warn('rebuildPathfindingGrid method not found on scene');
             }

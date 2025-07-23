@@ -485,6 +485,7 @@ export class MainScene extends Phaser.Scene {
             }
         });
 
+        this.setupWorkerPurchaseListener();
         this.setupResourceRestoreListeners();
     }
 
@@ -526,6 +527,115 @@ export class MainScene extends Phaser.Scene {
                 inventory.setAmount(type, amount);
             }
         });
+    }
+
+    private setupWorkerPurchaseListener(): void {
+        window.addEventListener('game:purchaseWorker', this.onPurchaseWorker.bind(this));
+    }
+
+    private onPurchaseWorker(event: CustomEvent): void {
+        const { workerType, cost } = event.detail;
+
+        try {
+            if (!this.workerManager) {
+                console.error('WorkerManager not available for worker purchase');
+                return;
+            }
+
+            // Calculer une position près du joueur avec un peu d'aléatoire
+            const playerX = this.player.x;
+            const playerY = this.player.y;
+
+            // Ajouter un décalage aléatoire pour éviter que tous les ouvriers apparaissent au même endroit
+            const offsetX = (Math.random() - 0.5) * 100; // -50 à +50 pixels
+            const offsetY = (Math.random() - 0.5) * 100; // -50 à +50 pixels
+
+            const workerX = playerX + offsetX;
+            const workerY = playerY + offsetY;
+
+            // Créer le nouvel ouvrier NEUTRAL
+            const newWorker = this.workerManager.createWorker('neutral', workerX, workerY);
+
+            if (newWorker) {
+                console.log(`Successfully created new NEUTRAL worker at position (${workerX}, ${workerY}) for ${cost} coins`);
+
+                // Optionnel : ajouter un effet visuel d'apparition
+                this.createWorkerSpawnEffect(workerX, workerY);
+            } else {
+                console.error('Failed to create worker during purchase');
+
+                // Rembourser le joueur si la création échoue
+                const gameStore = useGameStore();
+                gameStore.updatePlayerGold(gameStore.getPlayerGold + cost);
+
+                window.dispatchEvent(new CustomEvent('game:notification', {
+                    detail: {
+                        type: 'error',
+                        title: 'Erreur de recrutement',
+                        message: 'Impossible de créer l\'ouvrier. Vos coins ont été remboursés.'
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('Error during worker purchase:', error);
+
+            // Rembourser le joueur en cas d'erreur
+            const gameStore = useGameStore();
+            gameStore.updatePlayerGold(gameStore.getPlayerGold + cost);
+
+            window.dispatchEvent(new CustomEvent('game:notification', {
+                detail: {
+                    type: 'error',
+                    title: 'Erreur',
+                    message: 'Une erreur s\'est produite lors du recrutement. Vos coins ont été remboursés.'
+                }
+            }));
+        }
+    }
+
+    private createWorkerSpawnEffect(x: number, y: number): void {
+        try {
+            // Créer un effet de particules pour l'apparition de l'ouvrier
+            if (this.scene && this.scene.scene.isActive()) {
+                // Créer un cercle de lumière temporaire
+                const spawnEffect = this.add.circle(x, y, 30, 0xFFD700, 0.6);
+                spawnEffect.setDepth(10);
+
+                // Animation de l'effet
+                this.tweens.add({
+                    targets: spawnEffect,
+                    scaleX: 2,
+                    scaleY: 2,
+                    alpha: 0,
+                    duration: 1000,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        spawnEffect.destroy();
+                    }
+                });
+
+                // Ajouter du texte "Nouvel ouvrier !"
+                const spawnText = this.add.text(x, y - 40, 'Nouvel ouvrier !', {
+                    fontSize: '16px',
+                    fontStyle: 'bold',
+                    color: '#00FF00',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }).setOrigin(0.5);
+                spawnText.setDepth(11);
+
+                this.tweens.add({
+                    targets: spawnText,
+                    y: spawnText.y - 30,
+                    alpha: 0,
+                    duration: 1500,
+                    ease: 'Power1',
+                    onComplete: () => spawnText.destroy()
+                });
+            }
+        } catch (error) {
+            console.warn('Could not create worker spawn effect:', error);
+        }
     }
 
     private setupVueResourceSync(): void {

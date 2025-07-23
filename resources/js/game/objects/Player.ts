@@ -75,7 +75,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     private setupLevelSystem(): void {
-        // Écouter les événements de level up pour créer des effets visuels
         window.addEventListener('player:levelUp', (event: CustomEvent) => {
             this.showLevelUpEffect(event.detail);
         });
@@ -96,7 +95,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
         ).setOrigin(0.5);
 
-        // Animation de l'effet
         this.scene.tweens.add({
             targets: levelUpText,
             y: levelUpText.y - 60,
@@ -106,7 +104,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             onComplete: () => levelUpText.destroy()
         });
 
-        // Ajouter des particules d'or si disponibles
         if (this.scene.textures.exists('gold-particle')) {
             const particles = this.scene.add.particles(0, 0, 'gold-particle', {
                 x: this.x,
@@ -119,16 +116,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 blendMode: 'ADD'
             });
 
-            // Auto-destruction des particules
             this.scene.time.delayedCall(1500, () => {
                 particles.destroy();
             });
         }
-
-        console.log(`Player leveled up to level ${levelData.newLevel}! Gold bonus: ${levelData.goldBonus}`);
     }
 
-    // Nouvelles méthodes pour la gestion de l'expérience
     public gainExperience(amount: number, source: string = 'action', resourceType?: ResourceType): void {
         this.levelSystem.addExperience(amount, source, resourceType);
     }
@@ -139,7 +132,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.levelSystem.addExperience(totalExperience, source, resourceType);
     }
 
-    // Getters pour accéder aux données de niveau
     public getLevel(): number {
         return this.levelSystem.getLevel();
     }
@@ -297,7 +289,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     destroy(fromScene?: boolean): void {
-        // Nettoyer les event listeners
         window.removeEventListener('player:levelUp', this.showLevelUpEffect);
         super.destroy(fromScene);
     }

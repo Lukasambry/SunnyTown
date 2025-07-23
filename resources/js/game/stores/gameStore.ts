@@ -221,6 +221,41 @@ export const useGameStore = defineStore('game', () => {
         }
     };
 
+    const purchaseWorker = (cost: number): boolean => {
+        try {
+            if (playerGold.value < cost) {
+                console.log(`Cannot afford worker: need ${cost}, have ${playerGold.value}`);
+                return false;
+            }
+
+            // Déduire le coût
+            const newGold = playerGold.value - cost;
+            updatePlayerGold(newGold);
+
+            console.log(`Worker purchased for ${cost} coins. New gold balance: ${newGold}`);
+
+            // Sauvegarder automatiquement
+            if (!isLoading.value) {
+                setTimeout(() => saveGameData(), 100);
+            }
+
+            return true;
+        } catch (error) {
+            console.error(`Error purchasing worker for ${cost} coins:`, error);
+            return false;
+        }
+    };
+
+    const getWorkerPurchasePrice = (totalWorkerCount: number): number => {
+        const basePrice = 50;
+        return Math.floor(basePrice * Math.pow(1.3, totalWorkerCount));
+    };
+
+    const canAffordWorker = (totalWorkerCount: number): boolean => {
+        const price = getWorkerPurchasePrice(totalWorkerCount);
+        return playerGold.value >= price;
+    };
+
     // AMÉLIORATION: Synchronisation bidirectionnelle avec ResourceManager
     const initializeResourceSync = () => {
         if (!initializeManagers() || !resourceManager) {
@@ -560,6 +595,7 @@ export const useGameStore = defineStore('game', () => {
         getPlayerAvatar,
         getPlayerLevel,
         getPlayerGold,
+        getWorkerPurchasePrice,
         getPlayerCurrentExperience,
         getPlayerNextLevelExperience,
         getPlayerCurrentHealth,
@@ -571,6 +607,8 @@ export const useGameStore = defineStore('game', () => {
         hasExistingSave,
         deleteSaveData,
         setupAutoSave,
+        purchaseWorker,
+        canAffordWorker,
 
         // Actions
         setGameLoaded,
