@@ -38,6 +38,7 @@ interface StoredBuilding {
     readonly type: string;
     readonly x: number;
     readonly y: number;
+    readonly resources?: Record<string, number>;
 }
 
 interface BuildingWithWorkers extends StoredBuilding {
@@ -96,17 +97,27 @@ export class GameDataService {
 
     public saveGameData(): boolean {
         try {
-            console.log('=== DÉBUT SAUVEGARDE ===');
+            console.log('=== DÉBUT SAUVEGARDE AVEC RESSOURCES BÂTIMENTS ===');
 
             const playerData = this.getCurrentPlayerData();
             const buildingsData = this.getCurrentBuildingsData();
             const resourcesData = this.getCurrentResourcesData();
             const workersData = this.getCurrentWorkersData();
 
+            // Compter les ressources sauvegardées dans les bâtiments
+            const buildingsWithResources = buildingsData.filter(b => b.resources && Object.keys(b.resources).length > 0);
+            const totalBuildingResources = buildingsWithResources.reduce((total, building) => {
+                return total + Object.keys(building.resources || {}).length;
+            }, 0);
+
             console.log('Data to save:', {
                 player: playerData,
-                buildings: buildingsData.length,
-                resources: Object.keys(resourcesData).length,
+                buildings: {
+                    total: buildingsData.length,
+                    withResources: buildingsWithResources.length,
+                    totalResourceTypes: totalBuildingResources
+                },
+                globalResources: Object.keys(resourcesData).length,
                 workers: {
                     total: workersData.totalCount,
                     assignments: {
@@ -131,7 +142,7 @@ export class GameDataService {
             };
 
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
-            console.log('Game data saved successfully to localStorage');
+            console.log('Game data with building resources saved successfully to localStorage');
             console.log('=== FIN SAUVEGARDE ===');
 
             // Émettre un événement de sauvegarde
@@ -142,6 +153,7 @@ export class GameDataService {
                         level: gameData.player.level,
                         gold: gameData.player.gold,
                         buildings: gameData.buildings.length,
+                        buildingsWithResources: buildingsWithResources.length,
                         workers: gameData.workers.totalCount
                     }
                 }
@@ -149,7 +161,7 @@ export class GameDataService {
 
             return true;
         } catch (error) {
-            console.error('Error saving game data:', error);
+            console.error('Error saving game data with building resources:', error);
             return false;
         }
     }
@@ -266,20 +278,17 @@ export class GameDataService {
             const buildingManager = (window as any).__BUILDING_MANAGER__;
             if (buildingManager && typeof buildingManager.getCurrentBuildingsData === 'function') {
                 const buildings = buildingManager.getCurrentBuildingsData();
-                console.log('getCurrentBuildingsData from BuildingManager:', buildings);
-
-                // ✅ NOUVEAU: Enrichir les données avec les informations des workers si nécessaire
-                // Pour l'instant, on garde la structure simple car les workers seront recréés
-                // basés sur la config des bâtiments
+                console.log('getCurrentBuildingsData with resources from BuildingManager:', buildings);
                 return buildings;
             }
 
+            // Fallback vers sessionStorage (sans ressources)
             console.warn('BuildingManager not available, falling back to sessionStorage');
             const stored = sessionStorage.getItem('BUILDINGS_STORAGE');
             if (stored) {
                 const buildings = JSON.parse(stored);
                 const validBuildings = Array.isArray(buildings) ? buildings : [];
-                console.log('getCurrentBuildingsData from sessionStorage:', validBuildings);
+                console.log('getCurrentBuildingsData from sessionStorage (no resources):', validBuildings);
                 return validBuildings;
             }
 

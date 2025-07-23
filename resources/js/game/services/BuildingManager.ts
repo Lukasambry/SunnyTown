@@ -201,22 +201,46 @@ export class BuildingManager {
     public getCurrentBuildingsData(): StoredBuilding[] {
         return this.buildings.map(building => {
             const position = building.getPosition();
-            return {
+            const buildingResources = this.getBuildingResourcesAsObject(building);
+
+            const storedBuilding: StoredBuilding = {
                 type: building.getType(),
                 x: position.x,
                 y: position.y
             };
+
+            if (Object.keys(buildingResources).length > 0) {
+                (storedBuilding as any).resources = buildingResources;
+            }
+
+            return storedBuilding;
         });
     }
 
+    private getBuildingResourcesAsObject(building: TiledBuilding): Record<string, number> {
+        const resourcesObject: Record<string, number> = {};
+
+        try {
+            const buildingResources = building.getAllBuildingResources();
+            buildingResources.forEach((amount, resourceType) => {
+                if (amount > 0) {
+                    resourcesObject[resourceType] = amount;
+                }
+            });
+        } catch (error) {
+            console.error(`Error getting resources for building ${building.getType()}:`, error);
+        }
+
+        return resourcesObject;
+    }
+
     public restoreBuildingsFromGameData(buildingsData: StoredBuilding[], workersData: GameData['workers']): void {
-        console.log('Restoring buildings from game data:', buildingsData);
-        console.log('Workers data:', workersData);
+        console.log('Restoring buildings with resources from game data:', buildingsData);
 
         // Nettoyer les bâtiments existants
         this.clearAll();
 
-        // Première étape : Créer tous les bâtiments sans workers
+        // Première étape : Créer tous les bâtiments
         const createdBuildings: TiledBuilding[] = [];
         buildingsData.forEach(data => {
             if (typeof data.type === 'string' &&
@@ -230,14 +254,19 @@ export class BuildingManager {
                     const building = new TiledBuilding(this.scene, data.x, data.y, templateKey, data.type);
                     this.buildings.push(building);
                     createdBuildings.push(building);
+
+                    // ✅ NOUVEAU: Restaurer les ressources du bâtiment
+                    if (data.resources) {
+                        this.restoreBuildingResources(building, data.resources);
+                    }
                 }
             }
         });
 
-        // ✅ NOUVEAU: Attendre que les bâtiments soient initialisés puis créer les workers selon les données sauvegardées
+        // Deuxième étape : Créer les workers après que les bâtiments soient prêts
         setTimeout(() => {
             this.restoreWorkersForBuildings(createdBuildings, workersData);
-        }, 100);
+        }, 200); // Délai plus long pour s'assurer que les ressources sont chargées
 
         // Sauvegarder l'état final dans sessionStorage
         const state: StoredBuilding[] = this.buildings.map(building => {
@@ -251,7 +280,57 @@ export class BuildingManager {
         sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
 
         this.rebuildPathfindingGrid();
-        console.log(`Restored ${this.buildings.length} buildings`);
+        console.log(`Restored ${this.buildings.length} buildings with resources and workers`);
+    }
+
+    private restoreBuildingResources(building: TiledBuilding, savedResources: Record<string, number>): void {
+        try {
+            console.log(`Restoring resources for building ${building.getType()}:`, savedResources);
+
+            // Attendre que le bâtiment soit complètement initialisé
+            setTimeout(() => {
+                Object.entries(savedResources).forEach(([resourceType, amount]) => {
+                    if (typeof amount === 'number' && amount > 0) {
+                        // Vérifier que le bâtiment peut stocker ce type de ressource
+                        const capacity = building.getBuildingResourceCapacity(resourceType as any);
+                        if (capacity > 0) {
+                            // Ajouter la ressource directement sans vérification de capacité
+                            // (car c'est une restauration de données sauvegardées)
+                            const currentStored = building.getBuildingResource(resourceType as any);
+                            const maxToRestore = Math.min(amount, capacity);
+
+                            if (maxToRestore > currentStored) {
+                                const toAdd = maxToRestore - currentStored;
+                                const added = building.addResourceToBuilding(resourceType as any, toAdd);
+                                console.log(`Restored ${added}/${toAdd} ${resourceType} to building ${building.getType()}`);
+                            }
+                        } else {
+                            console.warn(`Building ${building.getType()} cannot store ${resourceType}`);
+                        }
+                    }
+                });
+
+                console.log(`Building ${building.getType()} resources restoration completed`);
+            }, 50);
+
+        } catch (error) {
+            console.error(`Error restoring resources for building ${building.getType()}:`, error);
+        }
+    }
+
+    public getAllBuildingsResourcesSummary(): Record<string, Record<string, number>> {
+        const summary: Record<string, Record<string, number>> = {};
+
+        this.buildings.forEach(building => {
+            const buildingId = this.getBuildingId(building);
+            const resources = this.getBuildingResourcesAsObject(building);
+
+            if (Object.keys(resources).length > 0) {
+                summary[buildingId] = resources;
+            }
+        });
+
+        return summary;
     }
 
     private restoreWorkersForBuildings(buildings: TiledBuilding[], workersData: GameData['workers']): void {
