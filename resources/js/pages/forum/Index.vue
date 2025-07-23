@@ -174,8 +174,8 @@ const props = defineProps<{
 const matomo = useMatomo();
 
 let pageStartTime: number;
-let categoryInteractions: Record<string, number> = {};
-let threadInteractions: Record<string, number> = {};
+const categoryInteractions: Record<string, number> = {};
+const threadInteractions: Record<string, number> = {};
 let scrollDepth = 0;
 
 const stats = computed(() => {

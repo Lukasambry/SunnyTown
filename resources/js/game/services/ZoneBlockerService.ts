@@ -602,7 +602,7 @@ export class ZoneBlockerService {
         if (!this.currentMap) return;
         const layersToDestroy: string[] = [];
 
-        this.currentMap.layers.forEach((layerData, index) => {
+        this.currentMap.layers.forEach((layerData) => {
             const layerProperties = this.extractLayerProperties(layerData);
 
             if (layerProperties.blockerId === blockerId) {

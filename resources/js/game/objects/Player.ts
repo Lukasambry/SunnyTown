@@ -80,8 +80,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
     }
 
-    private showLevelUpEffect(levelData: any): void {
-        // Créer un effet de texte flottant
+    private showLevelUpEffect(/*levelData: any*/): void {
         const levelUpText = this.scene.add.text(
             this.x,
             this.y - 40,

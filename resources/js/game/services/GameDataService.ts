@@ -46,12 +46,14 @@ interface StoredBuilding {
     readonly resources?: Record<string, number>;
 }
 
+/*
 interface BuildingWithWorkers extends StoredBuilding {
     workers?: {
         count: number;
         type: WorkerType;
     };
 }
+*/
 
 export class GameDataService {
     private static instance: GameDataService;

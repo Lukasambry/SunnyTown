@@ -533,8 +533,8 @@ export class MainScene extends Phaser.Scene {
         window.addEventListener('game:purchaseWorker', this.onPurchaseWorker.bind(this));
     }
 
-    private onPurchaseWorker(event: CustomEvent): void {
-        const { workerType, cost } = event.detail;
+    private onPurchaseWorker(/*event: CustomEvent*/): void {
+        //const { workerType, cost } = event.detail;
 
         try {
             if (!this.workerManager) {

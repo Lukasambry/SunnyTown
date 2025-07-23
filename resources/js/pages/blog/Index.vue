@@ -230,8 +230,8 @@ const props = defineProps<{
 const matomo = useMatomo();
 
 let pageStartTime: number;
-let articleInteractions: Record<string, number> = {};
-let authorInteractions: Record<string, number> = {};
+const articleInteractions: Record<string, number> = {};
+const authorInteractions: Record<string, number> = {};
 let scrollDepth = 0;
 
 const sortedBlogPosts = computed(() => {

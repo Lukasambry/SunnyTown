@@ -326,11 +326,11 @@ const matomo = useMatomo();
 
 let pageStartTime: number;
 let readingStartTime: number;
-let messageInteractions: Record<string, number> = {};
-let authorInteractions: Record<string, number> = {};
+const messageInteractions: Record<string, number> = {};
+const authorInteractions: Record<string, number> = {};
 let scrollDepth = 0;
 let readingProgress = 0;
-let messagesViewed = new Set<number>();
+const messagesViewed = new Set<number>();
 
 const formatDate = (dateString: string) => {
     const date = new Date(dateString);
