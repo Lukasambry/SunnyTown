@@ -9,7 +9,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'wood-icon',
         color: 0x8B4513,
         baseValue: 1,
-        stackSize: 100,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: true
     },
@@ -21,7 +21,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'stone-icon',
         color: 0x808080,
         baseValue: 2,
-        stackSize: 50,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: true
     },
@@ -33,7 +33,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'food-icon',
         color: 0xFFD700,
         baseValue: 3,
-        stackSize: 20,
+        stackSize: 9999,
         isConsumable: true,
         canTrade: true
     },
@@ -45,7 +45,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'metal-ore-icon',
         color: 0x654321,
         baseValue: 4,
-        stackSize: 30,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: true
     },
@@ -57,7 +57,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'metal-ore-icon',
         color: 0x654321,
         baseValue: 4,
-        stackSize: 30,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: true
     },
@@ -69,7 +69,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'planks-icon',
         color: 0xDEB887,
         baseValue: 3,
-        stackSize: 50,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: true
     },
@@ -81,7 +81,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'metal-icon',
         color: 0xC0C0C0,
         baseValue: 8,
-        stackSize: 30,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: true
     },
@@ -93,7 +93,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'tools-icon',
         color: 0x4169E1,
         baseValue: 15,
-        stackSize: 10,
+        stackSize: 9999,
         isConsumable: true,
         canTrade: true
     },
@@ -105,7 +105,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'energy-icon',
         color: 0xFFFF00,
         baseValue: 1,
-        stackSize: 1000,
+        stackSize: 9999,
         isConsumable: true,
         canTrade: false
     },
@@ -117,7 +117,7 @@ export const RESOURCE_DEFINITIONS: Record<ResourceType, ResourceDefinition> = {
         iconTexture: 'population-icon',
         color: 0xFF69B4,
         baseValue: 0,
-        stackSize: 1000,
+        stackSize: 9999,
         isConsumable: false,
         canTrade: false
     }

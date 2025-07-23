@@ -21,7 +21,6 @@
                         </div>
                     </div>
 
-                    <!-- Message de statut -->
                     <div v-if="page.props.flash?.success" class="mx-8 mt-6">
                         <div class="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl text-green-800 dark:text-green-400 success-animation">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
@@ -48,7 +47,6 @@
                     </div>
 
                     <div class="relative p-8">
-                        <!-- 2FA Activée -->
                         <div v-if="twoFactorEnabled" class="space-y-6">
                             <div class="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
                                 <div class="flex items-center gap-3">
@@ -64,7 +62,6 @@
                                 </div>
                             </div>
 
-                            <!-- Codes de récupération -->
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between">
                                     <h3 class="text-lg font-semibold text-black dark:text-white">Codes de récupération</h3>
@@ -122,7 +119,6 @@
                                 </div>
                             </div>
 
-                            <!-- Bouton désactiver -->
                             <div class="rounded-xl p-1 border border-red-400/30 hover:border-red-400/50 transition-all duration-300">
                                 <button
                                     @click="disableTwoFactorAuthentication"
@@ -140,7 +136,6 @@
                             </div>
                         </div>
 
-                        <!-- 2FA Désactivée ou en cours de configuration -->
                         <div v-else class="space-y-6">
                             <div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
                                 <div class="flex items-center gap-3">
@@ -156,7 +151,6 @@
                                 </div>
                             </div>
 
-                            <!-- Configuration en cours -->
                             <div v-if="requiresConfirmation" class="space-y-6">
                                 <div class="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
                                     <div class="flex items-start gap-3">
@@ -176,7 +170,6 @@
                                     </div>
                                 </div>
 
-                                <!-- QR Code -->
                                 <div class="text-center space-y-4">
                                     <div class="inline-block p-4 bg-white rounded-xl border border-black/10 dark:border-white/10 shadow-lg">
                                         <div v-html="qrCodeSvg"></div>
