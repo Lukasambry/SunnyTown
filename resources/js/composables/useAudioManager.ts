@@ -95,8 +95,6 @@ export const useAudioManager = () => {
 
     console.log('Chargement de la piste:', track.src)
 
-    const wasPlaying = state.isPlaying
-
     audioElement.value.src = track.src
     state.currentTrack = track
     state.currentTime = 0
@@ -179,7 +177,10 @@ export const useAudioManager = () => {
   }
 
   const changeTrack = (trackId: string) => {
-    return
+    const track = tracks.value.find(t => t.id === trackId)
+    if (track) {
+      loadTrack(track)
+    }
   }
 
   const nextTrack = () => {
