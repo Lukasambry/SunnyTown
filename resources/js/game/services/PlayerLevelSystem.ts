@@ -14,19 +14,15 @@ export class PlayerLevelSystem {
     }
 
     public addExperience(amount: number, source: string = 'unknown', resourceType?: ResourceType): void {
-        // Calculer le multiplicateur selon le type de ressource
         const multiplier = resourceType ? this.getResourceExperienceMultiplier(resourceType) : 1.0;
         const finalAmount = Math.floor(amount * multiplier);
 
-        // Récupérer les données actuelles du joueur
         const currentData = this.getCurrentPlayerData();
 
-        // Calculer la nouvelle expérience
         let newExp = currentData.currentExperience + finalAmount;
         let newLevel = currentData.level;
         let newNextLevelExp = currentData.nextLevelExperience;
 
-        // Vérifier si le joueur monte de niveau
         const levelUpData = this.checkLevelUp(newExp, newLevel, newNextLevelExp);
 
         if (levelUpData.hasLeveledUp) {
@@ -37,14 +33,12 @@ export class PlayerLevelSystem {
             this.handleLevelUp(newLevel);
         }
 
-        // Mettre à jour le store
         this.updatePlayerData({
             level: newLevel,
             currentExperience: newExp,
             nextLevelExperience: newNextLevelExp
         });
 
-        // Émettre un événement pour les effets UI
         this.emitExperienceEvent({
             amount: finalAmount,
             source,
@@ -59,9 +53,9 @@ export class PlayerLevelSystem {
     private getResourceExperienceMultiplier(resourceType: ResourceType): number {
         switch (resourceType) {
             case ResourceType.WOOD:
-                return 20.0;
+                return 2.0;
             case ResourceType.STONE:
-                return 1.5;
+                return 3.5;
             case ResourceType.FOOD:
                 return 0.8;
             default:
@@ -93,7 +87,6 @@ export class PlayerLevelSystem {
         let newNextLevelExp = nextLevelExp;
         let hasLeveledUp = false;
 
-        // Gérer les niveaux multiples
         while (remainingExp >= newNextLevelExp) {
             hasLeveledUp = true;
             remainingExp -= newNextLevelExp;
@@ -114,19 +107,16 @@ export class PlayerLevelSystem {
     }
 
     private handleLevelUp(newLevel: number): void {
-        // Soigner le joueur complètement
         const maxHealth = this.gameStore.getPlayerMaxHealth;
         this.gameStore.updatePlayerHealth({
             current: maxHealth,
             max: maxHealth
         });
 
-        // Bonus de pièces d'or
         const goldBonus = newLevel * 5;
         const currentGold = this.gameStore.getPlayerGold;
         this.gameStore.updatePlayerGold(currentGold + goldBonus);
 
-        // Émettre un événement pour l'effet visuel
         window.dispatchEvent(new CustomEvent('player:levelUp', {
             detail: {
                 newLevel,

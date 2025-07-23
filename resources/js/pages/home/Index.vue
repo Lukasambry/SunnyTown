@@ -397,9 +397,9 @@ const matomo = useMatomo();
 
 // Variables de tracking
 let pageStartTime: number;
-let sectionViews: Set<string> = new Set();
+const sectionViews: Set<string> = new Set();
 let scrollDepth = 0;
-let engagementMetrics: Record<string, number> = {};
+const engagementMetrics: Record<string, number> = {};
 
 // Fonctions de tracking
 

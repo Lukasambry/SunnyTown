@@ -23,6 +23,7 @@ import { CameraService } from '../services/CameraService';
 import { BuildingSelectionService } from '../services/BuildingSelectionService';
 import { PlayerLevelSystem } from '../services/PlayerLevelSystem';
 import { ZoneBlockerService } from '../services/ZoneBlockerService';
+import { useGameStore } from '@/game/stores/gameStore';
 import { AudioService } from '../../game/services/AudioService'
 
 
@@ -280,8 +281,11 @@ export class MainScene extends Phaser.Scene {
         this.buildingManager.loadState();
         this.rebuildPathfindingGrid();
 
-        this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));
+        (window as any).__WORKER_MANAGER__ = this.workerManager;
+        (window as any).__RESOURCE_MANAGER__ = this.resourceManager;
+        this.setupGameDataListeners();
 
+        this.baseGrid = Array.from({ length: this.map.height }, () => Array(this.map.width).fill(0));
         this.mapLayers.forEach((layerConfig) => {
             if (!layerConfig.hasCollision) return;
             const layer = layerConfig.layer;
@@ -455,6 +459,183 @@ export class MainScene extends Phaser.Scene {
             this.clearPathDots();
         });
 
+        const gameStore = useGameStore();
+        gameStore.setupAutoSave(5);
+        if (gameStore.hasExistingSave()) {
+            gameStore.loadGameData();
+        }
+
+        this.initializeAllManagers();
+
+        // ✅ NOUVEAU: Attendre que tout soit prêt avant de charger les données du jeu
+        this.time.delayedCall(500, () => {
+            const gameStore = useGameStore();
+            gameStore.setupAutoSave(5);
+
+            if (gameStore.hasExistingSave()) {
+                console.log('Loading existing save data...');
+                const loadSuccess = gameStore.loadGameData();
+                if (loadSuccess) {
+                    console.log('Game data loaded successfully, workers should be created');
+                } else {
+                    console.error('Failed to load game data');
+                }
+            } else {
+                console.log('No existing save found, starting fresh game');
+            }
+        });
+
+        this.setupWorkerPurchaseListener();
+        this.setupResourceRestoreListeners();
+    }
+
+    private initializeAllManagers(): void {
+        try {
+            // Initialiser WorkerManager
+            if (!this.workerManager) {
+                this.workerManager = new WorkerManager(this);
+                console.log('WorkerManager initialized');
+            }
+
+            // Initialiser BuildingManager
+            if (!this.buildingManager) {
+                this.buildingManager = new BuildingManager(this);
+                console.log('BuildingManager initialized');
+            }
+
+            // S'assurer que les références sont disponibles globalement
+            (window as any).__WORKER_MANAGER__ = this.workerManager;
+            (window as any).__BUILDING_MANAGER__ = this.buildingManager;
+
+            console.log('All managers initialized and available globally');
+        } catch (error) {
+            console.error('Error initializing managers:', error);
+        }
+    }
+
+    private setupGameDataListeners(): void {
+        window.addEventListener('game:restorePlayerData', (event: CustomEvent) => {
+            const playerData = event.detail;
+            const gameStore = useGameStore();
+            gameStore.restorePlayerData(playerData);
+        });
+
+        window.addEventListener('game:restoreResource', (event: CustomEvent) => {
+            const { type, amount } = event.detail;
+            if (this.resourceManager) {
+                const inventory = this.resourceManager.getGlobalInventory();
+                inventory.setAmount(type, amount);
+            }
+        });
+    }
+
+    private setupWorkerPurchaseListener(): void {
+        window.addEventListener('game:purchaseWorker', this.onPurchaseWorker.bind(this));
+    }
+
+    private onPurchaseWorker(/*event: CustomEvent*/): void {
+        //const { workerType, cost } = event.detail;
+
+        try {
+            if (!this.workerManager) {
+                console.error('WorkerManager not available for worker purchase');
+                return;
+            }
+
+            // Calculer une position près du joueur avec un peu d'aléatoire
+            const playerX = this.player.x;
+            const playerY = this.player.y;
+
+            // Ajouter un décalage aléatoire pour éviter que tous les ouvriers apparaissent au même endroit
+            const offsetX = (Math.random() - 0.5) * 100; // -50 à +50 pixels
+            const offsetY = (Math.random() - 0.5) * 100; // -50 à +50 pixels
+
+            const workerX = playerX + offsetX;
+            const workerY = playerY + offsetY;
+
+            // Créer le nouvel ouvrier NEUTRAL
+            const newWorker = this.workerManager.createWorker('neutral', workerX, workerY);
+
+            if (newWorker) {
+                console.log(`Successfully created new NEUTRAL worker at position (${workerX}, ${workerY}) for ${cost} coins`);
+
+                // Optionnel : ajouter un effet visuel d'apparition
+                this.createWorkerSpawnEffect(workerX, workerY);
+            } else {
+                console.error('Failed to create worker during purchase');
+
+                // Rembourser le joueur si la création échoue
+                const gameStore = useGameStore();
+                gameStore.updatePlayerGold(gameStore.getPlayerGold + cost);
+
+                window.dispatchEvent(new CustomEvent('game:notification', {
+                    detail: {
+                        type: 'error',
+                        title: 'Erreur de recrutement',
+                        message: 'Impossible de créer l\'ouvrier. Vos coins ont été remboursés.'
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('Error during worker purchase:', error);
+
+            // Rembourser le joueur en cas d'erreur
+            const gameStore = useGameStore();
+            gameStore.updatePlayerGold(gameStore.getPlayerGold + cost);
+
+            window.dispatchEvent(new CustomEvent('game:notification', {
+                detail: {
+                    type: 'error',
+                    title: 'Erreur',
+                    message: 'Une erreur s\'est produite lors du recrutement. Vos coins ont été remboursés.'
+                }
+            }));
+        }
+    }
+
+    private createWorkerSpawnEffect(x: number, y: number): void {
+        try {
+            // Créer un effet de particules pour l'apparition de l'ouvrier
+            if (this.scene && this.scene.scene.isActive()) {
+                // Créer un cercle de lumière temporaire
+                const spawnEffect = this.add.circle(x, y, 30, 0xFFD700, 0.6);
+                spawnEffect.setDepth(10);
+
+                // Animation de l'effet
+                this.tweens.add({
+                    targets: spawnEffect,
+                    scaleX: 2,
+                    scaleY: 2,
+                    alpha: 0,
+                    duration: 1000,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        spawnEffect.destroy();
+                    }
+                });
+
+                // Ajouter du texte "Nouvel ouvrier !"
+                const spawnText = this.add.text(x, y - 40, 'Nouvel ouvrier !', {
+                    fontSize: '16px',
+                    fontStyle: 'bold',
+                    color: '#00FF00',
+                    stroke: '#000000',
+                    strokeThickness: 2
+                }).setOrigin(0.5);
+                spawnText.setDepth(11);
+
+                this.tweens.add({
+                    targets: spawnText,
+                    y: spawnText.y - 30,
+                    alpha: 0,
+                    duration: 1500,
+                    ease: 'Power1',
+                    onComplete: () => spawnText.destroy()
+                });
+            }
+        } catch (error) {
+            console.warn('Could not create worker spawn effect:', error);
+        }
     }
 
     private setupVueResourceSync(): void {
@@ -534,6 +715,35 @@ export class MainScene extends Phaser.Scene {
                 }),
             );
         }
+    }
+
+    private setupResourceRestoreListeners(): void {
+        window.addEventListener('game:restoreResource', (event: CustomEvent) => {
+            const { type, amount } = event.detail;
+            try {
+                const inventory = this.resourceManager.getGlobalInventory();
+                if (inventory.setResource) {
+                    inventory.setResource(type, amount);
+                } else {
+                    const currentAmount = inventory.getResource(type);
+                    if (currentAmount > 0) {
+                        inventory.removeResource(type, currentAmount);
+                    }
+                    inventory.addResource(type, amount);
+                }
+            } catch (error) {
+                console.error(`Error restoring resource ${type}:`, error);
+            }
+        });
+
+        window.addEventListener('game:restoreAllResources', (event: CustomEvent) => {
+            const resourcesData = event.detail;
+            try {
+                this.resourceManager.loadGlobalInventory(resourcesData);
+            } catch (error) {
+                console.error('Error restoring all resources:', error);
+            }
+        });
     }
 
     private onCancelBuildingPlacement(): void {
@@ -1307,7 +1517,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     private findNearestDepositPoint(workerType: WorkerType, position: WorkerPosition): WorkerPosition | undefined {
-        
+
         return { x: position.x + 100, y: position.y };
     }
 
@@ -1675,17 +1885,21 @@ export class MainScene extends Phaser.Scene {
 
     public getResourcesSnapshot(): Record<string, number> {
         try {
-            const inventory = this.resourceManager.getGlobalInventory();
-            const resources: Record<string, number> = {};
-
-            inventory.getAllResources().forEach((amount, type) => {
-                resources[type] = amount;
-            });
-
-            return resources;
+            return this.resourceManager.saveGlobalInventory();
         } catch (error) {
             console.error('Error getting resources snapshot:', error);
             return {};
+        }
+    }
+
+    public forceSaveResources(): void {
+        try {
+            const gameDataService = (window as any).__GAME_DATA_SERVICE__;
+            if (gameDataService && gameDataService.forceResourceSave) {
+                gameDataService.forceResourceSave();
+            }
+        } catch (error) {
+            console.error('Error forcing resource save:', error);
         }
     }
 
@@ -1849,7 +2063,7 @@ export class MainScene extends Phaser.Scene {
         });
     }
 
-    
+
     private showPathDots(path: { x: number; y: number }[]): void {
         this.clearPathDots();
         if (!path || path.length === 0 || !this.pathDotsGroup) return;
@@ -1899,7 +2113,7 @@ export class MainScene extends Phaser.Scene {
         }
     }
 
-    
+
     private clearPathDots(): void {
         if (this.pathDotsGroup) {
             this.pathDotsGroup.clear(true, true);

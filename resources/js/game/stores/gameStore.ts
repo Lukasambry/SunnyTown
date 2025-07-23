@@ -5,6 +5,7 @@ import { ResourceManager } from '@/game/services/ResourceManager';
 import { BuildingRegistry } from '@/game/services/BuildingRegistry';
 import type { TiledBuilding } from '@/game/objects/TiledBuilding';
 import type { Worker } from '@/game/objects/workers/Worker';
+import { GameDataService, type PlayerData } from '@/game/services/GameDataService';
 
 interface GameState {
     isGameLoaded: boolean;
@@ -18,7 +19,6 @@ interface GameState {
 }
 
 export const useGameStore = defineStore('game', () => {
-    // State
     const state: Ref<GameState> = ref({
         isGameLoaded: false,
         selectedBuilding: null,
@@ -36,6 +36,7 @@ export const useGameStore = defineStore('game', () => {
     const playerGold = ref<number>(0);
     const playerHealth = ref<{ current: number, max: number }>({ current: 100, max: 100 });
     const playerExperience = ref<{ current: number, nextLevel: number }>({ current: 0, nextLevel: 100 });
+    const gameDataService = GameDataService.getInstance();
 
     // Player data
     const getPlayerAvatar = computed(() => playerAvatar.value);
@@ -46,25 +47,157 @@ export const useGameStore = defineStore('game', () => {
     const getPlayerCurrentHealth = computed(() => playerHealth.value.current);
     const getPlayerMaxHealth = computed(() => playerHealth.value.max);
 
+    const isLoading = ref<boolean>(false);
+
+    const saveGameData = (): boolean => {
+        try {
+            (window as any).__GAME_STORE__ = {
+                getPlayerLevel: playerLevel.value,
+                getPlayerCurrentExperience: playerExperience.value.current,
+                getPlayerNextLevelExperience: playerExperience.value.nextLevel,
+                getPlayerCurrentHealth: playerHealth.value.current,
+                getPlayerMaxHealth: playerHealth.value.max,
+                getPlayerGold: playerGold.value,
+                getPlayerAvatar: playerAvatar.value
+            };
+
+            console.log('Saving game data with player:', {
+                level: playerLevel.value,
+                gold: playerGold.value,
+                health: playerHealth.value,
+                experience: playerExperience.value
+            });
+
+            return gameDataService.saveGameData();
+        } catch (error) {
+            console.error('Error in saveGameData:', error);
+            return false;
+        }
+    };
+
+    const restorePlayerData = (playerData: PlayerData): void => {
+        console.log('Restoring player data:', playerData);
+
+        // ✅ SOLUTION: Marquer comme en cours de chargement
+        isLoading.value = true;
+
+        try {
+            updatePlayerLevel(playerData.level);
+            updatePlayerGold(playerData.gold);
+            updatePlayerHealth(playerData.health);
+            updatePlayerExperience({
+                current: playerData.currentExperience,
+                nextLevel: playerData.nextLevelExperience
+            });
+            updatePlayerAvatar(playerData.avatar);
+
+            // Mettre à jour __GAME_STORE__ immédiatement après la restauration
+            (window as any).__GAME_STORE__ = {
+                getPlayerLevel: playerData.level,
+                getPlayerCurrentExperience: playerData.currentExperience,
+                getPlayerNextLevelExperience: playerData.nextLevelExperience,
+                getPlayerCurrentHealth: playerData.health.current,
+                getPlayerMaxHealth: playerData.health.max,
+                getPlayerGold: playerData.gold,
+                getPlayerAvatar: playerData.avatar
+            };
+
+            console.log('Player data restored successfully:', {
+                level: playerData.level,
+                gold: playerData.gold,
+                health: playerData.health,
+                experience: { current: playerData.currentExperience, next: playerData.nextLevelExperience }
+            });
+
+        } finally {
+            // ✅ SOLUTION: Finir le chargement après un délai pour s'assurer que tout est stable
+            setTimeout(() => {
+                isLoading.value = false;
+                console.log('Loading complete, auto-save re-enabled');
+            }, 200);
+        }
+    };
+
+    const loadGameData = (): boolean => {
+        try {
+            const gameData = gameDataService.loadGameData();
+            if (!gameData) {
+                console.log('No game data found');
+                return false;
+            }
+
+            isLoading.value = true;
+
+            try {
+                restorePlayerData(gameData.player);
+
+                Object.entries(gameData.resources).forEach(([type, amount]) => {
+                    updateResource(type as any, amount);
+                });
+
+                gameDataService.restoreGameData(gameData);
+                return true;
+
+            } finally {
+                setTimeout(() => {
+                    isLoading.value = false;
+                    console.log('Loading complete, auto-save re-enabled');
+                }, 500);
+            }
+
+        } catch (error) {
+            console.error('Error loading game data:', error);
+            isLoading.value = false;
+            return false;
+        }
+    };
+
+    const hasExistingSave = (): boolean => {
+        return gameDataService.hasExistingSave();
+    };
+
+    const deleteSaveData = (): boolean => {
+        return gameDataService.deleteSaveData();
+    };
+
+    const setupAutoSave = (intervalMinutes: number = 5): void => {
+        gameDataService.setupAutoSave(intervalMinutes);
+    };
+
     // Player actions
     const updatePlayerAvatar = (avatar: string) => {
         playerAvatar.value = avatar;
+        if (!isLoading.value) {
+            setTimeout(() => saveGameData(), 100);
+        }
     };
 
     const updatePlayerLevel = (level: number) => {
         playerLevel.value = level;
+        if (!isLoading.value) {
+            setTimeout(() => saveGameData(), 100);
+        }
     };
 
     const updatePlayerGold = (gold: number) => {
         playerGold.value = gold;
+        if (!isLoading.value) {
+            setTimeout(() => saveGameData(), 100);
+        }
     };
 
     const updatePlayerHealth = (health: { current: number, max: number }) => {
         playerHealth.value = {...health};
+        if (!isLoading.value) {
+            setTimeout(() => saveGameData(), 100);
+        }
     };
 
     const updatePlayerExperience = (experience: { current: number, nextLevel: number }) => {
         playerExperience.value = {...experience};
+        if (!isLoading.value) {
+            setTimeout(() => saveGameData(), 100);
+        }
     };
 
     const resourcesMap = ref<Map<ResourceType, number>>(new Map());
@@ -86,6 +219,41 @@ export const useGameStore = defineStore('game', () => {
             console.error('Error initializing game store managers:', error);
             return false;
         }
+    };
+
+    const purchaseWorker = (cost: number): boolean => {
+        try {
+            if (playerGold.value < cost) {
+                console.log(`Cannot afford worker: need ${cost}, have ${playerGold.value}`);
+                return false;
+            }
+
+            // Déduire le coût
+            const newGold = playerGold.value - cost;
+            updatePlayerGold(newGold);
+
+            console.log(`Worker purchased for ${cost} coins. New gold balance: ${newGold}`);
+
+            // Sauvegarder automatiquement
+            if (!isLoading.value) {
+                setTimeout(() => saveGameData(), 100);
+            }
+
+            return true;
+        } catch (error) {
+            console.error(`Error purchasing worker for ${cost} coins:`, error);
+            return false;
+        }
+    };
+
+    const getWorkerPurchasePrice = (totalWorkerCount: number): number => {
+        const basePrice = 50;
+        return Math.floor(basePrice * Math.pow(1.3, totalWorkerCount));
+    };
+
+    const canAffordWorker = (totalWorkerCount: number): boolean => {
+        const price = getWorkerPurchasePrice(totalWorkerCount);
+        return playerGold.value >= price;
     };
 
     // AMÉLIORATION: Synchronisation bidirectionnelle avec ResourceManager
@@ -231,18 +399,10 @@ export const useGameStore = defineStore('game', () => {
         if (loaded) {
             if (initializeManagers()) {
                 initializeResourceSync();
-
-                // Give some starting resources for testing
-                if (resourceManager) {
-                    resourceManager.addResource(ResourceType.WOOD, 25, 'initial_resources');
-                    resourceManager.addResource(ResourceType.STONE, 10, 'initial_resources');
-                    resourceManager.addResource(ResourceType.FOOD, 5, 'initial_resources');
-                }
             }
         }
     };
 
-    // AMÉLIORÉ: Actions avec vérifications de réactivité
     const updateResource = (type: ResourceType, amount: number) => {
         if (!resourceManager) {
             console.error('ResourceManager not available for updateResource');
@@ -272,7 +432,9 @@ export const useGameStore = defineStore('game', () => {
             return 0;
         }
         try {
-            return resourceManager.addResource(type, amount, 'game_store');
+            const result = resourceManager.addResource(type, amount, 'game_store');
+            setTimeout(() => saveGameData(), 100);
+            return result;
         } catch (error) {
             console.error('Error adding resource:', error);
             return 0;
@@ -285,7 +447,9 @@ export const useGameStore = defineStore('game', () => {
             return 0;
         }
         try {
-            return resourceManager.removeResource(type, amount, 'game_store');
+            const result = resourceManager.removeResource(type, amount, 'game_store');
+            setTimeout(() => saveGameData(), 100);
+            return result;
         } catch (error) {
             console.error('Error removing resource:', error);
             return 0;
@@ -417,6 +581,8 @@ export const useGameStore = defineStore('game', () => {
         playerGold: readonly(playerGold),
         playerHealth: readonly(playerHealth),
         playerExperience: readonly(playerExperience),
+        isLoading: readonly(isLoading),
+
 
         // Getters
         isGameReady,
@@ -429,10 +595,20 @@ export const useGameStore = defineStore('game', () => {
         getPlayerAvatar,
         getPlayerLevel,
         getPlayerGold,
+        getWorkerPurchasePrice,
         getPlayerCurrentExperience,
         getPlayerNextLevelExperience,
         getPlayerCurrentHealth,
         getPlayerMaxHealth,
+
+        loadGameData,
+        saveGameData,
+        restorePlayerData,
+        hasExistingSave,
+        deleteSaveData,
+        setupAutoSave,
+        purchaseWorker,
+        canAffordWorker,
 
         // Actions
         setGameLoaded,
@@ -441,7 +617,7 @@ export const useGameStore = defineStore('game', () => {
         removeResource,
         purchaseBuilding,
         getBuildingAffordability,
-        forceResourceUpdate, // NOUVEAU
+        forceResourceUpdate,
         selectBuilding,
         showBuildingInfo,
         hideBuildingInfo,
@@ -457,7 +633,6 @@ export const useGameStore = defineStore('game', () => {
         updatePlayerGold,
         updatePlayerHealth,
         updatePlayerExperience,
-
 
         // Resource Manager access
         getResourceManager,

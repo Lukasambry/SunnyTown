@@ -5,6 +5,7 @@ import { Worker } from '../objects/workers';
 import { WorkerRegistry } from './WorkerRegistry';
 import { WorkerType, type WorkerPosition } from '../types';
 import { TiledBuilding } from '@/game/objects/TiledBuilding';
+import { GameDataService } from '@/game/services/GameDataService';
 
 export class WorkerManager {
     private readonly scene: Scene;
@@ -16,14 +17,11 @@ export class WorkerManager {
     constructor(scene: Scene) {
         this.scene = scene;
         this.registry = WorkerRegistry.getInstance();
-
-        console.log('WorkerManager: Initialized');
+        (window as any).__WORKER_MANAGER__ = this;
     }
 
     public createWorker(type: WorkerType, x: number, y: number, depositPoint?: WorkerPosition): Worker | null {
         try {
-            console.log(`WorkerManager: Creating worker ${type} at (${x}, ${y})`);
-
             const worker = this.registry.createWorker(type, this.scene, x, y, depositPoint);
             if (!worker) {
                 console.error(`WorkerManager: Registry failed to create worker ${type}`);
@@ -36,14 +34,24 @@ export class WorkerManager {
             this.workers.set(internalId, worker);
             this.workerIdMap.set(workerId, internalId);
 
-            console.log(`WorkerManager: Created worker ${internalId} with workerId ${workerId}`);
-
+            this.notifyWorkerCountChange();
             return worker;
 
         } catch (error) {
             console.error(`WorkerManager: Error creating worker ${type}:`, error);
             return null;
         }
+    }
+
+    public getTotalWorkerCount(): number {
+        return this.getAllWorkers().length;
+    }
+
+    private notifyWorkerCountChange(): void {
+        setTimeout(() => {
+            const gameDataService = GameDataService.getInstance();
+            gameDataService.saveGameData();
+        }, 100);
     }
 
     public removeWorker(workerId: string): boolean {
@@ -58,13 +66,12 @@ export class WorkerManager {
             this.workers.delete(workerId);
             console.log(`WorkerManager: Removed worker ${workerId}`);
 
-            // Notifier Vue.js
             window.dispatchEvent(new CustomEvent('game:workerRemoved', {
                 detail: { id: workerId }
             }));
 
+            this.notifyWorkerCountChange();
             return true;
-
         } catch (error) {
             console.error(`WorkerManager: Error removing worker ${workerId}:`, error);
             return false;

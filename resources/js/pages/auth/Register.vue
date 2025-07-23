@@ -336,10 +336,10 @@ const showPasswordConfirm = ref(false);
 const acceptTerms = ref(false);
 
 let formStartTime: number;
-let fieldFocusTimes: Record<string, number> = {};
+const fieldFocusTimes: Record<string, number> = {};
 let pageStartTime: number;
 let registrationAttempts = 0;
-let passwordStrengthHistory: number[] = [];
+const passwordStrengthHistory: number[] = [];
 
 const form = useForm({
     name: '',
