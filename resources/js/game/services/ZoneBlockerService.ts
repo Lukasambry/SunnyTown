@@ -41,12 +41,22 @@ export class ZoneBlockerService {
     private cornerSprites: Phaser.GameObjects.Sprite[] = [];
     private hoverCornerSprites: Phaser.GameObjects.Sprite[] = [];
     private currentMap: Phaser.Tilemaps.Tilemap | null = null;
+    private unlockedBlockerIds: Set<string> = new Set();
+    private unlockedBlockerNames: Set<string> = new Set();
+    private unlockTimestamps: Map<string, number> = new Map();
 
     constructor(scene: Scene, cameraService: CameraService) {
         this.scene = scene;
         this.cameraService = cameraService;
         this.registry = ZoneBlockerRegistry.getInstance();
+
+        this.blockers = new Map();
+        this.selectedBlocker = null;
+        this.cornerSprites = [];
+        this.currentMap = null;
         this.setupInputHandlers();
+
+        (window as any).__ZONE_BLOCKER_SERVICE__ = this;
     }
 
     public initialize(map: Phaser.Tilemaps.Tilemap): void {
@@ -475,6 +485,14 @@ export class ZoneBlockerService {
         // Marquer comme débloqué
         blockerConfig.unlocked = true;
 
+        // ✅ NOUVEAU: Sauvegarder les informations de déblocage
+        const blockerId = this.extractBlockerIdFromBlocker(blocker, blockerName);
+        this.unlockedBlockerIds.add(blockerId);
+        this.unlockedBlockerNames.add(blockerName);
+        this.unlockTimestamps.set(blockerName, Date.now());
+
+        console.log(`Zone blocker ${blockerName} with blockerId ${blockerId} will be saved as unlocked`);
+
         // Supprimer le groupe de layers de la map
         this.removeBlockerFromMap(blockerName);
 
@@ -485,7 +503,109 @@ export class ZoneBlockerService {
         // Reconstruire la grid du pathfinder après suppression des layers
         this.rebuildPathfindingGrid();
 
+        // ✅ NOUVEAU: Déclencher une sauvegarde automatique après déblocage
+        setTimeout(() => {
+            const gameDataService = (window as any).__GAME_DATA_SERVICE__;
+            if (gameDataService && gameDataService.saveGameData) {
+                gameDataService.saveGameData();
+                console.log('Game saved after zone unlock');
+            }
+        }, 500);
+
         console.log(`Zone blocker ${blockerName} unlocked and removed from map!`);
+    }
+
+    private extractBlockerIdFromBlocker(blocker: ZoneBlocker, blockerName: string): string {
+        let blockerId = blockerName;
+
+        try {
+            const layerProperties = this.extractLayerProperties(blocker.group);
+            if (layerProperties.blockerId) {
+                blockerId = layerProperties.blockerId;
+            } else {
+                console.warn(`No blockerId found in blocker ${blockerName}, using fallback: ${blockerId}`);
+            }
+        } catch (error) {
+            console.error(`Error extracting blockerId from blocker ${blockerName}:`, error);
+        }
+
+        return blockerId;
+    }
+
+    public getUnlockedZonesData(): { blockerIds: string[], blockerNames: string[], unlockedAt: Record<string, number> } {
+        const unlockedAt: Record<string, number> = {};
+        this.unlockTimestamps.forEach((timestamp, blockerName) => {
+            unlockedAt[blockerName] = timestamp;
+        });
+
+        return {
+            blockerIds: Array.from(this.unlockedBlockerIds),
+            blockerNames: Array.from(this.unlockedBlockerNames),
+            unlockedAt
+        };
+    }
+
+    public restoreUnlockedZones(unlockedZonesData: { blockerIds: string[], blockerNames: string[], unlockedAt: Record<string, number> }): void {
+        console.log('Restoring unlocked zones:', unlockedZonesData);
+
+        // Restaurer les données en mémoire
+        this.unlockedBlockerIds = new Set(unlockedZonesData.blockerIds);
+        this.unlockedBlockerNames = new Set(unlockedZonesData.blockerNames);
+        this.unlockTimestamps.clear();
+        Object.entries(unlockedZonesData.unlockedAt).forEach(([blockerName, timestamp]) => {
+            this.unlockTimestamps.set(blockerName, timestamp);
+        });
+
+        // Masquer les layers de chaque blockerId débloqué
+        unlockedZonesData.blockerIds.forEach(blockerId => {
+            console.log(`Hiding layers for previously unlocked blockerId: ${blockerId}`);
+            this.hideLayersByBlockerId(blockerId);
+        });
+
+        // Marquer les configs comme débloquées
+        unlockedZonesData.blockerNames.forEach(blockerName => {
+            const blockerConfig = this.registry.getBlocker(blockerName);
+            if (blockerConfig) {
+                blockerConfig.unlocked = true;
+                console.log(`Marked blocker config as unlocked: ${blockerName}`);
+            }
+        });
+
+        // Supprimer les blockers déjà débloqués de la map
+        unlockedZonesData.blockerNames.forEach(blockerName => {
+            if (this.blockers.has(blockerName)) {
+                const blocker = this.blockers.get(blockerName);
+                if (blocker) {
+                    this.cleanupBlocker(blocker);
+                }
+                this.blockers.delete(blockerName);
+                console.log(`Removed already unlocked blocker from map: ${blockerName}`);
+            }
+        });
+
+        // Reconstruire la grid du pathfinder
+        this.rebuildPathfindingGrid();
+
+        console.log(`Restored ${unlockedZonesData.blockerIds.length} unlocked zones`);
+    }
+
+    public isZoneUnlocked(blockerName: string): boolean {
+        return this.unlockedBlockerNames.has(blockerName);
+    }
+
+    public isBlockerIdUnlocked(blockerId: string): boolean {
+        return this.unlockedBlockerIds.has(blockerId);
+    }
+
+    public getZoneStats(): { total: number, unlocked: number, locked: number } {
+        const totalBlockers = this.registry.getAllBlockers().length;
+        const unlockedCount = this.unlockedBlockerNames.size;
+
+        return {
+            total: totalBlockers,
+            unlocked: unlockedCount,
+            locked: totalBlockers - unlockedCount
+        };
     }
 
     private removeBlockerFromMap(blockerName: string): void {

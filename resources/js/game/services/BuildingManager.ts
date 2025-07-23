@@ -46,9 +46,6 @@ export class BuildingManager {
 
         this.buildings.push(building);
 
-        // ✅ SUPPRIMÉ: Plus de création automatique de workers lors du placement manuel
-        // Les players devront manuellement assigner des workers aux nouveaux bâtiments
-
         console.log(`Bâtiment ${type} placé à (${x}, ${y}) SANS workers automatiques. Total: ${this.buildings.length}`);
         this.saveState();
         this.rebuildPathfindingGrid();
@@ -347,6 +344,7 @@ export class BuildingManager {
             console.log(`Building ${building.getType()} (${buildingId}): restoring ${workerCount} workers`);
 
             if (workerCount > 0) {
+                console.log('createSpecificNumberOfWorkersForBuilding:', workerCount, buildingWorkers);
                 this.createSpecificNumberOfWorkersForBuilding(building, workerCount);
             }
         });

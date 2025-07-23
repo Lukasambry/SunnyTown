@@ -30,6 +30,11 @@ export interface GameData {
             workersByType: Record<string, number>;
         };
     };
+    unlockedZones: {
+        blockerIds: string[];
+        blockerNames: string[];
+        unlockedAt: Record<string, number>;
+    };
     lastSaved: number;
     gameVersion: string;
 }
@@ -90,6 +95,11 @@ export class GameDataService {
                     workersByType: {}
                 }
             },
+            unlockedZones: {
+                blockerIds: [],
+                blockerNames: [],
+                unlockedAt: {}
+            },
             lastSaved: Date.now(),
             gameVersion: this.VERSION
         };
@@ -97,33 +107,22 @@ export class GameDataService {
 
     public saveGameData(): boolean {
         try {
-            console.log('=== DÉBUT SAUVEGARDE AVEC RESSOURCES BÂTIMENTS ===');
+            console.log('=== DÉBUT SAUVEGARDE AVEC ZONES DÉBLOQUÉES ===');
 
             const playerData = this.getCurrentPlayerData();
             const buildingsData = this.getCurrentBuildingsData();
             const resourcesData = this.getCurrentResourcesData();
             const workersData = this.getCurrentWorkersData();
-
-            // Compter les ressources sauvegardées dans les bâtiments
-            const buildingsWithResources = buildingsData.filter(b => b.resources && Object.keys(b.resources).length > 0);
-            const totalBuildingResources = buildingsWithResources.reduce((total, building) => {
-                return total + Object.keys(building.resources || {}).length;
-            }, 0);
+            const unlockedZonesData = this.getCurrentUnlockedZonesData();
 
             console.log('Data to save:', {
                 player: playerData,
-                buildings: {
-                    total: buildingsData.length,
-                    withResources: buildingsWithResources.length,
-                    totalResourceTypes: totalBuildingResources
-                },
-                globalResources: Object.keys(resourcesData).length,
-                workers: {
-                    total: workersData.totalCount,
-                    assignments: {
-                        buildingWorkers: Object.keys(workersData.assignments.buildingWorkers).length,
-                        workerBuildings: Object.keys(workersData.assignments.workerBuildings).length
-                    }
+                buildings: buildingsData.length,
+                resources: Object.keys(resourcesData).length,
+                workers: workersData.totalCount,
+                unlockedZones: {
+                    blockerIds: unlockedZonesData.blockerIds.length,
+                    blockerNames: unlockedZonesData.blockerNames.length
                 }
             });
 
@@ -132,6 +131,7 @@ export class GameDataService {
                 buildings: buildingsData,
                 resources: resourcesData,
                 workers: workersData,
+                unlockedZones: unlockedZonesData,
                 lastSaved: Date.now(),
                 gameVersion: this.VERSION
             };
@@ -142,7 +142,7 @@ export class GameDataService {
             };
 
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
-            console.log('Game data with building resources saved successfully to localStorage');
+            console.log('Game data with unlocked zones saved successfully to localStorage');
             console.log('=== FIN SAUVEGARDE ===');
 
             // Émettre un événement de sauvegarde
@@ -153,16 +153,40 @@ export class GameDataService {
                         level: gameData.player.level,
                         gold: gameData.player.gold,
                         buildings: gameData.buildings.length,
-                        buildingsWithResources: buildingsWithResources.length,
-                        workers: gameData.workers.totalCount
+                        workers: gameData.workers.totalCount,
+                        unlockedZones: gameData.unlockedZones.blockerIds.length
                     }
                 }
             }));
 
             return true;
         } catch (error) {
-            console.error('Error saving game data with building resources:', error);
+            console.error('Error saving game data with unlocked zones:', error);
             return false;
+        }
+    }
+
+    private getCurrentUnlockedZonesData(): GameData['unlockedZones'] {
+        try {
+            const zoneBlockerService = (window as any).__ZONE_BLOCKER_SERVICE__;
+            if (zoneBlockerService && typeof zoneBlockerService.getUnlockedZonesData === 'function') {
+                const data = zoneBlockerService.getUnlockedZonesData();
+                return data;
+            }
+
+            console.warn('ZoneBlockerService not available, using default unlocked zones data');
+            return {
+                blockerIds: [],
+                blockerNames: [],
+                unlockedAt: {}
+            };
+        } catch (error) {
+            console.error('Error getting current unlocked zones data:', error);
+            return {
+                blockerIds: [],
+                blockerNames: [],
+                unlockedAt: {}
+            };
         }
     }
 
@@ -389,15 +413,17 @@ export class GameDataService {
 
     public restoreGameData(gameData: GameData): void {
         try {
-            console.log('Restoring game data...', gameData);
+            console.log('Restoring game data with unlocked zones...', gameData);
 
             // Restaurer d'abord les données workers dans le GlobalWorkerStorage
             this.restoreWorkerData(gameData.workers);
 
+            // Restaurer les zones débloquées AVANT les bâtiments
+            this.restoreUnlockedZonesData(gameData.unlockedZones);
+
             // Restaurer les bâtiments avec leurs workers
             const buildingManager = (window as any).__BUILDING_MANAGER__;
             if (buildingManager && typeof buildingManager.restoreBuildingsFromGameData === 'function') {
-                // ✅ NOUVEAU: Passer aussi les données workers
                 buildingManager.restoreBuildingsFromGameData(gameData.buildings, gameData.workers);
             } else {
                 console.warn('BuildingManager not available for buildings restoration');
@@ -406,6 +432,22 @@ export class GameDataService {
             console.log('Game data restoration completed');
         } catch (error) {
             console.error('Error restoring game data:', error);
+        }
+    }
+
+    private restoreUnlockedZonesData(unlockedZonesData: GameData['unlockedZones']): void {
+        try {
+            console.log('Restoring unlocked zones:', unlockedZonesData);
+
+            const zoneBlockerService = (window as any).__ZONE_BLOCKER_SERVICE__;
+            if (zoneBlockerService && typeof zoneBlockerService.restoreUnlockedZones === 'function') {
+                zoneBlockerService.restoreUnlockedZones(unlockedZonesData);
+                console.log('Unlocked zones restored successfully');
+            } else {
+                console.warn('ZoneBlockerService not available for zones restoration');
+            }
+        } catch (error) {
+            console.error('Error restoring unlocked zones:', error);
         }
     }
 
