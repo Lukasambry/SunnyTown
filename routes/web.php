@@ -32,10 +32,9 @@ Route::prefix('forum')->name('forums.')->group(function(){
 Route::get('/blog', [BlogPostController::class, 'index'])->name('blog.index');
 
 Route::middleware('auth')->group(function(){
-    Route::middleware('role:admin')->group(function() {
         Route::get('/blog/create', [BlogPostController::class, 'create'])->name('blog.create');
         Route::post('/blog', [BlogPostController::class, 'store'])->name('blog.store');
-    });
+
 
     // Game authenticated route
     Route::get('/game', [GameController::class, 'index'])->name('game.index');
