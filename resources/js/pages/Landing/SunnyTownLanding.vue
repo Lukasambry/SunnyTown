@@ -1,15 +1,4 @@
 <template>
-    <head>
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389925912"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-
-            gtag('config', 'AW-17389925912');
-        </script>
-    </head>
     <SmoothScroll>
         <div class="min-h-screen overflow-x-hidden bg-[#00161A] font-sans text-white antialiased" @mousemove="handleMouseMove">
             <header class="fixed top-0 right-0 left-0 z-50 backdrop-blur-md">

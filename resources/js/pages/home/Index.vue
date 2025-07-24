@@ -1,16 +1,5 @@
 <template>
     <SiteLayout :auth="$page.props.auth">
-        <head>
-            <!-- Google tag (gtag.js) -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17389925912"></script>
-            <script>
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-
-                gtag('config', 'AW-17389925912');
-            </script>
-        </head>
         <div class="relative min-h-screen w-full overflow-hidden bg-white dark:bg-[#0a0a0a] -mt-12">
             <section class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#0a0a0a]">
                 <div class="absolute inset-0 opacity-10">

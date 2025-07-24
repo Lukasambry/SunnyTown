@@ -10,8 +10,8 @@ class BlogPostPolicy
 {
     public function create(User $user)
     {
-//        return $user->is_admin
-//            ? Response::allow()
-//            : Response::deny('Seuls les administrateurs peuvent créer des articles.');
+        return $user->is_admin
+            ? Response::allow()
+            : Response::deny('Seuls les administrateurs peuvent créer des articles.');
     }
 }
