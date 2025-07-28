@@ -118,9 +118,9 @@
                             </div>
 
                             <div class="space-y-6">
-                                <article 
-                                    v-for="(post, index) in blogPosts" 
-                                    :key="post.id" 
+                                <article
+                                    v-for="(post, index) in blogPosts"
+                                    :key="post.id"
                                     :data-blog-post="post.title"
                                     class="group cursor-pointer"
                                     @mouseenter="trackBlogPostHover(post.title, post.author, index + 1)"
@@ -171,9 +171,9 @@
                             </div>
 
                             <div class="space-y-4">
-                                <div 
-                                    v-for="(thread, index) in forumThreads" 
-                                    :key="thread.id" 
+                                <div
+                                    v-for="(thread, index) in forumThreads"
+                                    :key="thread.id"
                                     :data-forum-thread="thread.title"
                                     class="group"
                                     @mouseenter="trackForumThreadHover(thread.title, thread.category, index + 1)"
@@ -198,7 +198,7 @@
                                                 <div class="mt-1 flex items-center gap-2 text-xs text-black/60 dark:text-white/60">
                                                     <span>{{ thread.author }}</span>
                                                     <span>•</span>
-                                                    <span 
+                                                    <span
                                                         class="rounded bg-black/5 px-1.5 py-0.5 text-xs dark:bg-white/5"
                                                         @click.stop="trackCategoryTagClick(thread.category)"
                                                     >
@@ -427,7 +427,7 @@ const trackSecondaryCTAClick = () => {
 const trackFeatureHover = (featureTitle: string, position: number) => {
     const key = `feature_${featureTitle}`;
     engagementMetrics[key] = (engagementMetrics[key] || 0) + 1;
-    
+
     if (engagementMetrics[key] === 1) {
         matomo.trackEvent('Home', 'Feature_Hover', featureTitle);
         matomo.trackEvent('Home', 'Feature_Position_Hover', `position_${position}`);
@@ -438,7 +438,7 @@ const trackFeatureClick = (featureTitle: string, position: number) => {
     matomo.trackEvent('Home', 'Feature_Click', featureTitle);
     matomo.trackEvent('Home', 'Feature_Position_Click', `position_${position}`);
     matomo.trackUserAction('feature_interest', 'home', featureTitle);
-    
+
     if (position <= 2) {
         matomo.trackEvent('Home', 'Top_Feature_Click', featureTitle);
     }
@@ -452,7 +452,7 @@ const trackSectionNavigationClick = (section: string, action: string) => {
 const trackBlogPostHover = (title: string, author: string, position: number) => {
     const key = `blog_${title}`;
     engagementMetrics[key] = (engagementMetrics[key] || 0) + 1;
-    
+
     if (engagementMetrics[key] === 1) {
         matomo.trackEvent('Home', 'Blog_Post_Hover', title);
         matomo.trackEvent('Home', 'Blog_Position_Hover', `position_${position}`);
@@ -469,7 +469,7 @@ const trackBlogPostClick = (title: string, author: string, position: number) => 
 const trackForumThreadHover = (title: string, category: string, position: number) => {
     const key = `forum_${title}`;
     engagementMetrics[key] = (engagementMetrics[key] || 0) + 1;
-    
+
     if (engagementMetrics[key] === 1) {
         matomo.trackEvent('Home', 'Forum_Thread_Hover', title);
         matomo.trackEvent('Home', 'Forum_Position_Hover', `position_${position}`);
@@ -491,7 +491,7 @@ const trackCategoryTagClick = (category: string) => {
 const trackTestimonialHover = (name: string, level: string, position: number) => {
     const key = `testimonial_${name}`;
     engagementMetrics[key] = (engagementMetrics[key] || 0) + 1;
-    
+
     if (engagementMetrics[key] === 1) {
         matomo.trackEvent('Home', 'Testimonial_Hover', name);
         matomo.trackEvent('Home', 'Testimonial_Position_Hover', `position_${position}`);
@@ -508,13 +508,13 @@ const trackTestimonialClick = (name: string, rating: number, position: number) =
 
 const trackBottomCTAClick = (type: 'primary' | 'secondary', action: string) => {
     matomo.trackEvent('Home', 'Bottom_CTA_Click', `${type}_${action}`);
-    
+
     if (type === 'primary') {
         matomo.trackCTA('play_now_bottom', matomo.MATOMO_GOALS?.PLAY_NOW);
     } else {
         matomo.trackNavigation('community_from_bottom_cta');
     }
-    
+
     // Track CTA performance by position
     matomo.trackEvent('Home', 'CTA_Performance', `bottom_section_${type}`);
 };
@@ -523,10 +523,10 @@ const trackFAQClick = (faqType: string, position: number) => {
     matomo.trackEvent('Home', 'FAQ_Click', faqType);
     matomo.trackEvent('Home', 'FAQ_Position_Click', `position_${position}`);
     matomo.trackUserAction('faq_interest', 'home', faqType);
-    
+
     const faqInteractions = (engagementMetrics[`faq_${faqType}`] || 0) + 1;
     engagementMetrics[`faq_${faqType}`] = faqInteractions;
-    
+
     if (faqInteractions >= 3) {
         matomo.trackEvent('Home', 'Popular_FAQ', faqType);
     }
@@ -535,19 +535,19 @@ const trackFAQClick = (faqType: string, position: number) => {
 const trackScrollBehavior = () => {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    
+
     if (docHeight > 0) {
         const currentDepth = Math.round((scrollTop / docHeight) * 100);
-        
+
         if (currentDepth > scrollDepth && currentDepth % 25 === 0) {
             scrollDepth = currentDepth;
             matomo.trackEvent('Home', 'Scroll_Depth', 'home_page', scrollDepth);
         }
-        
+
         // Track section views based on scroll position
         const sectionsViewed = Math.floor(currentDepth / 16.67); // Assuming ~6 sections
         const sectionNames = ['hero', 'features', 'content', 'testimonials', 'cta', 'faq'];
-        
+
         for (let i = 0; i <= sectionsViewed && i < sectionNames.length; i++) {
             if (!sectionViews.has(sectionNames[i])) {
                 sectionViews.add(sectionNames[i]);
@@ -560,19 +560,19 @@ const trackScrollBehavior = () => {
 const trackUserEngagementPatterns = () => {
     const totalInteractions = Object.values(engagementMetrics).reduce((a, b) => a + b, 0);
     const uniqueInteractions = Object.keys(engagementMetrics).length;
-    
+
     let engagementLevel = 'passive';
     if (totalInteractions > 15) engagementLevel = 'high';
     else if (totalInteractions > 8) engagementLevel = 'moderate';
     else if (totalInteractions > 3) engagementLevel = 'light';
-    
+
     matomo.trackEvent('Home', 'User_Engagement_Level', engagementLevel);
     matomo.trackEvent('Home', 'Total_Interactions', 'home_page', totalInteractions);
     matomo.trackEvent('Home', 'Unique_Elements_Interacted', 'home_page', uniqueInteractions);
-    
+
     const mostEngagingElement = Object.entries(engagementMetrics)
         .sort(([,a], [,b]) => b - a)[0];
-    
+
     if (mostEngagingElement) {
         matomo.trackEvent('Home', 'Most_Engaging_Element', mostEngagingElement[0], mostEngagingElement[1]);
     }
@@ -586,15 +586,15 @@ const trackConversionFunnel = () => {
         testimonials_viewed: sectionViews.has('testimonials'),
         cta_viewed: sectionViews.has('cta')
     };
-    
+
     let funnelProgress = 0;
     Object.values(funnelSteps).forEach(viewed => {
         if (viewed) funnelProgress++;
     });
-    
+
     const funnelPercentage = Math.round((funnelProgress / 5) * 100);
     matomo.trackEvent('Home', 'Funnel_Progress', 'home_page', funnelPercentage);
-    
+
     if (funnelProgress > 0 && funnelProgress < 5) {
         const lastStep = Object.entries(funnelSteps).findIndex(([, viewed]) => !viewed);
         if (lastStep !== -1) {
@@ -609,15 +609,15 @@ const trackDeviceAndPerformance = () => {
     let deviceCategory = 'desktop';
     if (viewportWidth < 768) deviceCategory = 'mobile';
     else if (viewportWidth < 1024) deviceCategory = 'tablet';
-    
+
     matomo.trackEvent('Home', 'Device_Category', deviceCategory);
     matomo.trackEvent('Home', 'Viewport_Width', 'home_page', viewportWidth);
-    
+
     if ('performance' in window && performance.timing) {
         const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
         if (loadTime > 0) {
             matomo.trackEvent('Home', 'Page_Load_Time', 'milliseconds', Math.round(loadTime));
-            
+
             if (loadTime > 5000) matomo.trackEvent('Home', 'Performance', 'slow');
             else if (loadTime > 3000) matomo.trackEvent('Home', 'Performance', 'moderate');
             else matomo.trackEvent('Home', 'Performance', 'fast');
@@ -627,20 +627,20 @@ const trackDeviceAndPerformance = () => {
 
 onMounted(() => {
     pageStartTime = Date.now();
-    
+
     matomo.trackHomePage();
-    
+
     matomo.setCustomVariable(1, 'Page Type', 'Home', 'page');
     matomo.setCustomVariable(2, 'Landing Section', 'Hero', 'page');
     matomo.setCustomVariable(3, 'User Type', 'Visitor', 'page');
-    
+
     trackDeviceAndPerformance();
-    
+
     sectionViews.add('hero');
     matomo.trackEvent('Home', 'Section_View', 'hero');
-    
+
     window.addEventListener('scroll', trackScrollBehavior);
-    
+
     const engagementInterval = setInterval(() => {
         const timeOnPage = Math.floor((Date.now() - pageStartTime) / 1000);
         if (timeOnPage > 0 && timeOnPage % 30 === 0) {
@@ -649,11 +649,11 @@ onMounted(() => {
             trackConversionFunnel();
         }
     }, 30000);
-    
+
     // Track user activity detection
     let userActive = true;
     let inactiveTime = 0;
-    
+
     const resetInactiveTime = () => {
         inactiveTime = 0;
         if (!userActive) {
@@ -661,7 +661,7 @@ onMounted(() => {
             matomo.trackEvent('Home', 'User_Activity', 'resumed');
         }
     };
-    
+
     const checkInactivity = setInterval(() => {
         inactiveTime++;
         if (inactiveTime >= 30 && userActive) {
@@ -669,12 +669,12 @@ onMounted(() => {
             matomo.trackEvent('Home', 'User_Activity', 'inactive');
         }
     }, 1000);
-    
+
     document.addEventListener('mousemove', resetInactiveTime);
     document.addEventListener('keypress', resetInactiveTime);
     document.addEventListener('click', resetInactiveTime);
     document.addEventListener('scroll', resetInactiveTime);
-    
+
     onUnmounted(() => {
         clearInterval(engagementInterval);
         clearInterval(checkInactivity);
@@ -683,17 +683,17 @@ onMounted(() => {
         document.removeEventListener('keypress', resetInactiveTime);
         document.removeEventListener('click', resetInactiveTime);
         document.removeEventListener('scroll', resetInactiveTime);
-        
+
         const sessionTime = Math.floor((Date.now() - pageStartTime) / 1000);
         matomo.trackEvent('Home', 'Session_Duration', 'home_page', sessionTime);
-        
+
         trackUserEngagementPatterns();
         trackConversionFunnel();
-        
+
         matomo.trackEvent('Home', 'Exit_Metrics', 'scroll_depth', scrollDepth);
         matomo.trackEvent('Home', 'Exit_Metrics', 'sections_viewed', sectionViews.size);
         matomo.trackEvent('Home', 'Exit_Metrics', 'total_interactions', Object.values(engagementMetrics).reduce((a, b) => a + b, 0));
-        
+
         const totalInteractions = Object.values(engagementMetrics).reduce((a, b) => a + b, 0);
         if (totalInteractions === 0 && sessionTime < 10) {
             matomo.trackEvent('Home', 'Session_Type', 'bounce');

@@ -21,14 +21,16 @@ class BlogPostController extends Controller
 
     public function create()
     {
-//        $this->authorize('create', BlogPost::class);
+
+        if (!auth()->user() || !auth()->user()->hasRole('admin')) {
+            return redirect()->route('blog.index')->with('error', 'Unauthorized access');
+        }
 
         return Inertia::render('blog/Create');
     }
 
     public function store(Request $request)
     {
-//        $this->authorize('create', BlogPost::class);
 
         $validated = $request->validate([
             'title' => 'required|string|max:140',
